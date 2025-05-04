@@ -11,6 +11,8 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import BookService from './pages/BookService';
 import MyBookings from './pages/MyBookings';
+import BookingDetail from './pages/BookingDetail';
+import Profile from './pages/Profile';
 import { useAuth } from './components/auth/AuthProvider';
 
 const Navigation = () => {
@@ -210,6 +212,8 @@ function AppContent() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/book/:serviceId" element={<BookService />} />
           <Route path="/bookings" element={<MyBookings />} />
+          <Route path="/booking/:id" element={<BookingDetail />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/" element={<Home />} />
         </Routes>
       </main>

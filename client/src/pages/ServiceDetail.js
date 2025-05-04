@@ -227,30 +227,30 @@ const ServiceDetail = () => {
         </div>
       </div>
       
-      {/* Hero Section with Service Image - Improved with less opacity */}
-      <div className="relative h-64 md:h-96 bg-gray-900">
+      {/* Hero Section with Service Image - Improved with better overlay and readability */}
+      <div className="relative h-72 md:h-96 bg-gray-900 overflow-hidden">
         <div className="absolute inset-0">
           <img 
             src={service.image} 
             alt={service.title}
-            className="w-full h-full object-cover opacity-85"
+            className="w-full h-full object-cover brightness-90 hover:scale-105 transition-transform duration-700"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-gray-900/20"></div>
         </div>
         <div className="absolute inset-0 flex items-end">
           <div className="container mx-auto px-4 py-8">
             <div className="max-w-4xl">
-              <div className="inline-block px-3 py-1 rounded-full bg-primary-100 text-primary-800 text-sm font-medium mb-3 shadow-sm">
+              <div className="inline-block px-3 py-1 rounded-full bg-primary-100 text-primary-800 text-sm font-medium mb-3 shadow-md">
                 {service.category}
               </div>
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-3 drop-shadow-sm">{service.title}</h1>
+              <h1 className="text-3xl md:text-5xl font-bold text-white mb-3 drop-shadow-md">{service.title}</h1>
               <div className="flex flex-wrap items-center text-white gap-y-2">
-                <div className="flex items-center">
+                <div className="flex items-center bg-gray-900/30 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm">
                   {renderRating(service.rating)}
                   <span className="ml-2 text-sm font-medium">{service.rating} ({service.reviewCount} reviews)</span>
                 </div>
                 <span className="mx-3 hidden md:inline">•</span>
-                <span className="flex items-center">
+                <span className="flex items-center bg-gray-900/30 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm">
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
@@ -263,23 +263,23 @@ const ServiceDetail = () => {
       </div>
       
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div className="p-6 md:p-8">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+      <div className="container mx-auto px-4 py-24">  {/* Further increased spacing */}
+        <div className="max-w-4xl mx-auto mt-8">
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+            <div className="p-6 md:p-10">  {/* Increased padding */}
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-10">  {/* Increased spacing */}
                 <div className="mb-6 md:mb-0">
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">Service Details</h2>
                   <p className="text-gray-600 text-lg">Everything you need to know about this service</p>
                 </div>
-                <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100 shadow-sm">
+                <div className="flex flex-col sm:flex-row items-center gap-4 p-5 bg-gray-50 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300">
                   <div className="text-center sm:text-left sm:mr-4 sm:pr-4 sm:border-r sm:border-gray-200">
                     <span className="block text-sm text-gray-500 mb-1">Price</span>
                     <span className="text-2xl font-bold text-primary-600">{formatPrice(service.price, service.priceUnit)}</span>
                   </div>
                   <button
                     onClick={handleBookNow}
-                    className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors shadow-md w-full sm:w-auto"
+                    className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-300 shadow-md w-full sm:w-auto hover:scale-105"
                   >
                     <span className="flex items-center justify-center">
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -291,15 +291,15 @@ const ServiceDetail = () => {
                 </div>
               </div>
               
-              <div className="border-t border-gray-100 pt-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Description</h3>
-                <p className="text-gray-700 text-lg leading-relaxed mb-8">{service.description}</p>
+              <div className="border-t border-gray-100 pt-10">  {/* Increased spacing */}
+                <h3 className="text-xl font-semibold text-gray-900 mb-5">Description</h3>  {/* Increased spacing */}
+                <p className="text-gray-700 text-lg leading-relaxed mb-10">{service.description}</p>  {/* Increased spacing */}
                 
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Features</h3>
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-5">Features</h3>  {/* Increased spacing */}
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">  {/* Increased spacing and gap */}
                   {service.features.map((feature, index) => (
-                    <li key={index} className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-primary-100 hover:bg-primary-50 transition-colors">
-                      <div className="bg-primary-100 p-2 rounded-full mr-3">
+                    <li key={index} className="flex items-center p-4 bg-gray-50 rounded-lg border border-gray-100 hover:border-primary-100 hover:bg-primary-50 transition-all duration-300 shadow-sm hover:shadow-md h-full">
+                      <div className="bg-primary-100 p-2 rounded-full mr-4 flex-shrink-0">
                         <svg className="h-5 w-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                         </svg>
@@ -309,21 +309,21 @@ const ServiceDetail = () => {
                   ))}
                 </ul>
                 
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6 border border-gray-200 shadow-sm">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">About the Provider</h3>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
-                    <div className="h-16 w-16 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-xl border-2 border-primary-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-8 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-5">About the Provider</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-5">  {/* Increased spacing */}
+                    <div className="h-20 w-20 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-2xl border-2 border-primary-200 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105">
                       {service.provider.charAt(0)}{service.provider.split(' ')[1]?.charAt(0) || ''}
                     </div>
                     <div>
-                      <h4 className="font-medium text-gray-900 text-lg mb-1">{service.provider}</h4>
+                      <h4 className="font-medium text-gray-900 text-lg mb-2">{service.provider}</h4>
                       <div className="flex items-center">
                         {renderRating(service.rating)}
                         <span className="ml-2 text-sm text-gray-600">{service.rating} ({service.reviewCount} reviews)</span>
                       </div>
-                      <button className="mt-2 text-primary-600 text-sm font-medium hover:text-primary-700 flex items-center">
+                      <button className="mt-3 text-primary-600 text-sm font-medium hover:text-primary-700 flex items-center bg-white px-3 py-1.5 rounded-md border border-primary-100 hover:border-primary-300 transition-colors shadow-sm">
                         View full profile
-                        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
                       </button>
@@ -337,10 +337,10 @@ const ServiceDetail = () => {
             </div>
           </div>
           
-          <div className="mt-12 flex flex-col sm:flex-row justify-between gap-4">
+          <div className="mt-16 flex flex-col sm:flex-row justify-between gap-6">  {/* Increased spacing */}
             <button
               onClick={handleBookNow}
-              className="order-2 sm:order-1 flex-1 py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all transform hover:scale-[1.02] shadow-md text-center font-medium"
+              className="order-2 sm:order-1 flex-1 py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-300 transform hover:scale-[1.03] shadow-md text-center font-medium"
             >
               <span className="flex items-center justify-center">
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -352,9 +352,9 @@ const ServiceDetail = () => {
             
             <Link 
               to="/services" 
-              className="order-1 sm:order-2 py-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-center font-medium flex-1 flex items-center justify-center group"
+              className="order-1 sm:order-2 py-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-300 text-center font-medium flex-1 flex items-center justify-center group shadow-sm hover:shadow-md"
             >
-              <svg className="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
               Continue Browsing Services
