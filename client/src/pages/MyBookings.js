@@ -14,7 +14,7 @@ const MyBookings = () => {
       setLoading(true);
       // Simulated API call to fetch user's bookings
       setTimeout(() => {
-        // This would be replaced with a real API call
+        // This would be replaced with a real API call to fetch bookings with status
         const mockBookings = [
           {
             id: 'bk1',
@@ -31,7 +31,7 @@ const MyBookings = () => {
             date: new Date(Date.now() + 86400000 * 3), // 3 days from now
             timeSlot: '10:00 AM',
             address: '123 Main St, Anytown, CA 12345',
-            status: 'confirmed',
+            status: 'pending',
             createdAt: new Date().toISOString()
           },
           {
@@ -49,7 +49,7 @@ const MyBookings = () => {
             date: new Date(Date.now() + 86400000 * 7), // 7 days from now
             timeSlot: '02:00 PM',
             address: '123 Main St, Anytown, CA 12345',
-            status: 'confirmed',
+            status: 'pending',
             createdAt: new Date().toISOString()
           },
           {
@@ -138,7 +138,7 @@ const MyBookings = () => {
     const now = new Date();
     
     if (activeTab === 'upcoming') {
-      return bookingDate >= now && booking.status === 'confirmed';
+      return bookingDate >= now && (booking.status === 'confirmed' || booking.status === 'pending');
     } else if (activeTab === 'completed') {
       return booking.status === 'completed' || (bookingDate < now && booking.status === 'confirmed');
     } else if (activeTab === 'cancelled') {
@@ -149,7 +149,7 @@ const MyBookings = () => {
   
   // Count bookings by tab for displaying badge counts
   const bookingCounts = {
-    upcoming: bookings.filter(b => new Date(b.date) >= new Date() && b.status === 'confirmed').length,
+    upcoming: bookings.filter(b => new Date(b.date) >= new Date() && (b.status === 'confirmed' || b.status === 'pending')).length,
     completed: bookings.filter(b => b.status === 'completed' || (new Date(b.date) < new Date() && b.status === 'confirmed')).length,
     cancelled: bookings.filter(b => b.status === 'cancelled').length
   };
@@ -254,6 +254,7 @@ const MyBookings = () => {
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
                           booking.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                          booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-red-100 text-red-800'
                         }`}>
                           {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
@@ -303,6 +304,27 @@ const MyBookings = () => {
                               <p className="font-medium">{booking.timeSlot}</p>
                             </div>
                           </div>
+                          <div className="flex items-center">
+                            <svg className="h-5 w-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div>
+                              <span className="text-sm text-gray-500 block">Status</span>
+                              <p className="font-medium">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                  booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                                  booking.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                                  booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-red-100 text-red-800'
+                                }`}>
+                                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                                </span>
+                                {booking.status === 'pending' && 
+                                  <span className="ml-2 text-xs text-gray-500">Awaiting confirmation</span>
+                                }
+                              </p>
+                            </div>
+                          </div>
                           <div className="md:col-span-2 flex items-start">
                             <svg className="h-5 w-5 text-gray-400 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -325,7 +347,7 @@ const MyBookings = () => {
                         </div>
                         
                         <div className="flex space-x-3">
-                          {booking.status === 'confirmed' && (
+                          {(booking.status === 'confirmed' || booking.status === 'pending') && (
                             <>
                               <button 
                                 onClick={() => window.location.href = `/booking/${booking.id}`}
@@ -391,7 +413,7 @@ const MyBookings = () => {
                   </svg>
                   <h3 className="mt-4 text-xl font-medium text-gray-900">No upcoming bookings</h3>
                   <p className="mt-2 text-gray-500 max-w-md mx-auto">
-                    You don't have any upcoming bookings scheduled. Browse our services to book your next appointment.
+                    You don't have any pending or confirmed bookings scheduled. Browse our services to book your next appointment.
                   </p>
                 </>
               ) : activeTab === 'completed' ? (

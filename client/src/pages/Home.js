@@ -26,6 +26,25 @@ const Home = () => {
 
 // Visitor Homepage (Not Logged In)
 const VisitorHomepage = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  
+  // Handle search submission
+  const handleSearch = () => {
+    if (searchTerm.trim() !== '') {
+      setIsRedirecting(true);
+      // Redirect to services page with search parameters
+      window.location.href = `/services?search=${encodeURIComponent(searchTerm)}&category=${encodeURIComponent(selectedCategory)}`;
+    }
+  };
+  
+  // Handle Enter key press in search input
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
   return (
     <div className="bg-gray-50">
       {/* Hero Section with Search Bar */}
@@ -75,14 +94,20 @@ const VisitorHomepage = () => {
                       type="text"
                       className="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 pr-20 py-3 sm:text-sm border-gray-300 rounded-md"
                       placeholder="Search for services..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyPress={handleKeyPress}
                     />
                     <div className="absolute inset-y-0 right-0 flex items-center">
                       <select
                         className="h-full py-0 pl-3 pr-7 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-md focus:ring-primary-500 focus:border-primary-500"
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
                       >
                         <option>All Categories</option>
                         <option>Cleaning</option>
-                        <option>Repair</option>
+                        <option>Plumbing</option>
+                        <option>Electrical</option>
                         <option>Gardening</option>
                         <option>Moving</option>
                       </select>
@@ -92,8 +117,10 @@ const VisitorHomepage = () => {
                     <button
                       type="button"
                       className="w-full flex justify-center items-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                      onClick={handleSearch}
+                      disabled={isRedirecting}
                     >
-                      Search
+                      {isRedirecting ? 'Searching...' : 'Search'}
                     </button>
                   </div>
                 </motion.div>
@@ -812,9 +839,27 @@ const Footer = () => {
 
 // User Dashboard Component (Logged In Users)
 const UserDashboard = () => {
-  const [activeCategory, setActiveCategory] = useState('all');
   const { currentUser } = useAuth();
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isRedirecting, setIsRedirecting] = useState(false);
   
+  // Handle search submission
+  const handleSearch = () => {
+    if (searchTerm.trim() !== '') {
+      setIsRedirecting(true);
+      // Redirect to services page with search parameter
+      window.location.href = `/services?search=${encodeURIComponent(searchTerm)}`;
+    }
+  };
+  
+  // Handle Enter key press in search input
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   // Sample recommended services data
   const recommendedServices = [
     {
@@ -916,13 +961,18 @@ const UserDashboard = () => {
               type="text"
               className="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 pr-12 py-4 sm:text-lg border-gray-300 rounded-md"
               placeholder="Search for services..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={handleKeyPress}
             />
             <div className="absolute inset-y-0 right-0 flex items-center">
               <button
                 type="button"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-r-md text-white bg-primary-600 hover:bg-primary-700"
+                onClick={handleSearch}
+                disabled={isRedirecting}
               >
-                Search
+                {isRedirecting ? 'Searching...' : 'Search'}
               </button>
             </div>
           </div>

@@ -108,7 +108,7 @@ const BookService = () => {
           email: currentUser.email
         },
         ...bookingData,
-        status: 'confirmed',
+        status: 'pending', // Initial status is pending, will be confirmed by service provider
         createdAt: new Date().toISOString()
       };
       
@@ -144,8 +144,8 @@ const BookService = () => {
               <svg className="h-16 w-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
               </svg>
-              <h2 className="text-2xl font-bold">Booking Confirmed!</h2>
-              <p className="mt-2">Your service has been successfully booked.</p>
+              <h2 className="text-2xl font-bold">Booking Submitted!</h2>
+              <p className="mt-2">Your service booking request has been successfully submitted.</p>
             </div>
             
             <div className="p-6">
@@ -179,6 +179,15 @@ const BookService = () => {
                         <p className="font-medium">{bookingData.notes}</p>
                       </div>
                     )}
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-gray-500">Status</p>
+                      <p className="font-medium">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          Pending
+                        </span>
+                        <span className="ml-2 text-sm text-gray-500">Waiting for service provider confirmation</span>
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -187,7 +196,8 @@ const BookService = () => {
                 <h3 className="text-lg font-semibold mb-2">What's Next?</h3>
                 <ul className="list-disc list-inside space-y-2 text-gray-700">
                   <li>You'll receive a confirmation email shortly.</li>
-                  <li>The service provider will contact you to confirm details.</li>
+                  <li>The service provider will review your request and confirm or reschedule.</li>
+                  <li>Once confirmed, the status will change from <strong>Pending</strong> to <strong>Confirmed</strong>.</li>
                   <li>You can view or manage this booking in your dashboard.</li>
                 </ul>
               </div>

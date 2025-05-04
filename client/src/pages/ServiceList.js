@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../components/auth/AuthProvider';
 
 const ServiceList = () => {
   const { currentUser } = useAuth();
+  const location = useLocation();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  // Parse search parameters from URL
+  const searchParams = new URLSearchParams(location.search);
+  const searchFromURL = searchParams.get('search') || '';
+  const categoryFromURL = searchParams.get('category') || '';
+  
   // Search and filter states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState(searchFromURL);
+  const [categoryFilter, setCategoryFilter] = useState(
+    categoryFromURL === 'All Categories' ? '' : categoryFromURL
+  );
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
   const [ratingFilter, setRatingFilter] = useState(0);
   const [sortBy, setSortBy] = useState('default'); // default, price-low, price-high, rating
@@ -147,10 +155,11 @@ const ServiceList = () => {
   
   // Apply all filters
   const filteredServices = services.filter(service => {
-    const matchesSearch = 
+    const matchesSearch = searchTerm ? (
       service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.provider.toLowerCase().includes(searchTerm.toLowerCase());
+      service.provider.toLowerCase().includes(searchTerm.toLowerCase())
+    ) : true;
       
     const matchesCategory = categoryFilter === '' || service.category === categoryFilter;
     
