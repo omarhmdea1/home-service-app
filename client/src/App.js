@@ -6,6 +6,11 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Home from './pages/Home';
 import ServiceList from './pages/ServiceList';
+import ServiceDetail from './pages/ServiceDetail';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import BookService from './pages/BookService';
+import MyBookings from './pages/MyBookings';
 import { useAuth } from './components/auth/AuthProvider';
 
 const Navigation = () => {
@@ -200,6 +205,11 @@ function AppContent() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/services" element={<ServiceList />} />
+          <Route path="/services/:id" element={<ServiceDetail />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/book/:serviceId" element={<BookService />} />
+          <Route path="/bookings" element={<MyBookings />} />
           <Route path="/" element={<Home />} />
         </Routes>
       </main>
