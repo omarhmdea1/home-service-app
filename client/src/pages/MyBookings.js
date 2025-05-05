@@ -442,7 +442,7 @@ const MyBookings = () => {
                                   alt={booking.service.provider.name}
                                   className="h-6 w-6 rounded-full mr-2"
                                 />
-                                <Link to={`/provider/${booking.service.provider.id}`} className="text-sm text-primary-600 hover:underline">
+                                <Link to={`/providers/${booking.service.provider.id}`} className="text-sm text-primary-600 hover:underline">
                                   {booking.service.provider.name}
                                 </Link>
                               </div>

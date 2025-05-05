@@ -17,6 +17,9 @@ import BookingDetail from './pages/BookingDetail';
 import Profile from './pages/Profile';
 import { useAuth } from './components/auth/AuthProvider';
 
+// Import the new provider profile page
+import ProviderPublicProfile from './pages/ProviderProfile';
+
 // Lazy-loaded provider dashboard components
 const ProviderDashboard = lazy(() => import('./pages/provider/Dashboard'));
 const ProviderBookings = lazy(() => import('./pages/provider/Bookings'));
@@ -491,6 +494,9 @@ function AppContent() {
               <Profile />
             </PrivateRoute>
           } />
+          
+          {/* Public provider profile page */}
+          <Route path="/providers/:providerId" element={<ProviderPublicProfile />} />
           
           {/* Provider routes */}
           <Route path="/provider/pending-verification" element={
