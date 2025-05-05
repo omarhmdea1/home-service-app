@@ -84,23 +84,25 @@ const VisitorHomepage = () => {
                   variants={fadeIn}
                   custom={2}
                 >
-                  <div className="mt-1 relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                      </svg>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-grow shadow-sm">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <input
+                        type="text"
+                        className="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 py-3 sm:text-sm border-gray-300 rounded-full"
+                        placeholder="Search for services..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                      />
                     </div>
-                    <input
-                      type="text"
-                      className="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 pr-20 py-3 sm:text-sm border-gray-300 rounded-md"
-                      placeholder="Search for services..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center">
+                    <div className="relative">
                       <select
-                        className="h-full py-0 pl-3 pr-7 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-md focus:ring-primary-500 focus:border-primary-500"
+                        className="h-full py-3 pl-3 pr-7 border border-gray-300 bg-gray-50 text-gray-500 sm:text-sm rounded-full focus:ring-primary-500 focus:border-primary-500"
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
                       >
@@ -112,15 +114,28 @@ const VisitorHomepage = () => {
                         <option>Moving</option>
                       </select>
                     </div>
-                  </div>
-                  <div className="mt-3">
                     <button
                       type="button"
-                      className="w-full flex justify-center items-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                      className="flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors duration-200 ease-in-out"
                       onClick={handleSearch}
                       disabled={isRedirecting}
                     >
-                      {isRedirecting ? 'Searching...' : 'Search'}
+                      {isRedirecting ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Searching
+                        </>
+                      ) : (
+                        <>
+                          <svg className="mr-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          Search
+                        </>
+                      )}
                     </button>
                   </div>
                 </motion.div>
@@ -1083,22 +1098,7 @@ const UserDashboard = () => {
           )}
         </div>
 
-        {/* Promotions */}
-        <div className="mb-8">
-          <div className="bg-gradient-to-r from-primary-500 to-primary-700 rounded-lg shadow-md overflow-hidden">
-            <div className="px-6 py-8 md:flex md:items-center md:justify-between">
-              <div className="md:w-0 md:flex-1">
-                <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Get 20% off your first booking!</h2>
-                <p className="mt-3 max-w-3xl text-lg text-primary-100">Use code WELCOME20 at checkout.</p>
-              </div>
-              <div className="mt-8 md:mt-0">
-                <Link to="/services" className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-primary-700 bg-white hover:bg-primary-50">
-                  Book Now
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Promotions section removed as requested */}
       </div>
     </div>
   );
