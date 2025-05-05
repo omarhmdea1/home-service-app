@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
 import { AuthProvider } from './components/auth/AuthProvider';
 import PrivateRoute from './components/auth/PrivateRoute';
+import UserRoleBadge from './components/UserRoleBadge';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import VerifyEmail from './pages/VerifyEmail';
@@ -89,6 +90,7 @@ const Navigation = () => {
                   className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none"
                 >
                   <span className="mr-2">{currentUser.email}</span>
+                  <span className="mr-2"><UserRoleBadge /></span>
                   <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
                     {currentUser.email?.charAt(0).toUpperCase() || 'U'}
                   </div>
@@ -180,6 +182,7 @@ const Navigation = () => {
                 </div>
                 <div className="ml-3">
                   <div className="text-base font-medium text-gray-800">{currentUser.email}</div>
+                  <div className="mt-1"><UserRoleBadge /></div>
                 </div>
               </div>
               <div className="mt-3 space-y-1 px-2">

@@ -364,7 +364,28 @@ const BookingDetail = () => {
             </div>
           </div>
           
-          {/* Contact Support section removed as requested */}
+          {/* Contact Support */}
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 mr-4">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Need help with your booking?</h3>
+                <p className="text-gray-600">Our support team is available 24/7 to assist you.</p>
+              </div>
+              <div className="ml-auto">
+                <Link
+                  to="/contact"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  Contact Support
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       
