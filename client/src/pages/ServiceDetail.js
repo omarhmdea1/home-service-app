@@ -135,7 +135,9 @@ const ServiceDetail = () => {
   }, [id]);
   
   const handleBookNow = () => {
-    navigate(`/book/${id}`);
+    console.log('Navigating to booking page for service:', id);
+    // Use direct navigation with window.location to bypass any potential React Router issues
+    window.location.href = `/book/${id}`;
   };
   
   // Format price with unit

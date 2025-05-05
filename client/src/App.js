@@ -233,9 +233,9 @@ function AppContent() {
           <Route path="/services" element={<ServiceList />} />
           <Route path="/services/:id" element={<ServiceDetail />} />
           
-          {/* Customer-only routes */}
+          {/* Booking route - accessible to all authenticated users */}
           <Route path="/book/:serviceId" element={
-            <PrivateRoute allowedRoles={['customer']}>
+            <PrivateRoute>
               <BookService />
             </PrivateRoute>
           } />

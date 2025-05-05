@@ -4,8 +4,11 @@ import { useAuth } from '../components/auth/AuthProvider';
 import { motion } from 'framer-motion';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
+import { getServiceById } from '../services/serviceService';
+import { createBooking } from '../services/bookingService';
 
 const BookService = () => {
+  console.log('BookService component rendering');
   const { serviceId } = useParams();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
@@ -28,41 +31,125 @@ const BookService = () => {
     '04:00 PM', '05:00 PM', '06:00 PM'
   ];
   
+  // Debug information
+  useEffect(() => {
+    console.log('BookService component mounted');
+    console.log('Service ID from URL:', serviceId);
+    console.log('Current User:', currentUser?.email);
+  }, [serviceId, currentUser]);
+  
   // Redirect if not logged in
   useEffect(() => {
+    console.log('Checking authentication:', { currentUser: !!currentUser, serviceId });
     if (!currentUser) {
+      console.log('User not logged in, redirecting to login');
       // Save the service ID to session storage to redirect back after login
       sessionStorage.setItem('pendingBookingServiceId', serviceId);
       navigate('/login', { state: { from: `/book/${serviceId}`, message: 'Please log in to book a service.' } });
+    } else {
+      console.log('User is authenticated, proceeding with booking');
     }
   }, [currentUser, navigate, serviceId]);
-  
+
   // Fetch service details
   useEffect(() => {
-    if (currentUser) {
-      setLoading(true);
-      // Simulated API call to fetch service details
-      setTimeout(() => {
-        // This would be replaced with a real API call
-        const mockService = {
-          id: serviceId,
-          title: 'Professional Plumbing Service',
-          description: 'Expert plumbing services for all your home needs. We handle everything from minor repairs to major installations.',
-          provider: {
-            name: 'Mike\'s Plumbing',
-            rating: 4.8,
-            reviews: 127
-          },
-          price: 85,
-          priceUnit: 'hour',
-          image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80'
-        };
+    console.log('Fetching service details for ID:', serviceId);
+    setLoading(true);
+    
+    const fetchServiceDetails = async () => {
+      try {
+        // Try to get the service from Firebase
+        console.log('Attempting to fetch service from Firebase');
+        let serviceData = null;
         
-        setService(mockService);
+        try {
+          // Try to get from Firebase first
+          serviceData = await getServiceById(serviceId);
+          console.log('Service data from Firebase:', serviceData);
+        } catch (firebaseError) {
+          console.log('Firebase fetch failed, will use mock data');
+        }
+        
+        if (serviceData) {
+          setService(serviceData);
+        } else {
+          // If not found in Firebase, use mock data based on ID
+          console.log('Service not found in Firebase, using mock data');
+          
+          // Mock data for development purposes
+          const mockServices = {
+            "1": {
+              id: "1",
+              title: 'House Cleaning',
+              description: 'Professional house cleaning services for all room types. Our team ensures a spotless home with eco-friendly products.',
+              provider: {
+                id: 'provider123',
+                name: 'CleanHome Services',
+                rating: 4.8,
+                reviews: 127
+              },
+              price: 80,
+              priceUnit: 'hour',
+              image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
+            },
+            "2": {
+              id: "2",
+              title: 'Plumbing Repair',
+              description: 'Expert plumbing services for leaks, clogs, installations, and more. Available 24/7 for emergency calls.',
+              provider: {
+                id: 'provider456',
+                name: 'Quick Fix Plumbing',
+                rating: 4.7,
+                reviews: 89
+              },
+              price: 95,
+              priceUnit: 'hour',
+              image: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
+            },
+            "3": {
+              id: "3",
+              title: 'Electrical Installation',
+              description: 'Licensed electricians for all your electrical needs. From rewiring to new installations, we handle it all safely.',
+              provider: {
+                id: 'provider789',
+                name: 'Bright Spark Electrical',
+                rating: 4.9,
+                reviews: 64
+              },
+              price: 110,
+              priceUnit: 'hour',
+              image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
+            }
+          };
+          
+          const mockService = mockServices[serviceId] || {
+            id: serviceId || '123',
+            title: 'Professional Service',
+            description: 'Expert services for all your home needs. We handle everything from minor repairs to major installations.',
+            provider: {
+              id: 'provider123',
+              name: 'Home Services Pro',
+              rating: 4.8,
+              reviews: 127
+            },
+            price: 85,
+            priceUnit: 'hour',
+            image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80'
+          };
+          
+          setService(mockService);
+          setError('Using mock data for demonstration purposes. In production, this would use real data from Firebase.');
+        }
+      } catch (error) {
+        console.error('Error in service fetching process:', error);
+        setError('Failed to load service details. Please try again.');
+      } finally {
         setLoading(false);
-      }, 1000);
-    }
-  }, [currentUser, serviceId]);
+      }
+    };
+    
+    fetchServiceDetails();
+  }, [serviceId]);
   
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -79,7 +166,7 @@ const BookService = () => {
     });
   };
   
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validate form
@@ -94,30 +181,41 @@ const BookService = () => {
     }
     
     setLoading(true);
+    setError(null);
     
-    // Simulated API call to create booking
-    setTimeout(() => {
-      // This would be replaced with a real API call
-      // POST /api/bookings with { userId: currentUser.uid, serviceId, ...bookingData }
+    try {
+      // Format the booking data for Firebase
+      const formattedDate = bookingData.date.toISOString().split('T')[0]; // YYYY-MM-DD format
       
       const bookingDetails = {
-        id: 'bk' + Math.random().toString(36).substr(2, 9),
-        service,
-        user: {
-          id: currentUser.uid,
-          email: currentUser.email
-        },
-        ...bookingData,
-        status: 'pending', // Initial status is pending, will be confirmed by service provider
-        createdAt: new Date().toISOString()
+        userId: currentUser.uid,
+        serviceId: service.id,
+        providerId: service.provider?.id || 'provider123', // Fallback for mock data
+        date: formattedDate,
+        time: bookingData.timeSlot,
+        address: bookingData.address,
+        notes: bookingData.notes,
+        serviceName: service.title,
+        servicePrice: service.price,
+        servicePriceUnit: service.priceUnit,
+        providerName: service.provider?.name || 'Service Provider',
+        userEmail: currentUser.email,
+        userName: currentUser.displayName || 'Customer'
       };
+      
+      // Create booking in Firebase
+      await createBooking(bookingDetails);
       
       setLoading(false);
       setBookingConfirmed(true);
       
-      // In a real app, you would store this in your database
-      console.log('Booking created:', bookingDetails);
-    }, 1500);
+      // Log success
+      console.log('Booking created successfully');
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      setError('Failed to create booking. Please try again.');
+      setLoading(false);
+    }
   };
   
   // Show loading state
@@ -134,95 +232,11 @@ const BookService = () => {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="container mx-auto px-4">
-          <motion.div 
-            className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="bg-primary-600 text-white p-6 text-center">
-              <svg className="h-16 w-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <h2 className="text-2xl font-bold">Booking Submitted!</h2>
-              <p className="mt-2">Your service booking request has been successfully submitted.</p>
-            </div>
-            
-            <div className="p-6">
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Booking Details</h3>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500">Service</p>
-                      <p className="font-medium">{service.title}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Provider</p>
-                      <p className="font-medium">{service.provider.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Date</p>
-                      <p className="font-medium">{bookingData.date.toLocaleDateString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Time</p>
-                      <p className="font-medium">{bookingData.timeSlot}</p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <p className="text-sm text-gray-500">Address</p>
-                      <p className="font-medium">{bookingData.address}</p>
-                    </div>
-                    {bookingData.notes && (
-                      <div className="md:col-span-2">
-                        <p className="text-sm text-gray-500">Notes</p>
-                        <p className="font-medium">{bookingData.notes}</p>
-                      </div>
-                    )}
-                    <div className="md:col-span-2">
-                      <p className="text-sm text-gray-500">Status</p>
-                      <p className="font-medium">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          Pending
-                        </span>
-                        <span className="ml-2 text-sm text-gray-500">Waiting for service provider confirmation</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">What's Next?</h3>
-                <ul className="list-disc list-inside space-y-2 text-gray-700">
-                  <li>You'll receive a confirmation email shortly.</li>
-                  <li>The service provider will review your request and confirm or reschedule.</li>
-                  <li>Once confirmed, the status will change from <strong>Pending</strong> to <strong>Confirmed</strong>.</li>
-                  <li>You can view or manage this booking in your dashboard.</li>
-                </ul>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link 
-                  to="/bookings" 
-                  className="flex-1 px-6 py-3 bg-primary-600 text-white text-center rounded-lg hover:bg-primary-700 transition-colors"
-                >
-                  View My Bookings
-                </Link>
-                <Link 
-                  to="/" 
-                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 text-center rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Return to Home
-                </Link>
-              </div>
-            </div>
-          </motion.div>
         </div>
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container mx-auto px-4">

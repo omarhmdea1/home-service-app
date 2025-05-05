@@ -26,8 +26,57 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [emailVerified, setEmailVerified] = useState(false);
 
+  // Function to ensure user role is set correctly
+  const ensureUserRole = async (uid, email) => {
+    console.log('Ensuring user role is set for:', email);
+    try {
+      const userDocRef = doc(db, 'users', uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (!userDoc.exists()) {
+        // Create a new user document with customer role
+        console.log('Creating new user document for:', email);
+        await setDoc(userDocRef, {
+          uid: uid,
+          email: email,
+          name: email.split('@')[0],
+          photoURL: '',
+          role: 'customer', // Default role
+          createdAt: serverTimestamp(),
+          lastLogin: serverTimestamp()
+        });
+        setUserRole('customer');
+        return 'customer';
+      } else {
+        const userData = userDoc.data();
+        // Check if role exists
+        if (!userData.role) {
+          // Update the document to add the role field
+          console.log('Adding missing role field for:', email);
+          await updateDoc(userDocRef, {
+            role: 'customer',
+            lastLogin: serverTimestamp()
+          });
+          setUserRole('customer');
+          return 'customer';
+        } else {
+          // Role exists, just return it
+          console.log('User role found:', userData.role);
+          setUserRole(userData.role);
+          return userData.role;
+        }
+      }
+    } catch (error) {
+      console.error('Error in ensureUserRole:', error);
+      // Default to customer role in case of error
+      setUserRole('customer');
+      return 'customer';
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('Auth state changed:', user?.email);
       setCurrentUser(user);
       
       if (user) {
@@ -39,7 +88,19 @@ export const AuthProvider = ({ children }) => {
           
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            setUserRole(userData.role);
+            console.log('User data from Firestore:', { 
+              email: user.email, 
+              role: userData.role,
+              uid: user.uid
+            });
+            
+            // If role is missing, ensure it's set
+            if (!userData.role) {
+              await ensureUserRole(user.uid, user.email);
+            } else {
+              setUserRole(userData.role);
+            }
+            
             setUserProfile(userData);
             
             // Update lastLogin
@@ -47,12 +108,15 @@ export const AuthProvider = ({ children }) => {
               lastLogin: serverTimestamp()
             });
           } else {
-            console.log('No user document found!');
-            setUserRole(null);
+            console.warn('No user document found for:', user.email, user.uid);
+            // Ensure user role is set
+            await ensureUserRole(user.uid, user.email);
             setUserProfile(null);
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
+          // Attempt to fix the issue by ensuring role
+          await ensureUserRole(user.uid, user.email);
         }
       } else {
         setUserRole(null);
@@ -242,6 +306,7 @@ export const AuthProvider = ({ children }) => {
     currentUser,
     userRole,
     userProfile,
+    loading,
     emailVerified,
     signup,
     login,
@@ -249,6 +314,7 @@ export const AuthProvider = ({ children }) => {
     signInWithGoogle,
     createUserProfile,
     updateUserRole,
+    ensureUserRole,
     sendVerificationEmail,
     deleteAccount
   };
