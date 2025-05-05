@@ -13,6 +13,8 @@ const fadeIn = {
   }
 };
 
+
+
 // Main Home component
 const Home = () => {
   const { currentUser } = useAuth();

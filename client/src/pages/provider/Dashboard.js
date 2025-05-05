@@ -298,41 +298,7 @@ const ProviderDashboard = () => {
           </div>
         )}
         
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-            <div className="space-y-3">
-              <Link 
-                to="/provider/services/new" 
-                className="flex items-center text-primary-600 hover:text-primary-700"
-              >
-                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Add a new service
-              </Link>
-              <Link 
-                to="/provider/profile" 
-                className="flex items-center text-primary-600 hover:text-primary-700"
-              >
-                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Update your profile
-              </Link>
-              <Link 
-                to="/provider/bookings" 
-                className="flex items-center text-primary-600 hover:text-primary-700"
-              >
-                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Manage bookings
-              </Link>
-            </div>
-          </div>
-        </div>
+        {/* Empty space for additional content if needed */}
       </div>
     </div>
   );

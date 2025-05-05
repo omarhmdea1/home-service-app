@@ -22,6 +22,7 @@ const ProviderDashboard = lazy(() => import('./pages/provider/Dashboard'));
 const ProviderBookings = lazy(() => import('./pages/provider/Bookings'));
 const ProviderServices = lazy(() => import('./pages/provider/Services'));
 const ProviderProfile = lazy(() => import('./pages/provider/Profile'));
+const ProviderEarnings = lazy(() => import('./pages/provider/Earnings'));
 const PendingVerification = lazy(() => import('./pages/provider/PendingVerification'));
 
 // Loading fallback component
@@ -32,10 +33,20 @@ const LoadingFallback = () => (
 );
 
 const Navigation = () => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, userRole, userProfile } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = React.useState(false);
   const dropdownRef = React.useRef(null);
+  
+  // Function to close the dropdown
+  const closeDropdown = () => {
+    setIsProfileDropdownOpen(false);
+  };
+  
+  // Function to close the mobile menu
+  const closeMobileMenu = () => {
+    setIsMenuOpen(false);
+  };
 
   // Close dropdown when clicking outside
   React.useEffect(() => {
@@ -79,6 +90,14 @@ const Navigation = () => {
             <Link to="/contact" className="text-gray-600 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors duration-200">
               Contact
             </Link>
+            {currentUser && userRole === 'provider' && (
+              <Link 
+                to="/provider/dashboard" 
+                className="text-gray-600 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
+              >
+                Provider Dashboard
+              </Link>
+            )}
           </div>
 
           {/* User Menu (Desktop) */}
@@ -87,30 +106,141 @@ const Navigation = () => {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                  className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none"
+                  className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none group"
                 >
-                  <span className="mr-2">{currentUser.email}</span>
-                  <span className="mr-2"><UserRoleBadge /></span>
-                  <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
-                    {currentUser.email?.charAt(0).toUpperCase() || 'U'}
+                  <div className="flex flex-col items-end mr-3">
+                    <span className="font-medium">{currentUser.displayName || currentUser.email}</span>
+                    <div className="flex items-center">
+                      <UserRoleBadge />
+                      {userRole === 'provider' && !userProfile?.isVerified && (
+                        <span className="ml-2 px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800 border border-yellow-300">
+                          Pending Verification
+                        </span>
+                      )}
+                      {userRole === 'provider' && userProfile?.isVerified && (
+                        <span className="ml-2 px-1.5 py-0.5 text-xs rounded bg-green-100 text-green-800 border border-green-300">
+                          Verified
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 border-2 border-transparent group-hover:border-primary-300 transition-all duration-200">
+                    {currentUser.displayName?.charAt(0).toUpperCase() || currentUser.email?.charAt(0).toUpperCase() || 'U'}
                   </div>
                 </button>
 
                 {/* Dropdown menu */}
                 {isProfileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 ring-1 ring-black ring-opacity-5">
-                    <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Profile
-                    </Link>
-                    <Link to="/bookings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      My Bookings
-                    </Link>
-                    <button
-                      onClick={logout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Logout
-                    </button>
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg py-1 z-10 ring-1 ring-black ring-opacity-5 divide-y divide-gray-100">
+                    {/* User info section */}
+                    <div className="px-4 py-3">
+                      <p className="text-sm leading-5 text-gray-900 truncate font-medium">
+                        {currentUser.displayName || currentUser.email}
+                      </p>
+                      <p className="text-xs leading-4 text-gray-500 truncate">
+                        {currentUser.email}
+                      </p>
+                    </div>
+                    
+                    {/* Provider-specific menu items */}
+                    {userRole === 'provider' && (
+                      <div>
+                        {/* Dashboard */}
+                        <Link
+                          to="/provider/dashboard"
+                          className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+                          title="View your dashboard with upcoming bookings, earnings, and quick actions"
+                          onClick={closeDropdown}
+                        >
+                          <svg className="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                          </svg>
+                          Dashboard
+                        </Link>
+                        
+                        {/* Manage Services */}
+                        <Link
+                          to="/provider/services"
+                          className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+                          title="Manage your service listings, add new services, and toggle availability"
+                          onClick={closeDropdown}
+                        >
+                          <svg className="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                          Manage Services
+                        </Link>
+                        
+                        {/* Booking Requests */}
+                        <Link
+                          to="/provider/bookings"
+                          className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+                          title="View, accept, decline, and manage booking requests"
+                          onClick={closeDropdown}
+                        >
+                          <svg className="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          Booking Requests
+                        </Link>
+                        
+                        {/* Earnings */}
+                        <Link
+                          to="/provider/earnings"
+                          className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+                          title="View your earnings, completed bookings, and payout details"
+                          onClick={closeDropdown}
+                        >
+                          <svg className="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Earnings
+                        </Link>
+                      </div>
+                    )}
+                    
+                    {/* Common menu items */}
+                    <div className="py-1">
+                      {userRole === 'customer' && (
+                        <Link 
+                          to="/bookings" 
+                          className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                          onClick={closeDropdown}
+                        >
+                          <svg className="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          My Bookings
+                        </Link>
+                      )}
+                      <Link 
+                        to={userRole === 'provider' ? '/provider/profile' : '/profile'} 
+                        className="group flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-150"
+                        title="Update your profile information, contact details, and verification status"
+                        onClick={closeDropdown}
+                      >
+                        <svg className="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Profile
+                      </Link>
+                    </div>
+                    
+                    {/* Logout section */}
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          closeDropdown();
+                          logout();
+                        }}
+                        className="group flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
+                      >
+                        <svg className="mr-3 h-5 w-5 text-gray-400 group-hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -158,44 +288,146 @@ const Navigation = () => {
       {/* Mobile menu */}
       <div className={`${isMenuOpen ? 'block' : 'hidden'} md:hidden bg-white border-t border-gray-200`}>
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          <Link to="/" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
+          <Link to="/" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50" onClick={closeMobileMenu}>
             Home
           </Link>
-          <Link to="/services" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
+          <Link to="/services" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50" onClick={closeMobileMenu}>
             Services
           </Link>
-          <Link to="/about" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
+          <Link to="/about" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50" onClick={closeMobileMenu}>
             About
           </Link>
-          <Link to="/contact" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
+          <Link to="/contact" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50" onClick={closeMobileMenu}>
             Contact
           </Link>
+          {currentUser && userRole === 'provider' && (
+            <Link to="/provider/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50" onClick={closeMobileMenu}>
+              Provider Dashboard
+            </Link>
+          )}
         </div>
         <div className="pt-4 pb-3 border-t border-gray-200">
           {currentUser ? (
             <div>
               <div className="flex items-center px-4">
                 <div className="flex-shrink-0">
-                  <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
-                    {currentUser.email?.charAt(0).toUpperCase() || 'U'}
+                  <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 border-2 border-primary-200">
+                    {currentUser.displayName?.charAt(0).toUpperCase() || currentUser.email?.charAt(0).toUpperCase() || 'U'}
                   </div>
                 </div>
                 <div className="ml-3">
-                  <div className="text-base font-medium text-gray-800">{currentUser.email}</div>
-                  <div className="mt-1"><UserRoleBadge /></div>
+                  <div className="text-base font-medium text-gray-800">{currentUser.displayName || currentUser.email}</div>
+                  <div className="flex items-center mt-1">
+                    <UserRoleBadge />
+                    {userRole === 'provider' && !userProfile?.isVerified && (
+                      <span className="ml-2 px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800 border border-yellow-300">
+                        Pending Verification
+                      </span>
+                    )}
+                    {userRole === 'provider' && userProfile?.isVerified && (
+                      <span className="ml-2 px-1.5 py-0.5 text-xs rounded bg-green-100 text-green-800 border border-green-300">
+                        Verified
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
+              
+              {/* Provider-specific menu items */}
+              {userRole === 'provider' && (
+                <div className="mt-3 border-t border-b border-gray-200 py-2">
+                  <div className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Provider Menu
+                  </div>
+                  {/* Dashboard */}
+                  <Link 
+                    to="/provider/dashboard" 
+                    className="flex items-center px-3 py-2 rounded-md text-base font-medium text-blue-700 hover:bg-blue-50"
+                    title="View your dashboard with upcoming bookings, earnings, and quick actions"
+                    onClick={closeMobileMenu}
+                  >
+                    <svg className="mr-3 h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                    </svg>
+                    Dashboard
+                  </Link>
+                  
+                  {/* Manage Services */}
+                  <Link 
+                    to="/provider/services" 
+                    className="flex items-center px-3 py-2 rounded-md text-base font-medium text-blue-700 hover:bg-blue-50"
+                    title="Manage your service listings, add new services, and toggle availability"
+                    onClick={closeMobileMenu}
+                  >
+                    <svg className="mr-3 h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Manage Services
+                  </Link>
+                  
+                  {/* Booking Requests */}
+                  <Link 
+                    to="/provider/bookings" 
+                    className="flex items-center px-3 py-2 rounded-md text-base font-medium text-blue-700 hover:bg-blue-50"
+                    title="View, accept, decline, and manage booking requests"
+                    onClick={closeMobileMenu}
+                  >
+                    <svg className="mr-3 h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Booking Requests
+                  </Link>
+                  
+                  {/* Earnings */}
+                  <Link 
+                    to="/provider/earnings" 
+                    className="flex items-center px-3 py-2 rounded-md text-base font-medium text-blue-700 hover:bg-blue-50"
+                    title="View your earnings, completed bookings, and payout details"
+                    onClick={closeMobileMenu}
+                  >
+                    <svg className="mr-3 h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Earnings
+                  </Link>
+                </div>
+              )}
+              
+              {/* Common menu items */}
               <div className="mt-3 space-y-1 px-2">
-                <Link to="/profile" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
+                {userRole === 'customer' && (
+                  <Link 
+                    to="/bookings" 
+                    className="flex items-center px-3 py-2 rounded-md text-base font-medium text-green-700 hover:bg-green-50"
+                    onClick={closeMobileMenu}
+                  >
+                    <svg className="mr-3 h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    My Bookings
+                  </Link>
+                )}
+                <Link 
+                  to={userRole === 'provider' ? '/provider/profile' : '/profile'} 
+                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50"
+                  title="Update your profile information, contact details, and verification status"
+                  onClick={closeMobileMenu}
+                >
+                  <svg className="mr-3 h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
                   Profile
                 </Link>
-                <Link to="/bookings" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50">
-                  My Bookings
-                </Link>
                 <button
-                  onClick={logout}
-                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50"
+                  onClick={() => {
+                    closeMobileMenu();
+                    logout();
+                  }}
+                  className="flex w-full items-center px-3 py-2 rounded-md text-base font-medium text-red-700 hover:bg-red-50"
                 >
+                  <svg className="mr-3 h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
                   Logout
                 </button>
               </div>
@@ -276,6 +508,7 @@ function AppContent() {
                   <Route path="dashboard" element={<ProviderDashboard />} />
                   <Route path="bookings" element={<ProviderBookings />} />
                   <Route path="services" element={<ProviderServices />} />
+                  <Route path="earnings" element={<ProviderEarnings />} />
                   <Route path="profile" element={<ProviderProfile />} />
                   <Route path="*" element={<Navigate to="/provider/dashboard" replace />} />
                 </Routes>
