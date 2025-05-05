@@ -138,7 +138,7 @@ const BookService = () => {
           };
           
           setService(mockService);
-          setError('Using mock data for demonstration purposes. In production, this would use real data from Firebase.');
+          console.log('Using mock service:', mockService);
         }
       } catch (error) {
         console.error('Error in service fetching process:', error);
@@ -196,21 +196,28 @@ const BookService = () => {
         address: bookingData.address,
         notes: bookingData.notes,
         serviceName: service.title,
+        serviceImage: service.image,
         servicePrice: service.price,
         servicePriceUnit: service.priceUnit,
         providerName: service.provider?.name || 'Service Provider',
+        providerAvatar: service.provider?.avatar,
+        providerRating: service.provider?.rating,
         userEmail: currentUser.email,
-        userName: currentUser.displayName || 'Customer'
+        userName: currentUser.displayName || 'Customer',
+        status: 'pending', // Initial status is pending
+        paymentStatus: 'unpaid'
       };
       
       // Create booking in Firebase
-      await createBooking(bookingDetails);
+      const createdBooking = await createBooking(bookingDetails);
+      console.log('Booking created successfully:', createdBooking);
       
+      // Set success state with booking ID for navigation
       setLoading(false);
       setBookingConfirmed(true);
       
-      // Log success
-      console.log('Booking created successfully');
+      // Store the booking ID for navigation when user clicks a button
+      sessionStorage.setItem('lastBookingId', createdBooking.id);
     } catch (error) {
       console.error('Error creating booking:', error);
       setError('Failed to create booking. Please try again.');
@@ -227,11 +234,44 @@ const BookService = () => {
     );
   }
   
-  // Show booking confirmation
+  // Render booking confirmed state
   if (bookingConfirmed) {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="container mx-auto px-4">
+          <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-8">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Submitted!</h2>
+              <p className="text-gray-600 mb-6">
+                Your booking request has been successfully submitted and is pending confirmation from the service provider.
+                You will be redirected to your bookings page in a moment...
+              </p>
+              <div className="flex justify-center space-x-4">
+                <a
+                  href="/bookings"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    // Navigate directly without setting success message
+                    window.location.href = '/bookings';
+                  }}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 transition-colors"
+                >
+                  View My Bookings
+                </a>
+                <Link
+                  to="/services"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                >
+                  Browse More Services
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

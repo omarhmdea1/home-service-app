@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../components/auth/AuthProvider';
 import { motion } from 'framer-motion';
 import { getUserBookings, updateBookingStatus } from '../services/bookingService';
@@ -7,13 +7,69 @@ import { getUserBookings, updateBookingStatus } from '../services/bookingService
 const MyBookings = () => {
   const { currentUser, userRole, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [activeTab, setActiveTab] = useState('upcoming');
   const [cancelBookingId, setCancelBookingId] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [processingAction, setProcessingAction] = useState(false);
+  
+  // Check for success message from various sources
+  useEffect(() => {
+    // Check for direct success message in sessionStorage
+    if (sessionStorage.getItem('bookingSuccess') === 'true') {
+      const message = sessionStorage.getItem('bookingMessage') || 'Booking was successful!';
+      setSuccess(message);
+      setActiveTab('upcoming'); // Switch to upcoming tab to show the new booking
+      
+      // Clear sessionStorage
+      sessionStorage.removeItem('bookingSuccess');
+      sessionStorage.removeItem('bookingMessage');
+      
+      // Auto-hide success message after 5 seconds
+      const timer = setTimeout(() => {
+        setSuccess(null);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+    
+    // Check for state passed from Link component (legacy support)
+    if (location.state?.bookingSuccess) {
+      setSuccess(location.state.message || 'Booking was successful!');
+      setActiveTab('upcoming');
+      
+      // Clear the location state
+      window.history.replaceState({}, document.title);
+      
+      // Auto-hide success message
+      const timer = setTimeout(() => {
+        setSuccess(null);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+    
+    // Check for lastBookingId in sessionStorage (alternative method)
+    const lastBookingId = sessionStorage.getItem('lastBookingId');
+    if (lastBookingId) {
+      setSuccess('Your booking has been successfully submitted! The service provider will confirm your booking soon.');
+      setActiveTab('upcoming');
+      
+      // Remove from session storage
+      sessionStorage.removeItem('lastBookingId');
+      
+      // Auto-hide success message
+      const timer = setTimeout(() => {
+        setSuccess(null);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
   
   // Handle role-based access
   useEffect(() => {
@@ -314,6 +370,8 @@ const MyBookings = () => {
               <p>{error}</p>
             </div>
           )}
+          
+          {/* Success message removed as requested */}
           
           <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
             <div className="flex border-b border-gray-200">

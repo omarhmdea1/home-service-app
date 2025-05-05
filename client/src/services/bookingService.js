@@ -14,6 +14,115 @@ import { db } from '../firebase';
 
 const BOOKINGS_COLLECTION = 'bookings';
 
+// Mock bookings data for development
+let MOCK_BOOKINGS = [
+  {
+    id: 'bk1',
+    userId: 'user123',
+    serviceId: 's1',
+    providerId: 'provider123',
+    serviceName: 'Professional Plumbing Service',
+    serviceImage: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e',
+    providerName: 'Mike\'s Plumbing',
+    providerRating: 4.8,
+    providerAvatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+    date: '2025-05-10',
+    time: '10:00 AM',
+    address: '123 Main St, Anytown, CA 12345',
+    notes: 'Leaky faucet in kitchen',
+    status: 'pending',
+    paymentStatus: 'unpaid',
+    servicePrice: 95,
+    servicePriceUnit: 'hour',
+    createdAt: new Date(Date.now() - 86400000)
+  },
+  {
+    id: 'bk2',
+    userId: 'user123',
+    serviceId: 's2',
+    providerId: 'provider456',
+    serviceName: 'House Cleaning Service',
+    serviceImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952',
+    providerName: 'CleanHome Pro',
+    providerRating: 4.9,
+    providerAvatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+    date: '2025-05-15',
+    time: '02:00 PM',
+    address: '123 Main St, Anytown, CA 12345',
+    notes: 'Please focus on kitchen and bathrooms',
+    status: 'confirmed',
+    paymentStatus: 'unpaid',
+    servicePrice: 80,
+    servicePriceUnit: 'hour',
+    createdAt: new Date(Date.now() - 86400000 * 2)
+  },
+  {
+    id: 'bk3',
+    userId: 'user123',
+    serviceId: 's3',
+    providerId: 'provider789',
+    serviceName: 'Electrical Repair',
+    serviceImage: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4',
+    providerName: 'ElectraTech',
+    providerRating: 4.7,
+    providerAvatar: 'https://randomuser.me/api/portraits/men/67.jpg',
+    date: '2025-04-30',
+    time: '11:00 AM',
+    address: '123 Main St, Anytown, CA 12345',
+    notes: 'Need to fix outlet in living room',
+    status: 'completed',
+    paymentStatus: 'paid',
+    servicePrice: 110,
+    servicePriceUnit: 'hour',
+    createdAt: new Date(Date.now() - 86400000 * 10)
+  },
+  {
+    id: 'bk4',
+    userId: 'user123',
+    serviceId: 's4',
+    providerId: 'provider101',
+    serviceName: 'Lawn Mowing Service',
+    serviceImage: 'https://images.unsplash.com/photo-1589923188900-85dae523342b',
+    providerName: 'GreenThumb Landscaping',
+    providerRating: 4.6,
+    providerAvatar: 'https://randomuser.me/api/portraits/women/28.jpg',
+    date: '2025-05-03',
+    time: '09:00 AM',
+    address: '123 Main St, Anytown, CA 12345',
+    notes: 'Front and back yard, please trim hedges too',
+    status: 'completed',
+    paymentStatus: 'paid',
+    servicePrice: 50,
+    servicePriceUnit: 'job',
+    createdAt: new Date(Date.now() - 86400000 * 5)
+  },
+  {
+    id: 'bk5',
+    userId: 'user123',
+    serviceId: 's5',
+    providerId: 'provider202',
+    serviceName: 'Carpet Cleaning',
+    serviceImage: 'https://images.unsplash.com/photo-1558317374-067fb5f30001',
+    providerName: 'FreshCarpets Inc',
+    providerRating: 4.8,
+    providerAvatar: 'https://randomuser.me/api/portraits/men/42.jpg',
+    date: '2025-04-25',
+    time: '01:00 PM',
+    address: '123 Main St, Anytown, CA 12345',
+    notes: 'Living room and hallway carpets',
+    status: 'cancelled',
+    paymentStatus: 'refunded',
+    servicePrice: 75,
+    servicePriceUnit: 'job',
+    createdAt: new Date(Date.now() - 86400000 * 15)
+  }
+];
+
+// Helper function to generate a random ID
+const generateId = () => {
+  return 'bk' + Math.random().toString(36).substring(2, 10);
+};
+
 /**
  * Create a new booking in Firestore
  * @param {Object} bookingData - The booking data
@@ -21,21 +130,24 @@ const BOOKINGS_COLLECTION = 'bookings';
  */
 export const createBooking = async (bookingData) => {
   try {
-    // Add timestamp
-    const bookingWithTimestamp = {
-      ...bookingData,
-      createdAt: serverTimestamp(),
-      status: 'pending',
-      paymentStatus: 'unpaid'
-    };
-
-    // Add to Firestore
-    const docRef = await addDoc(collection(db, BOOKINGS_COLLECTION), bookingWithTimestamp);
+    console.log('Creating mock booking instead of using Firebase');
     
-    return {
-      id: docRef.id,
-      ...bookingWithTimestamp
+    // Create a mock booking with an ID
+    const newBooking = {
+      id: generateId(),
+      ...bookingData,
+      createdAt: new Date()
     };
+    
+    // Add to mock data
+    MOCK_BOOKINGS.unshift(newBooking);
+    
+    console.log('Mock booking created:', newBooking);
+    
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return newBooking;
   } catch (error) {
     console.error('Error creating booking:', error);
     throw error;
@@ -49,18 +161,14 @@ export const createBooking = async (bookingData) => {
  */
 export const getUserBookings = async (userId) => {
   try {
-    const q = query(
-      collection(db, BOOKINGS_COLLECTION), 
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
-    );
+    console.log('Fetching mock bookings instead of using Firebase');
     
-    const querySnapshot = await getDocs(q);
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    // Return mock bookings filtered by userId
+    // For demo purposes, we'll return all mock bookings regardless of userId
+    return MOCK_BOOKINGS;
   } catch (error) {
     console.error('Error fetching user bookings:', error);
     throw error;
@@ -74,18 +182,13 @@ export const getUserBookings = async (userId) => {
  */
 export const getProviderBookings = async (providerId) => {
   try {
-    const q = query(
-      collection(db, BOOKINGS_COLLECTION), 
-      where('providerId', '==', providerId),
-      orderBy('createdAt', 'desc')
-    );
+    console.log('Fetching mock provider bookings instead of using Firebase');
     
-    const querySnapshot = await getDocs(q);
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    // Return mock bookings filtered by providerId
+    return MOCK_BOOKINGS.filter(booking => booking.providerId === providerId);
   } catch (error) {
     console.error('Error fetching provider bookings:', error);
     throw error;
@@ -99,14 +202,16 @@ export const getProviderBookings = async (providerId) => {
  */
 export const getBookingById = async (bookingId) => {
   try {
-    const docRef = doc(db, BOOKINGS_COLLECTION, bookingId);
-    const docSnap = await getDoc(docRef);
+    console.log('Fetching mock booking by ID instead of using Firebase');
     
-    if (docSnap.exists()) {
-      return {
-        id: docSnap.id,
-        ...docSnap.data()
-      };
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Find booking by ID
+    const booking = MOCK_BOOKINGS.find(booking => booking.id === bookingId);
+    
+    if (booking) {
+      return booking;
     } else {
       throw new Error('Booking not found');
     }
@@ -124,21 +229,31 @@ export const getBookingById = async (bookingId) => {
  */
 export const updateBookingStatus = async (bookingId, status) => {
   try {
+    console.log('Updating mock booking status instead of using Firebase');
+    
     const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
     
     if (!validStatuses.includes(status)) {
       throw new Error('Invalid status');
     }
     
-    const bookingRef = doc(db, BOOKINGS_COLLECTION, bookingId);
-    await updateDoc(bookingRef, {
-      status,
-      updatedAt: serverTimestamp()
-    });
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Get the updated booking
-    const updatedBooking = await getBookingById(bookingId);
-    return updatedBooking;
+    // Find and update the booking
+    const bookingIndex = MOCK_BOOKINGS.findIndex(booking => booking.id === bookingId);
+    
+    if (bookingIndex !== -1) {
+      MOCK_BOOKINGS[bookingIndex] = {
+        ...MOCK_BOOKINGS[bookingIndex],
+        status,
+        updatedAt: new Date()
+      };
+      
+      return MOCK_BOOKINGS[bookingIndex];
+    } else {
+      throw new Error('Booking not found');
+    }
   } catch (error) {
     console.error('Error updating booking status:', error);
     throw error;
