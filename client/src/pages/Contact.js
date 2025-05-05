@@ -7,6 +7,7 @@ const Contact = () => {
     fullName: '',
     email: '',
     subject: 'General Inquiry',
+    phone: '',
     message: ''
   });
   const [errors, setErrors] = useState({});
@@ -176,21 +177,34 @@ const Contact = () => {
                 </div>
                 
                 <div className="mb-6">
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                    Subject
-                  </label>
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
                   <select
                     id="subject"
                     name="subject"
                     value={formData.subject}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
                     <option value="General Inquiry">General Inquiry</option>
                     <option value="Service Issue">Service Issue</option>
-                    <option value="Technical Problem">Technical Problem</option>
-                    <option value="Partnership">Partnership</option>
+                    <option value="Billing Question">Billing Question</option>
+                    <option value="Provider Application">Provider Application</option>
+                    <option value="Service in New Area">Service in New Area</option>
+                    <option value="Other">Other</option>
                   </select>
+                </div>
+                
+                <div className="mb-6">
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="e.g., 050-123-4567"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
                 </div>
                 
                 <div className="mb-6">
@@ -248,8 +262,8 @@ const Contact = () => {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold mb-1">Email</h3>
-                      <a href="mailto:support@homeservices.com" className="text-gray-600 hover:text-primary-600 transition-colors">
-                        support@homeservices.com
+                      <a href="mailto:support@homeservices.co.il" className="text-gray-600 hover:text-primary-600 transition-colors">
+                        support@homeservices.co.il
                       </a>
                     </div>
                   </div>
@@ -262,8 +276,8 @@ const Contact = () => {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold mb-1">Phone</h3>
-                      <a href="tel:+12345678901" className="text-gray-600 hover:text-primary-600 transition-colors">
-                        +1 (234) 567-8901
+                      <a href="tel:+97235555555" className="text-gray-600 hover:text-primary-600 transition-colors">
+                        +972 (3) 555-5555
                       </a>
                     </div>
                   </div>
@@ -278,9 +292,9 @@ const Contact = () => {
                     <div>
                       <h3 className="text-lg font-semibold mb-1">Office Address</h3>
                       <p className="text-gray-600">
-                        123 Service Street<br />
-                        San Francisco, CA 94105<br />
-                        United States
+                        123 Rothschild Boulevard<br />
+                        Tel Aviv 6380101<br />
+                        Israel
                       </p>
                     </div>
                   </div>

@@ -29,40 +29,40 @@ const ProviderDashboard = () => {
             confirmedBookings: 5,
             completedBookings: 12,
             cancelledBookings: 2,
-            totalEarnings: 1250,
+            totalEarnings: 4850,
             activeServices: 4
           });
           
           setRecentBookings([
             {
               id: 'bk1',
-              customerName: 'John Doe',
-              customerEmail: 'john@example.com',
+              customerName: 'Moshe Levi',
+              customerEmail: 'moshe.levi@gmail.com',
               service: 'Plumbing Repair',
               date: new Date(Date.now() + 86400000 * 2), // 2 days from now
-              time: '10:00 AM',
+              time: '10:00',
               status: 'pending',
-              price: 85
+              price: 350
             },
             {
               id: 'bk2',
-              customerName: 'Jane Smith',
-              customerEmail: 'jane@example.com',
+              customerName: 'Noor Abu-Hani',
+              customerEmail: 'noor.abuhani@gmail.com',
               service: 'Pipe Installation',
               date: new Date(Date.now() + 86400000 * 3), // 3 days from now
-              time: '2:00 PM',
+              time: '14:00',
               status: 'confirmed',
-              price: 150
+              price: 550
             },
             {
               id: 'bk3',
-              customerName: 'Mike Johnson',
-              customerEmail: 'mike@example.com',
+              customerName: 'Yael Goldstein',
+              customerEmail: 'yael.goldstein@gmail.com',
               service: 'Drain Cleaning',
-              date: new Date(Date.now() - 86400000 * 1), // 1 day ago
-              time: '11:30 AM',
-              status: 'completed',
-              price: 95
+              date: new Date(Date.now() + 86400000 * 5), // 5 days from now
+              time: '11:30',
+              status: 'confirmed',
+              price: 400
             }
           ]);
           

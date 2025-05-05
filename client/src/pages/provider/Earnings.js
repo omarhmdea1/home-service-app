@@ -35,54 +35,54 @@ const ProviderEarnings = () => {
             {
               id: 'tr1',
               date: '2025-05-01',
-              customerName: 'John Doe',
+              customerName: 'Moshe Levi',
               service: 'Plumbing Repair',
-              amount: 85.00,
+              amount: 350.00,
               status: 'completed',
               payoutStatus: 'paid'
             },
             {
               id: 'tr2',
               date: '2025-04-28',
-              customerName: 'Jane Smith',
+              customerName: 'Noor Abu-Hani',
               service: 'Pipe Installation',
-              amount: 150.00,
+              amount: 550.00,
               status: 'completed',
               payoutStatus: 'paid'
             },
             {
               id: 'tr3',
               date: '2025-04-25',
-              customerName: 'Mike Johnson',
+              customerName: 'Yael Goldstein',
               service: 'Drain Cleaning',
-              amount: 95.00,
+              amount: 400.00,
               status: 'completed',
               payoutStatus: 'paid'
             },
             {
               id: 'tr4',
               date: '2025-05-03',
-              customerName: 'Sarah Williams',
+              customerName: 'Ahmad Masarweh',
               service: 'Faucet Replacement',
-              amount: 120.25,
+              amount: 450.00,
               status: 'completed',
               payoutStatus: 'pending'
             },
             {
               id: 'tr5',
               date: '2025-05-04',
-              customerName: 'Robert Brown',
+              customerName: 'Rachel Berkovich',
               service: 'Toilet Repair',
-              amount: 75.00,
+              amount: 300.00,
               status: 'completed',
               payoutStatus: 'pending'
             },
             {
               id: 'tr6',
               date: '2025-03-15',
-              customerName: 'Emily Davis',
+              customerName: 'Mahmoud Jabarin',
               service: 'Shower Installation',
-              amount: 350.00,
+              amount: 800.00,
               status: 'completed',
               payoutStatus: 'paid'
             }

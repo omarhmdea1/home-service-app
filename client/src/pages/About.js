@@ -75,9 +75,9 @@ const About = () => {
 					</h2>
 					<p className="text-lg text-gray-700 leading-relaxed text-center">
 						Our mission is to make home maintenance simple, fast,
-						and stress-free by connecting homeowners with reliable
-						and vetted service providers. We believe everyone
-						deserves a well-maintained home without the hassle of
+						and stress-free by connecting homeowners across Israel with reliable
+						and vetted service providers. From Jerusalem to Tel Aviv, Haifa to Beer Sheva,
+						we believe every Israeli deserves a well-maintained home without the hassle of
 						finding trustworthy professionals.
 					</p>
 				</motion.section>
@@ -325,15 +325,15 @@ const About = () => {
 								/>
 							</div>
 							<h3 className="text-xl font-semibold mb-1">
-								David Mitchell
+								Avi Cohen
 							</h3>
 							<p className="text-primary-600 mb-3">
 								CEO & Founder
 							</p>
 							<p className="text-gray-600 text-sm">
-								With over 15 years in the home service industry,
-								David founded HomeServices to solve the
-								challenges he experienced firsthand.
+								With over 15 years in the home service industry across Israel,
+								Avi founded HomeServices to connect Israelis with trusted
+								professionals throughout the country.
 							</p>
 						</div>
 
@@ -347,15 +347,15 @@ const About = () => {
 								/>
 							</div>
 							<h3 className="text-xl font-semibold mb-1">
-								Sarah Johnson
+								Layla Masarweh
 							</h3>
 							<p className="text-primary-600 mb-3">
 								Chief Technology Officer
 							</p>
 							<p className="text-gray-600 text-sm">
-								Sarah leads our technology team with a focus on
+								A graduate of the Technion, Layla leads our technology team with a focus on
 								creating intuitive, user-friendly experiences
-								for both customers and service providers.
+								for both customers and service providers across Israel.
 							</p>
 						</div>
 
@@ -369,15 +369,15 @@ const About = () => {
 								/>
 							</div>
 							<h3 className="text-xl font-semibold mb-1">
-								Michael Rodriguez
+								Yonatan Berkovich
 							</h3>
 							<p className="text-primary-600 mb-3">
 								Chief Operations Officer
 							</p>
 							<p className="text-gray-600 text-sm">
-								Michael ensures our platform connects customers
-								with the best service providers through rigorous
-								vetting and quality control processes.
+								Yonatan ensures our platform connects customers
+								with the best service providers from Tel Aviv to Haifa,
+								through rigorous vetting and quality control processes.
 							</p>
 						</div>
 					</div>

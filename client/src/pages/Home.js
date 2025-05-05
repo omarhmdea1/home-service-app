@@ -281,43 +281,43 @@ const PopularServicesSection = () => {
     {
       id: 1,
       name: 'House Cleaning',
-      price: 50,
-      duration: '2h session',
+      price: 300,
+      duration: '3h session',
       image: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
     },
     {
       id: 2,
       name: 'Plumbing',
-      price: 75,
+      price: 350,
       duration: '1h session',
       image: 'https://images.unsplash.com/photo-1542013936693-884638332954?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
     },
     {
       id: 3,
       name: 'Electrical',
-      price: 80,
+      price: 400,
       duration: '1h session',
       image: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
     },
     {
       id: 4,
-      name: 'Gardening',
-      price: 60,
-      duration: '3h session',
+      name: 'Air Conditioning',
+      price: 450,
+      duration: 'Per unit',
       image: 'https://images.unsplash.com/photo-1598902108854-10e335adac99?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
     },
     {
       id: 5,
       name: 'Painting',
       price: 120,
-      duration: 'Per room',
+      duration: 'Per sqm',
       image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
     },
     {
       id: 6,
       name: 'Furniture Assembly',
-      price: 45,
-      duration: 'Per item',
+      price: 250,
+      duration: 'Per hour',
       image: 'https://images.unsplash.com/photo-1581957500008-417c4fd99ea8?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
     }
   ];
@@ -358,7 +358,7 @@ const PopularServicesSection = () => {
                 <div className="p-6">
                   <h3 className="text-lg font-medium text-gray-900">{service.name}</h3>
                   <div className="mt-2 flex justify-between items-center">
-                    <p className="text-primary-600 font-semibold">From ${service.price}</p>
+                    <p className="text-primary-600 font-semibold">From ₪{service.price}</p>
                     <span className="text-sm text-gray-500">{service.duration}</span>
                   </div>
                   <div className="mt-4">
@@ -394,7 +394,7 @@ const PopularServicesSection = () => {
                   <div className="p-4">
                     <h3 className="text-lg font-medium text-gray-900">{service.name}</h3>
                     <div className="mt-2 flex justify-between items-center">
-                      <p className="text-primary-600 font-semibold">From ${service.price}</p>
+                      <p className="text-primary-600 font-semibold">From ₪{service.price}</p>
                       <span className="text-sm text-gray-500">{service.duration}</span>
                     </div>
                     <div className="mt-3">
@@ -1038,7 +1038,7 @@ const UserDashboard = () => {
                 <div className="p-6">
                   <h3 className="text-lg font-medium text-gray-900">{service.name}</h3>
                   <div className="mt-2 flex justify-between items-center">
-                    <p className="text-primary-600 font-semibold">From ${service.price}</p>
+                    <p className="text-primary-600 font-semibold">From ₪{service.price}</p>
                     <span className="text-sm text-gray-500">{service.duration}</span>
                   </div>
                   <div className="mt-4">

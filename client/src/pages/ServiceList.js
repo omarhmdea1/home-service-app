@@ -44,97 +44,97 @@ const ServiceList = () => {
             id: 1,
             title: 'House Cleaning',
             description: 'Professional house cleaning services for all room types. Our team ensures a spotless home with eco-friendly products.',
-            price: 80,
+            price: 300,
             priceUnit: 'per hour',
             category: 'Cleaning',
             rating: 4.8,
             reviewCount: 127,
             image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'CleanHome Services'
+            provider: 'Naki Babait'
           },
           {
             id: 2,
             title: 'Plumbing Repair',
             description: 'Expert plumbing services for leaks, clogs, installations, and more. Available 24/7 for emergency calls.',
-            price: 95,
+            price: 350,
             priceUnit: 'per hour',
             category: 'Plumbing',
             rating: 4.7,
             reviewCount: 89,
             image: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'Quick Fix Plumbing'
+            provider: 'Cohen Plumbing Solutions'
           },
           {
             id: 3,
             title: 'Electrical Installation',
             description: 'Licensed electricians for all your electrical needs. From rewiring to new installations, we handle it all safely.',
-            price: 110,
+            price: 400,
             priceUnit: 'per hour',
             category: 'Electrical',
             rating: 4.9,
             reviewCount: 64,
             image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'Bright Spark Electrical'
+            provider: 'Abu Mazen Electrical'
           },
           {
             id: 4,
-            title: 'Lawn Mowing',
-            description: 'Regular lawn maintenance to keep your yard looking its best. Services include mowing, edging, and cleanup.',
-            price: 50,
+            title: 'Gardening Service',
+            description: 'Regular garden maintenance to keep your yard looking its best. Services include planting, pruning, and cleanup.',
+            price: 200,
             priceUnit: 'per visit',
             category: 'Gardening',
             rating: 4.5,
             reviewCount: 112,
             image: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'Green Thumb Landscaping'
+            provider: 'Gan Eden Landscaping'
           },
           {
             id: 5,
-            title: 'HVAC Maintenance',
-            description: 'Keep your heating and cooling systems running efficiently with our comprehensive maintenance services.',
-            price: 120,
+            title: 'Air Conditioning Service',
+            description: 'Keep your cooling systems running efficiently with our comprehensive maintenance and repair services.',
+            price: 450,
             priceUnit: 'per visit',
             category: 'HVAC',
             rating: 4.6,
             reviewCount: 73,
             image: 'https://images.unsplash.com/photo-1581275288578-bfb01a800c59?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'Cool Air Systems'
+            provider: 'Kol Kar - Air Conditioning'
           },
           {
             id: 6,
             title: 'Interior Painting',
             description: 'Transform your space with our professional painting services. We use premium paints for a lasting finish.',
-            price: 35,
+            price: 120,
             priceUnit: 'per sqm',
             category: 'Painting',
             rating: 4.8,
             reviewCount: 95,
             image: 'https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'Perfect Coat Painters'
+            provider: 'Tzeva Rishon'
           },
           {
             id: 7,
             title: 'Carpet Cleaning',
             description: 'Deep clean your carpets to remove stains, odors, and allergens. Safe for all carpet types and pets.',
-            price: 75,
+            price: 280,
             priceUnit: 'per room',
             category: 'Cleaning',
             rating: 4.7,
             reviewCount: 83,
             image: 'https://images.unsplash.com/photo-1558317374-067fb5f30001?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'Fresh Start Cleaning'
+            provider: 'Nasreen Cleaning Services'
           },
           {
             id: 8,
             title: 'Furniture Assembly',
             description: 'Expert assembly of all types of furniture. Save time and avoid frustration with our professional service.',
-            price: 65,
+            price: 250,
             priceUnit: 'per hour',
             category: 'Handyman',
             rating: 4.4,
             reviewCount: 58,
             image: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'Assembly Pros'
+            provider: 'Tachles Handyman'
           }
         ];
         
@@ -237,7 +237,7 @@ const ServiceList = () => {
   
   // Format price with unit
   const formatPrice = (price, unit) => {
-    return `$${price} ${unit}`;
+    return `₪${price} ${unit}`;
   };
   
   // Render star ratings

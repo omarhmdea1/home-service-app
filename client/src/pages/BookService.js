@@ -84,11 +84,11 @@ const BookService = () => {
               description: 'Professional house cleaning services for all room types. Our team ensures a spotless home with eco-friendly products.',
               provider: {
                 id: 'provider123',
-                name: 'CleanHome Services',
+                name: 'Naki Babait',
                 rating: 4.8,
                 reviews: 127
               },
-              price: 80,
+              price: 300,
               priceUnit: 'hour',
               image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
             },
@@ -98,11 +98,11 @@ const BookService = () => {
               description: 'Expert plumbing services for leaks, clogs, installations, and more. Available 24/7 for emergency calls.',
               provider: {
                 id: 'provider456',
-                name: 'Quick Fix Plumbing',
+                name: 'Cohen Plumbing Solutions',
                 rating: 4.7,
                 reviews: 89
               },
-              price: 95,
+              price: 350,
               priceUnit: 'hour',
               image: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
             },
@@ -112,13 +112,55 @@ const BookService = () => {
               description: 'Licensed electricians for all your electrical needs. From rewiring to new installations, we handle it all safely.',
               provider: {
                 id: 'provider789',
-                name: 'Bright Spark Electrical',
+                name: 'Abu Mazen Electrical',
                 rating: 4.9,
                 reviews: 64
               },
-              price: 110,
+              price: 400,
               priceUnit: 'hour',
               image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
+            },
+            "4": {
+              id: "4",
+              title: 'Air Conditioning',
+              description: 'Keep your cooling systems running efficiently with our comprehensive maintenance and repair services.',
+              provider: {
+                id: 'provider101',
+                name: 'Kol Kar - Air Conditioning',
+                rating: 4.6,
+                reviews: 73
+              },
+              price: 450,
+              priceUnit: 'unit',
+              image: 'https://images.unsplash.com/photo-1598902108854-10e335adac99?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
+            },
+            "5": {
+              id: "5",
+              title: 'Interior Painting',
+              description: 'Transform your space with our professional painting services. We use premium paints for a lasting finish.',
+              provider: {
+                id: 'provider202',
+                name: 'Tzeva Rishon',
+                rating: 4.8,
+                reviews: 95
+              },
+              price: 120,
+              priceUnit: 'sqm',
+              image: 'https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
+            },
+            "6": {
+              id: "6",
+              title: 'Furniture Assembly',
+              description: 'Expert assembly of all types of furniture. Save time and avoid frustration with our professional service.',
+              provider: {
+                id: 'provider303',
+                name: 'Tachles Handyman',
+                rating: 4.4,
+                reviews: 58
+              },
+              price: 250,
+              priceUnit: 'hour',
+              image: 'https://images.unsplash.com/photo-1581957500008-417c4fd99ea8?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
             }
           };
           
@@ -401,15 +443,15 @@ const BookService = () => {
                     <div className="bg-gray-50 rounded-lg p-4">
                       <div className="flex justify-between mb-2">
                         <span>Service Rate</span>
-                        <span>${service.price}/{service.priceUnit}</span>
+                        <span>₪{service.price}/{service.priceUnit}</span>
                       </div>
                       <div className="flex justify-between mb-2">
                         <span>Booking Fee</span>
-                        <span>$5.00</span>
+                        <span>₪20.00</span>
                       </div>
                       <div className="border-t border-gray-200 my-2 pt-2 flex justify-between font-bold">
                         <span>Total Due Now</span>
-                        <span>${service.price + 5}</span>
+                        <span>₪{service.price + 20}</span>
                       </div>
                       <p className="text-xs text-gray-500 mt-2">
                         * Final charges may vary based on the actual duration and any additional services requested.

@@ -155,61 +155,64 @@ const MyBookings = () => {
             id: 'bk3',
             service: {
               id: 's3',
-              title: 'Electrical Repair',
+              title: 'Electrical Installation',
               image: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80',
               provider: {
                 id: 'provider789',
-                name: 'ElectraTech',
+                name: 'Abu Mazen Electrical',
                 rating: 4.7,
                 avatar: 'https://randomuser.me/api/portraits/men/67.jpg'
               }
             },
-            date: new Date(Date.now() - 86400000 * 5), // 5 days ago
-            timeSlot: '11:00 AM',
-            address: '123 Main St, Anytown, CA 12345',
-            status: 'completed',
-            price: 110,
-            createdAt: new Date().toISOString()
+            date: new Date('2023-06-25'),
+            timeSlot: '09:00 AM',
+            address: 'Rothschild Blvd 123, Tel Aviv',
+            status: 'confirmed',
+            notes: 'Install new ceiling fan in living room',
+            price: 400,
+            createdAt: new Date('2023-06-14').toISOString()
           },
           {
             id: 'bk4',
             service: {
               id: 's4',
-              title: 'Lawn Mowing Service',
+              title: 'Gardening Service',
               image: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80',
               provider: {
                 id: 'provider101',
-                name: 'GreenThumb Landscaping',
+                name: 'Gan Eden Landscaping',
                 rating: 4.6,
                 avatar: 'https://randomuser.me/api/portraits/women/28.jpg'
               }
             },
-            date: new Date(Date.now() - 86400000 * 2), // 2 days ago
-            timeSlot: '09:00 AM',
-            address: '123 Main St, Anytown, CA 12345',
-            status: 'completed',
-            price: 50,
-            createdAt: new Date().toISOString()
+            date: new Date('2023-05-30'),
+            timeSlot: '11:00 AM',
+            address: 'Rothschild Blvd 123, Tel Aviv',
+            status: 'cancelled',
+            notes: 'Front and back yard',
+            price: 200,
+            createdAt: new Date('2023-05-25').toISOString()
           },
           {
             id: 'bk5',
             service: {
               id: 's5',
-              title: 'Carpet Cleaning',
+              title: 'Air Conditioning Service',
               image: 'https://images.unsplash.com/photo-1558317374-067fb5f30001?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80',
               provider: {
                 id: 'provider202',
-                name: 'FreshCarpets Inc',
+                name: 'Kol Kar - Air Conditioning',
                 rating: 4.8,
                 avatar: 'https://randomuser.me/api/portraits/men/42.jpg'
               }
             },
-            date: new Date(Date.now() - 86400000 * 10), // 10 days ago
+            date: new Date('2023-07-05'),
             timeSlot: '01:00 PM',
-            address: '123 Main St, Anytown, CA 12345',
-            status: 'cancelled',
-            price: 75,
-            createdAt: new Date().toISOString()
+            address: 'Rothschild Blvd 123, Tel Aviv',
+            status: 'pending',
+            notes: 'Annual AC maintenance',
+            price: 450,
+            createdAt: new Date('2023-06-20').toISOString()
           }
         ];
         
@@ -453,7 +456,7 @@ const MyBookings = () => {
                               </p>
                               {booking.price && (
                                 <p className="text-sm font-medium text-gray-900 mt-1">
-                                  ${booking.price}
+                                  ₪{booking.price}
                                 </p>
                               )}
                             </div>
