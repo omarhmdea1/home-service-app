@@ -30,45 +30,49 @@ export const AuthProvider = ({ children }) => {
   const ensureUserRole = async (uid, email) => {
     console.log('Ensuring user role is set for:', email);
     try {
+      // Check if user document exists in Firestore
       const userDocRef = doc(db, 'users', uid);
       const userDoc = await getDoc(userDocRef);
       
-      if (!userDoc.exists()) {
-        // Create a new user document with customer role
-        console.log('Creating new user document for:', email);
-        await setDoc(userDocRef, {
-          uid: uid,
-          email: email,
-          name: email.split('@')[0],
-          photoURL: '',
-          role: 'customer', // Default role
-          createdAt: serverTimestamp(),
-          lastLogin: serverTimestamp()
-        });
-        setUserRole('customer');
-        return 'customer';
-      } else {
+      if (userDoc.exists()) {
         const userData = userDoc.data();
+        
         // Check if role exists
         if (!userData.role) {
-          // Update the document to add the role field
-          console.log('Adding missing role field for:', email);
-          await updateDoc(userDocRef, {
-            role: 'customer',
-            lastLogin: serverTimestamp()
-          });
+          console.log('No role found in Firestore, setting default role: customer');
+          
+          // Update Firestore with default role
+          await updateDoc(userDocRef, { role: 'customer' });
+          
+          // Update state
           setUserRole('customer');
           return 'customer';
         } else {
           // Role exists, just return it
-          console.log('User role found:', userData.role);
+          console.log('User role found in Firestore:', userData.role);
           setUserRole(userData.role);
           return userData.role;
         }
+      } else {
+        // No user document exists, create one with default role
+        console.log('No user document found, creating one with default role');
+        await setDoc(userDocRef, { 
+          uid: uid, 
+          email, 
+          role: 'customer',
+          createdAt: serverTimestamp(),
+          lastLogin: serverTimestamp()
+        });
+        
+        // Update state
+        setUserRole('customer');
+        return 'customer';
       }
     } catch (error) {
       console.error('Error in ensureUserRole:', error);
+      
       // Default to customer role in case of error
+      console.log('Using default role as fallback: customer');
       setUserRole('customer');
       return 'customer';
     }
@@ -140,23 +144,39 @@ export const AuthProvider = ({ children }) => {
       const createdAt = serverTimestamp();
       
       try {
+        // Log the additionalData to debug
+        console.log('Creating user profile with data:', additionalData);
+        
+        // Ensure role is properly set
+        const userRole = additionalData.role || 'customer';
+        console.log('Setting user role to:', userRole);
+        
         // Create user document in Firestore
         await setDoc(userRef, {
           uid: user.uid,
           email,
           name: displayName || additionalData.name || email.split('@')[0],
           photoURL: photoURL || '',
-          role: additionalData.role || 'customer',
+          role: userRole,
           createdAt,
           lastLogin: createdAt,
           phone: additionalData.phone || '',
-          isVerified: additionalData.role === 'provider' ? false : true,
+          isVerified: userRole === 'provider' ? false : true,
           serviceArea: additionalData.serviceArea || '',
           providerDescription: additionalData.providerDescription || ''
         });
         
         // Update user role state
-        setUserRole(additionalData.role || 'customer');
+        setUserRole(userRole);
+        console.log('User role state updated to:', userRole);
+        
+        // Save to local storage as backup
+        saveUserToLocalStorage(user.uid, {
+          uid: user.uid,
+          email,
+          name: displayName || additionalData.name || email.split('@')[0],
+          role: userRole
+        });
         
         // Fetch the newly created profile
         const userDoc = await getDoc(userRef);
@@ -170,6 +190,8 @@ export const AuthProvider = ({ children }) => {
   };
   
   const signup = async (email, password, additionalData = {}) => {
+    console.log('Signing up user with data:', { email, ...additionalData });
+    
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const { user } = userCredential;
     
@@ -181,8 +203,21 @@ export const AuthProvider = ({ children }) => {
     // Send email verification
     await sendEmailVerification(user);
     
+    // Make sure role is explicitly set
+    if (!additionalData.role) {
+      console.warn('No role specified during signup, defaulting to customer');
+      additionalData.role = 'customer';
+    } else {
+      console.log('User role during signup:', additionalData.role);
+    }
+    
+    // Set user role in state immediately
+    setUserRole(additionalData.role);
+    
     // Create user profile in Firestore
     await createUserProfile(user, additionalData);
+    
+    console.log('User signup completed with role:', additionalData.role);
     
     return userCredential;
   };
