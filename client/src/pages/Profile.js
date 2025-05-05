@@ -3,7 +3,7 @@ import { useAuth } from '../components/auth/AuthProvider';
 import { motion } from 'framer-motion';
 
 const Profile = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, deleteAccount } = useAuth();
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState(null);
   const [activeSection, setActiveSection] = useState('personal-info');
@@ -16,6 +16,8 @@ const Profile = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
 
   // Fetch user profile data
   useEffect(() => {
@@ -150,24 +152,38 @@ const Profile = () => {
   };
   
   // Handle delete account
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'DELETE') {
       return;
     }
     
     setLoading(true);
+    setDeleteError('');
     
-    // Simulated API call to delete account
-    setTimeout(() => {
-      // This would be replaced with a real API call like:
-      // fetch('/api/users/me', { method: 'DELETE' })...
+    try {
+      console.log('Attempting to delete account');
+      // Call the deleteAccount method from AuthProvider without password
+      await deleteAccount();
       
+      setLoading(false);
       setShowDeleteModal(false);
+      
+      // Success message
+      alert('Account deleted successfully');
+      
+      // User will be automatically logged out and redirected by the AuthProvider
+      // as the auth state will change when the account is deleted
+    } catch (error) {
+      console.error('Error in handleDeleteAccount:', error);
       setLoading(false);
       
-      // Redirect to home page or login page
-      window.location.href = '/';
-    }, 800);
+      // Handle specific error types
+      if (error.code === 'auth/requires-recent-login') {
+        setDeleteError('For security reasons, please log out and log back in before deleting your account.');
+      } else {
+        setDeleteError('Failed to delete account: ' + (error.message || 'Unknown error'));
+      }
+    }
   };
 
   if (loading && !userProfile) {
@@ -1037,9 +1053,13 @@ const Profile = () => {
                   type="text"
                   value={deleteConfirmText}
                   onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 mb-3"
                   placeholder="Type DELETE to confirm"
                 />
+                
+                {deleteError && (
+                  <p className="mt-2 text-sm text-red-600">{deleteError}</p>
+                )}
               </div>
               <div className="flex gap-4">
                 <button

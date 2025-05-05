@@ -1,9 +1,10 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import React, { lazy, Suspense } from 'react';
+import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
 import { AuthProvider } from './components/auth/AuthProvider';
 import PrivateRoute from './components/auth/PrivateRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import VerifyEmail from './pages/VerifyEmail';
 import Home from './pages/Home';
 import ServiceList from './pages/ServiceList';
 import ServiceDetail from './pages/ServiceDetail';
@@ -14,6 +15,20 @@ import MyBookings from './pages/MyBookings';
 import BookingDetail from './pages/BookingDetail';
 import Profile from './pages/Profile';
 import { useAuth } from './components/auth/AuthProvider';
+
+// Lazy-loaded provider dashboard components
+const ProviderDashboard = lazy(() => import('./pages/provider/Dashboard'));
+const ProviderBookings = lazy(() => import('./pages/provider/Bookings'));
+const ProviderServices = lazy(() => import('./pages/provider/Services'));
+const ProviderProfile = lazy(() => import('./pages/provider/Profile'));
+const PendingVerification = lazy(() => import('./pages/provider/PendingVerification'));
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="min-h-screen flex justify-center items-center bg-gray-50">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+  </div>
+);
 
 const Navigation = () => {
   const { currentUser, logout } = useAuth();
@@ -199,32 +214,102 @@ const Navigation = () => {
 };
 
 function AppContent() {
+  const { userRole } = useAuth();
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <main>
         <Routes>
+          {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/services" element={<ServiceList />} />
-          <Route path="/services/:id" element={<ServiceDetail />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/book/:serviceId" element={<BookService />} />
-          <Route path="/bookings" element={<MyBookings />} />
-          <Route path="/booking/:id" element={<BookingDetail />} />
-          <Route path="/profile" element={<Profile />} />
           <Route path="/" element={<Home />} />
+          
+          {/* Service browsing (available to all) */}
+          <Route path="/services" element={<ServiceList />} />
+          <Route path="/services/:id" element={<ServiceDetail />} />
+          
+          {/* Customer-only routes */}
+          <Route path="/book/:serviceId" element={
+            <PrivateRoute allowedRoles={['customer']}>
+              <BookService />
+            </PrivateRoute>
+          } />
+          <Route path="/bookings" element={
+            <PrivateRoute allowedRoles={['customer']}>
+              <MyBookings />
+            </PrivateRoute>
+          } />
+          <Route path="/booking/:id" element={
+            <PrivateRoute allowedRoles={['customer']}>
+              <BookingDetail />
+            </PrivateRoute>
+          } />
+          
+          {/* User profile (available to all authenticated users) */}
+          <Route path="/profile" element={
+            <PrivateRoute>
+              <Profile />
+            </PrivateRoute>
+          } />
+          
+          {/* Provider routes */}
+          <Route path="/provider/pending-verification" element={
+            <PrivateRoute allowedRoles={['provider']} requireVerification={true}>
+              <Suspense fallback={<LoadingFallback />}>
+                <PendingVerification />
+              </Suspense>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/provider/*" element={
+            <PrivateRoute allowedRoles={['provider']} requireVerification={true}>
+              <Suspense fallback={<LoadingFallback />}>
+                <Routes>
+                  <Route path="dashboard" element={<ProviderDashboard />} />
+                  <Route path="bookings" element={<ProviderBookings />} />
+                  <Route path="services" element={<ProviderServices />} />
+                  <Route path="profile" element={<ProviderProfile />} />
+                  <Route path="*" element={<Navigate to="/provider/dashboard" replace />} />
+                </Routes>
+              </Suspense>
+            </PrivateRoute>
+          } />
+          
+          {/* Fallback route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
     </div>
   );
 }
 
+// Component to handle Google sign-in redirection
+const GoogleRedirectHandler = () => {
+  React.useEffect(() => {
+    // Check if we have a Google login success flag
+    const googleLoginSuccess = localStorage.getItem('googleLoginSuccess');
+    if (googleLoginSuccess === 'true') {
+      console.log('Detected Google login success flag, redirecting to home');
+      // Clear the flag
+      localStorage.removeItem('googleLoginSuccess');
+      // Redirect to home page
+      window.location.href = '/';
+    }
+  }, []);
+  
+  return null; // This component doesn't render anything
+};
+
 function App() {
   return (
     <Router>
       <AuthProvider>
+        <GoogleRedirectHandler />
         <AppContent />
       </AuthProvider>
     </Router>

@@ -1,24 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../components/auth/AuthProvider';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const { login, signInWithGoogle, currentUser } = useAuth();
+  const [verificationAlert, setVerificationAlert] = useState(false);
+  const { login, signInWithGoogle, currentUser, userRole, emailVerified, sendVerificationEmail } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { from } = location.state || { from: '/' };
 
   // Redirect if already logged in
   useEffect(() => {
-    if (currentUser) {
-      navigate('/');
+    console.log('Login useEffect - Auth state:', { currentUser, userRole, emailVerified });
+    
+    if (currentUser && userRole) {
+      console.log('User authenticated with role:', userRole);
+      
+      // Check if email is verified
+      if (!currentUser.emailVerified) {
+        console.log('Email not verified, showing alert');
+        setVerificationAlert(true);
+        // Don't redirect yet, show verification alert
+      } else {
+        console.log('Email verified, redirecting based on role');
+        // Redirect based on user role
+        if (userRole === 'provider') {
+          console.log('Redirecting to provider dashboard');
+          navigate('/provider/dashboard');
+        } else {
+          console.log('Redirecting to home');
+          navigate('/');
+        }
+      }
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, userRole, emailVerified, navigate]);
 
   // Validate email format
   const validateEmail = (email) => {
@@ -54,6 +79,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setVerificationAlert(false);
     
     if (!validateForm()) {
       return;
@@ -61,32 +87,68 @@ const Login = () => {
     
     setLoading(true);
     try {
-      await login(email, password);
-      navigate('/');
+      const userCredential = await login(email, password);
+      
+      // Check if email is verified
+      if (!userCredential.user.emailVerified) {
+        setVerificationAlert(true);
+        setLoading(false);
+      } else {
+        // Immediately redirect to home page
+        navigate('/');
+      }
     } catch (error) {
       console.error('Failed to login', error);
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         setError('Invalid email or password');
-      } else if (error.code === 'auth/too-many-requests') {
-        setError('Too many failed login attempts. Please try again later.');
       } else {
         setError('Failed to log in. Please try again.');
       }
-    } finally {
       setLoading(false);
     }
   };
   
+  // Handle resending verification email
+  const handleResendVerification = async () => {
+    try {
+      await sendVerificationEmail();
+      setError('');
+      setSuccess(true);
+      alert('Verification email sent! Please check your inbox.');
+    } catch (error) {
+      console.error('Failed to send verification email', error);
+      setError('Failed to send verification email. Please try again.');
+    }
+  };
+  
   const handleGoogleSignIn = async () => {
+    // Clear previous states
     setError('');
     setLoading(true);
+    
     try {
-      await signInWithGoogle();
-      navigate('/');
+      // Add a callback function to the signInWithGoogle call
+      const result = await signInWithGoogle();
+      console.log('Google sign-in successful, redirecting...');
+      
+      // Set a flag in localStorage to indicate successful login
+      localStorage.setItem('googleLoginSuccess', 'true');
+      
+      // Force immediate redirect to home page
+      window.location.href = '/';
     } catch (error) {
-      console.error('Failed to sign in with Google', error);
-      setError('Failed to sign in with Google. Please try again.');
-    } finally {
+      // Only show error if it's an actual authentication error
+      // Some errors might be thrown even on successful login due to navigation
+      if (error && error.code && error.code.startsWith('auth/')) {
+        console.error('Google sign-in error:', error);
+        setError('Failed to sign in with Google. Please try again.');
+      } else {
+        // This might be a navigation error after successful login
+        console.log('Non-critical error during Google sign-in:', error);
+        // Still try to redirect if we might have logged in successfully
+        localStorage.setItem('googleLoginSuccess', 'true');
+        window.location.href = '/';
+      }
       setLoading(false);
     }
   };
@@ -120,6 +182,30 @@ const Login = () => {
               </div>
               <div className="ml-3">
                 <p className="text-sm text-red-700">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Success Alert removed for immediate redirect */}
+        
+        {/* Email Verification Alert */}
+        {verificationAlert && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">Please verify your email address to access all features.</p>
+                <button 
+                  onClick={handleResendVerification}
+                  className="mt-2 text-xs font-medium text-yellow-700 underline hover:text-yellow-600"
+                >
+                  Resend verification email
+                </button>
               </div>
             </div>
           </div>
