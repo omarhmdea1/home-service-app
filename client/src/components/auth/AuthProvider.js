@@ -178,8 +178,10 @@ export const AuthProvider = ({ children }) => {
       await updateProfile(user, { displayName: additionalData.name });
     }
     
-    // Send email verification
-    await sendEmailVerification(user);
+    // Send email verification only for providers
+    if (additionalData.role === 'provider') {
+      await sendEmailVerification(user);
+    }
     
     // Create user profile in Firestore
     await createUserProfile(user, additionalData);

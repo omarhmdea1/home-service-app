@@ -34,7 +34,8 @@ const PrivateRoute = ({ children, allowedRoles, requireVerification = true }) =>
   }
   
   // Check email verification if required
-  if (requireVerification && !currentUser.emailVerified) {
+  // Skip verification for customers, only require it for providers
+  if (requireVerification && !currentUser.emailVerified && userRole === 'provider') {
     // Redirect to a verification page or show verification UI
     return <Navigate to="/verify-email" state={{ from: location.pathname }} />;
   }
