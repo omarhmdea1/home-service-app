@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { motion } from 'framer-motion';
+import { getProviderBookings } from '../../services/bookingService';
 
 const ProviderEarnings = () => {
   const { userProfile } = useAuth();
@@ -19,78 +20,65 @@ const ProviderEarnings = () => {
     const fetchEarningsData = async () => {
       setLoading(true);
       try {
-        // This would be replaced with real API calls in a production app
-        // Mock data for demonstration
-        setTimeout(() => {
+        // Get provider bookings from API
+        if (userProfile && userProfile.uid) {
+          const bookings = await getProviderBookings(userProfile.uid);
+          
+          // Filter completed bookings
+          const completedBookings = bookings.filter(booking => booking.status === 'completed');
+          
+          // Calculate total earnings
+          const totalEarnings = completedBookings.reduce((total, booking) => total + (booking.price || 0), 0);
+          
+          // Get current date info
+          const now = new Date();
+          const currentMonth = now.getMonth();
+          const currentYear = now.getFullYear();
+          const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+          const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+          
+          // Calculate this month's earnings
+          const thisMonthEarnings = completedBookings
+            .filter(booking => {
+              const bookingDate = new Date(booking.date);
+              return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
+            })
+            .reduce((total, booking) => total + (booking.price || 0), 0);
+          
+          // Calculate last month's earnings
+          const lastMonthEarnings = completedBookings
+            .filter(booking => {
+              const bookingDate = new Date(booking.date);
+              return bookingDate.getMonth() === lastMonth && bookingDate.getFullYear() === lastMonthYear;
+            })
+            .reduce((total, booking) => total + (booking.price || 0), 0);
+          
+          // Set earnings data
           setEarnings({
-            total: 3450.75,
-            thisMonth: 850.25,
-            lastMonth: 1200.50,
-            completedBookings: 28,
-            pendingPayouts: 250.00
+            total: totalEarnings,
+            thisMonth: thisMonthEarnings,
+            lastMonth: lastMonthEarnings,
+            completedBookings: completedBookings.length,
+            pendingPayouts: 0 // This would come from a payment API in a real app
           });
           
-          // Generate mock transaction history
-          const mockTransactions = [
-            {
-              id: 'tr1',
-              date: '2025-05-01',
-              customerName: 'Moshe Levi',
-              service: 'Plumbing Repair',
-              amount: 350.00,
-              status: 'completed',
-              payoutStatus: 'paid'
-            },
-            {
-              id: 'tr2',
-              date: '2025-04-28',
-              customerName: 'Noor Abu-Hani',
-              service: 'Pipe Installation',
-              amount: 550.00,
-              status: 'completed',
-              payoutStatus: 'paid'
-            },
-            {
-              id: 'tr3',
-              date: '2025-04-25',
-              customerName: 'Yael Goldstein',
-              service: 'Drain Cleaning',
-              amount: 400.00,
-              status: 'completed',
-              payoutStatus: 'paid'
-            },
-            {
-              id: 'tr4',
-              date: '2025-05-03',
-              customerName: 'Ahmad Masarweh',
-              service: 'Faucet Replacement',
-              amount: 450.00,
-              status: 'completed',
-              payoutStatus: 'pending'
-            },
-            {
-              id: 'tr5',
-              date: '2025-05-04',
-              customerName: 'Rachel Berkovich',
-              service: 'Toilet Repair',
-              amount: 300.00,
-              status: 'completed',
-              payoutStatus: 'pending'
-            },
-            {
-              id: 'tr6',
-              date: '2025-03-15',
-              customerName: 'Mahmoud Jabarin',
-              service: 'Shower Installation',
-              amount: 800.00,
-              status: 'completed',
-              payoutStatus: 'paid'
-            }
-          ];
+          // Format transactions from bookings
+          const formattedTransactions = completedBookings.map(booking => ({
+            id: booking._id,
+            date: booking.date,
+            customerName: booking.userName || 'Customer',
+            service: booking.serviceName,
+            amount: booking.price || 0,
+            status: 'completed',
+            payoutStatus: 'paid' // In a real app, this would come from payment status
+          }));
           
-          setTransactions(mockTransactions);
-          setLoading(false);
-        }, 1000);
+          // Sort by date (newest first)
+          formattedTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+          
+          setTransactions(formattedTransactions);
+        }
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching earnings data:', error);
         setLoading(false);
@@ -98,7 +86,7 @@ const ProviderEarnings = () => {
     };
     
     fetchEarningsData();
-  }, []);
+  }, [userProfile]);
 
   // Filter transactions based on active tab
   const filteredTransactions = transactions.filter(transaction => {

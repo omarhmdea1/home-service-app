@@ -14,8 +14,8 @@
     "react-scripts": "^5.0.0"
   },
   "scripts": {
-    "start": "DISABLE_ESLINT_PLUGIN=true GENERATE_SOURCEMAP=false CI=true react-scripts start",
-    "build": "DISABLE_ESLINT_PLUGIN=true GENERATE_SOURCEMAP=false react-scripts build",
+    "start": "WEBPACK_LOGGING_VERBOSE=true react-scripts start",
+    "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "build:css": "npx tailwindcss -i ./src/input.css -o ./src/index.css --watch",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { getServiceById } from '../services/serviceService';
 
 const ServiceDetail = () => {
   const { id } = useParams();
@@ -15,172 +16,33 @@ const ServiceDetail = () => {
       setError(null);
       
       try {
-        // In a real app, this would be an API call
-        // const response = await axios.get(`/api/services/${id}`);
-        // setService(response.data);
+        // Fetch service details from API
+        const serviceData = await getServiceById(id);
         
-        // Simulate API delay
-        setTimeout(() => {
-          // Mock data for development - this would come from your API
-          const mockServices = [
-            {
-              id: "1",
-              title: 'House Cleaning',
-              description: 'Professional house cleaning services for all room types. Our team ensures a spotless home with eco-friendly products. We handle everything from regular maintenance cleaning to deep cleaning for special occasions. Our trained professionals use high-quality equipment and environmentally friendly cleaning products.',
-              price: 300,
-              priceUnit: 'per hour',
-              category: 'Cleaning',
-              rating: 4.8,
-              reviewCount: 127,
-              image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-              provider: 'Naki Babait',
-              features: [
-                'Eco-friendly cleaning products',
-                'Trained and vetted professionals',
-                'Flexible scheduling options',
-                'Satisfaction guarantee'
-              ]
-            },
-            {
-              id: "2",
-              title: 'Plumbing Repair',
-              description: 'Expert plumbing services for leaks, clogs, installations, and more. Available 24/7 for emergency calls. Our licensed plumbers can handle everything from minor repairs to major installations. We use the latest tools and techniques to ensure your plumbing system works efficiently.',
-              price: 350,
-              priceUnit: 'per hour',
-              category: 'Plumbing',
-              rating: 4.7,
-              reviewCount: 89,
-              image: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-              provider: 'Cohen Plumbing Solutions',
-              features: [
-                '24/7 emergency service',
-                'Licensed and insured plumbers',
-                'Upfront pricing',
-                '90-day labor warranty'
-              ]
-            },
-            {
-              id: "3",
-              title: 'Electrical Installation',
-              description: 'Licensed electricians for all your electrical needs. From rewiring to new installations, we handle it all safely. Our team specializes in residential and commercial electrical services, including panel upgrades, lighting installation, and electrical troubleshooting.',
-              price: 400,
-              priceUnit: 'per hour',
-              category: 'Electrical',
-              rating: 4.9,
-              reviewCount: 64,
-              image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-              provider: 'Abu Mazen Electrical',
-              features: [
-                'Licensed electricians',
-                'Code-compliant installations',
-                'Energy-efficient solutions',
-                'Free safety inspections'
-              ]
-            },
-            {
-              id: "4",
-              title: 'Air Conditioning',
-              description: 'Keep your cooling systems running efficiently with our comprehensive maintenance and repair services. Our certified technicians will inspect, clean, and tune up your air conditioning system to ensure optimal performance during hot Israeli summers.',
-              price: 450,
-              priceUnit: 'per unit',
-              category: 'HVAC',
-              rating: 4.6,
-              reviewCount: 73,
-              image: 'https://images.unsplash.com/photo-1598902108854-10e335adac99?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-              provider: 'Kol Kar - Air Conditioning',
-              features: [
-                'Comprehensive system inspection',
-                'Filter replacement',
-                'Coil cleaning',
-                'Performance testing'
-              ]
-            },
-            {
-              id: "5",
-              title: 'Interior Painting',
-              description: 'Transform your space with our professional painting services. We use premium paints for a lasting finish. Our experienced painters will prep, paint, and clean up, leaving you with beautifully painted rooms that enhance your home\'s appearance.',
-              price: 120,
-              priceUnit: 'per sqm',
-              category: 'Painting',
-              rating: 4.8,
-              reviewCount: 95,
-              image: 'https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-              provider: 'Tzeva Rishon',
-              features: [
-                'Premium paint options',
-                'Color consultation',
-                'Surface preparation',
-                'Clean and precise application'
-              ]
-            },
-            {
-              id: "6",
-              title: 'Furniture Assembly',
-              description: 'Expert assembly of all types of furniture. Save time and avoid frustration with our professional service. Our skilled technicians can assemble any type of furniture, from simple shelves to complex bedroom sets.',
-              price: 250,
-              priceUnit: 'per hour',
-              category: 'Handyman',
-              rating: 4.4,
-              reviewCount: 58,
-              image: 'https://images.unsplash.com/photo-1581957500008-417c4fd99ea8?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-              provider: 'Tachles Handyman',
-              features: [
-                'Fast and efficient assembly',
-                'All tools provided',
-                'Furniture placement',
-                'Packaging disposal'
-              ]
-            },
-            {
-              id: "7",
-              title: 'Carpet Cleaning',
-              description: 'Deep clean your carpets to remove stains, odors, and allergens. Safe for all carpet types and pets. Our professional carpet cleaning service uses hot water extraction to remove dirt, dust, and allergens from deep within your carpets, leaving them fresh and clean.',
-              price: 280,
-              priceUnit: 'per room',
-              category: 'Cleaning',
-              rating: 4.7,
-              reviewCount: 83,
-              image: 'https://images.unsplash.com/photo-1558317374-067fb5f30001?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-              provider: 'Nasreen Cleaning Services',
-              features: [
-                'Deep extraction cleaning',
-                'Stain treatment',
-                'Deodorizing',
-                'Quick dry technology'
-              ]
-            },
-            {
-              id: "8",
-              title: 'Gardening Service',
-              description: 'Regular garden maintenance to keep your yard looking its best. Services include planting, pruning, and cleanup. Our team of gardening experts will ensure your garden stays healthy and beautiful throughout the year with regular maintenance and seasonal care.',
-              price: 200,
-              priceUnit: 'per visit',
-              category: 'Gardening',
-              rating: 4.5,
-              reviewCount: 112,
-              image: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-              provider: 'Gan Eden Landscaping',
-              features: [
-                'Weekly, bi-weekly, or monthly service',
-                'Seasonal garden treatments',
-                'Environmentally responsible practices',
-                'Garden health assessment'
-              ]
-            }
-          ];
-          
-          const foundService = mockServices.find(service => service.id === id);
-          
-          if (foundService) {
-            setService(foundService);
-          } else {
-            setError('Service not found');
-          }
-          
-          setLoading(false);
-        }, 800);
-      } catch (err) {
-        setError('Failed to fetch service details');
+        // Format data if needed
+        const formattedService = {
+          id: serviceData._id || serviceData.id,
+          title: serviceData.title || 'Service',
+          description: serviceData.description || 'No description available',
+          price: serviceData.price || 0,
+          priceUnit: serviceData.priceUnit || 'per service',
+          category: serviceData.category || 'General',
+          rating: serviceData.rating || 4.5,
+          reviewCount: serviceData.reviewCount || 0,
+          image: serviceData.image || 'https://via.placeholder.com/800x600?text=Service+Image',
+          provider: serviceData.providerName || 'Service Provider',
+          features: serviceData.features || [
+            'Professional service',
+            'Quality guarantee',
+            'Experienced providers'
+          ]
+        };
+        
+        setService(formattedService);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching service details:', error);
+        setError('Failed to load service details. Please try again.');
         setLoading(false);
       }
     };

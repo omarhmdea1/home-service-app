@@ -57,9 +57,9 @@ const ProviderProfile = () => {
     setSuccess(false);
     
     try {
-      // In a real app, this would update the user profile in Firestore
-      // For now, we'll just simulate a successful update
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Update user profile through the API
+      const { updateUserProfile } = useAuth();
+      await updateUserProfile(formData);
       
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);

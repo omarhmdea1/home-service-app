@@ -58,134 +58,37 @@ const BookService = () => {
     
     const fetchServiceDetails = async () => {
       try {
-        // Try to get the service from Firebase
-        console.log('Attempting to fetch service from Firebase');
-        let serviceData = null;
-        
-        try {
-          // Try to get from Firebase first
-          serviceData = await getServiceById(serviceId);
-          console.log('Service data from Firebase:', serviceData);
-        } catch (firebaseError) {
-          console.log('Firebase fetch failed, will use mock data');
-        }
+        // Get the service from API
+        console.log('Fetching service from API');
+        const serviceData = await getServiceById(serviceId);
+        console.log('Service data from API:', serviceData);
         
         if (serviceData) {
-          setService(serviceData);
-        } else {
-          // If not found in Firebase, use mock data based on ID
-          console.log('Service not found in Firebase, using mock data');
-          
-          // Mock data for development purposes
-          const mockServices = {
-            "1": {
-              id: "1",
-              title: 'House Cleaning',
-              description: 'Professional house cleaning services for all room types. Our team ensures a spotless home with eco-friendly products.',
-              provider: {
-                id: 'provider123',
-                name: 'Naki Babait',
-                rating: 4.8,
-                reviews: 127
-              },
-              price: 300,
-              priceUnit: 'hour',
-              image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
-            },
-            "2": {
-              id: "2",
-              title: 'Plumbing Repair',
-              description: 'Expert plumbing services for leaks, clogs, installations, and more. Available 24/7 for emergency calls.',
-              provider: {
-                id: 'provider456',
-                name: 'Cohen Plumbing Solutions',
-                rating: 4.7,
-                reviews: 89
-              },
-              price: 350,
-              priceUnit: 'hour',
-              image: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
-            },
-            "3": {
-              id: "3",
-              title: 'Electrical Installation',
-              description: 'Licensed electricians for all your electrical needs. From rewiring to new installations, we handle it all safely.',
-              provider: {
-                id: 'provider789',
-                name: 'Abu Mazen Electrical',
-                rating: 4.9,
-                reviews: 64
-              },
-              price: 400,
-              priceUnit: 'hour',
-              image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
-            },
-            "4": {
-              id: "4",
-              title: 'Air Conditioning',
-              description: 'Keep your cooling systems running efficiently with our comprehensive maintenance and repair services.',
-              provider: {
-                id: 'provider101',
-                name: 'Kol Kar - Air Conditioning',
-                rating: 4.6,
-                reviews: 73
-              },
-              price: 450,
-              priceUnit: 'unit',
-              image: 'https://images.unsplash.com/photo-1598902108854-10e335adac99?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
-            },
-            "5": {
-              id: "5",
-              title: 'Interior Painting',
-              description: 'Transform your space with our professional painting services. We use premium paints for a lasting finish.',
-              provider: {
-                id: 'provider202',
-                name: 'Tzeva Rishon',
-                rating: 4.8,
-                reviews: 95
-              },
-              price: 120,
-              priceUnit: 'sqm',
-              image: 'https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
-            },
-            "6": {
-              id: "6",
-              title: 'Furniture Assembly',
-              description: 'Expert assembly of all types of furniture. Save time and avoid frustration with our professional service.',
-              provider: {
-                id: 'provider303',
-                name: 'Tachles Handyman',
-                rating: 4.4,
-                reviews: 58
-              },
-              price: 250,
-              priceUnit: 'hour',
-              image: 'https://images.unsplash.com/photo-1581957500008-417c4fd99ea8?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
-            }
-          };
-          
-          const mockService = mockServices[serviceId] || {
-            id: serviceId || '123',
-            title: 'Professional Service',
-            description: 'Expert services for all your home needs. We handle everything from minor repairs to major installations.',
+          // Format the service data
+          const formattedService = {
+            id: serviceData._id,
+            title: serviceData.title,
+            description: serviceData.description,
             provider: {
-              id: 'provider123',
-              name: 'Home Services Pro',
-              rating: 4.8,
-              reviews: 127
+              id: serviceData.providerId,
+              name: serviceData.providerName || 'Service Provider',
+              rating: serviceData.rating || 4.5,
+              reviews: serviceData.reviewCount || 0
             },
-            price: 85,
-            priceUnit: 'hour',
-            image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80'
+            price: serviceData.price,
+            priceUnit: serviceData.priceUnit || 'hour',
+            image: serviceData.image || 'https://via.placeholder.com/300x200?text=Service+Image'
           };
           
-          setService(mockService);
-          console.log('Using mock service:', mockService);
+          setService(formattedService);
+        } else {
+          setError('Service not found');
         }
-      } catch (error) {
-        console.error('Error in service fetching process:', error);
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching service details:', err);
         setError('Failed to load service details. Please try again.');
-      } finally {
         setLoading(false);
       }
     };

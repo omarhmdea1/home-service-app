@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../components/auth/AuthProvider';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
 
 const Login = () => {
   const [email, setEmail] = useState('');

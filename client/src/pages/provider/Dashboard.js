@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { motion } from 'framer-motion';
+import { getProviderBookings } from '../../services/bookingService';
 
 const ProviderDashboard = () => {
   const { userProfile } = useAuth();
@@ -21,53 +22,49 @@ const ProviderDashboard = () => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        // This would be replaced with real API calls in a production app
-        // Mock data for demonstration
-        setTimeout(() => {
+        // Get provider bookings from API
+        if (userProfile && userProfile.uid) {
+          const bookings = await getProviderBookings(userProfile.uid);
+          
+          // Calculate stats from bookings
+          const pendingCount = bookings.filter(b => b.status === 'pending').length;
+          const confirmedCount = bookings.filter(b => b.status === 'confirmed').length;
+          const completedCount = bookings.filter(b => b.status === 'completed').length;
+          const cancelledCount = bookings.filter(b => b.status === 'cancelled').length;
+          
+          // Calculate total earnings from completed bookings
+          const earnings = bookings
+            .filter(b => b.status === 'completed')
+            .reduce((total, booking) => total + (booking.price || 0), 0);
+          
           setStats({
-            pendingBookings: 3,
-            confirmedBookings: 5,
-            completedBookings: 12,
-            cancelledBookings: 2,
-            totalEarnings: 4850,
-            activeServices: 4
+            pendingBookings: pendingCount,
+            confirmedBookings: confirmedCount,
+            completedBookings: completedCount,
+            cancelledBookings: cancelledCount,
+            totalEarnings: earnings,
+            activeServices: 0 // This would come from a separate API call in a real app
           });
           
-          setRecentBookings([
-            {
-              id: 'bk1',
-              customerName: 'Moshe Levi',
-              customerEmail: 'moshe.levi@gmail.com',
-              service: 'Plumbing Repair',
-              date: new Date(Date.now() + 86400000 * 2), // 2 days from now
-              time: '10:00',
-              status: 'pending',
-              price: 350
-            },
-            {
-              id: 'bk2',
-              customerName: 'Noor Abu-Hani',
-              customerEmail: 'noor.abuhani@gmail.com',
-              service: 'Pipe Installation',
-              date: new Date(Date.now() + 86400000 * 3), // 3 days from now
-              time: '14:00',
-              status: 'confirmed',
-              price: 550
-            },
-            {
-              id: 'bk3',
-              customerName: 'Yael Goldstein',
-              customerEmail: 'yael.goldstein@gmail.com',
-              service: 'Drain Cleaning',
-              date: new Date(Date.now() + 86400000 * 5), // 5 days from now
-              time: '11:30',
-              status: 'confirmed',
-              price: 400
-            }
-          ]);
+          // Get most recent bookings (up to 3)
+          const sortedBookings = [...bookings]
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .slice(0, 3)
+            .map(booking => ({
+              id: booking._id,
+              customerName: booking.userName || 'Customer',
+              customerEmail: booking.userEmail || 'No email provided',
+              service: booking.serviceName,
+              date: new Date(booking.date),
+              time: booking.time,
+              status: booking.status,
+              price: booking.price
+            }));
           
-          setLoading(false);
-        }, 1000);
+          setRecentBookings(sortedBookings);
+        }
+        
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         setLoading(false);

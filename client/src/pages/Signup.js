@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../components/auth/AuthProvider';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { serverTimestamp } from 'firebase/firestore';
 
 const Signup = () => {
   const [email, setEmail] = useState('');
@@ -143,7 +142,6 @@ const Signup = () => {
         name,
         role,
         phone,
-        createdAt: serverTimestamp(),
       };
       
       // Add provider-specific fields if role is provider

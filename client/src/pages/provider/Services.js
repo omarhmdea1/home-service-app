@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { motion } from 'framer-motion';
+import { getServices, createService, updateService } from '../../services/serviceService';
 
 const ProviderServices = () => {
   const [services, setServices] = useState([]);
@@ -23,39 +24,28 @@ const ProviderServices = () => {
 
   // Fetch provider services
   useEffect(() => {
-    const fetchServices = async () => {
+    const fetchProviderServices = async () => {
       try {
         setLoading(true);
-        // In a real app, this would be a call to your backend API
-        // For now, we'll use mock data
-        const mockServices = [
-          {
-            id: 's1',
-            title: 'Plumbing Repair',
-            description: 'Professional plumbing repair services for your home. We fix leaks, clogs, and more.',
-            price: 75,
-            duration: '1-2 hours',
-            category: 'plumbing',
-            image: 'https://images.unsplash.com/photo-1606093310360-af6aa1f8d324?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60',
-            active: true
-          },
-          {
-            id: 's2',
-            title: 'Electrical Wiring',
-            description: 'Professional electrical services including wiring, outlet installation, and troubleshooting.',
-            price: 90,
-            duration: '2-3 hours',
-            category: 'electrical',
-            image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60',
-            active: true
-          }
-        ];
-        
-        // Simulate API delay
-        setTimeout(() => {
-          setServices(mockServices);
-          setLoading(false);
-        }, 1000);
+        if (userProfile && userProfile.uid) {
+          // Get services from API for this provider
+          const response = await getServices({ providerId: userProfile.uid });
+          
+          // Format the services
+          const formattedServices = response.map(service => ({
+            id: service._id,
+            title: service.title,
+            description: service.description,
+            price: service.price,
+            duration: service.duration || '1 hour',
+            category: service.category,
+            image: service.image || 'https://via.placeholder.com/300x200?text=Service+Image',
+            active: service.isActive !== undefined ? service.isActive : true
+          }));
+          
+          setServices(formattedServices);
+        }
+        setLoading(false);
       } catch (err) {
         console.error('Error fetching services:', err);
         setError('Failed to load services. Please try again.');
@@ -63,8 +53,8 @@ const ProviderServices = () => {
       }
     };
 
-    fetchServices();
-  }, []);
+    fetchProviderServices();
+  }, [userProfile]);
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -76,12 +66,25 @@ const ProviderServices = () => {
   };
 
   // Handle service status toggle
-  const toggleServiceStatus = (serviceId) => {
-    setServices(prevServices => 
-      prevServices.map(service => 
-        service.id === serviceId ? { ...service, active: !service.active } : service
-      )
-    );
+  const toggleServiceStatus = async (serviceId) => {
+    try {
+      // Find the service to toggle
+      const serviceToToggle = services.find(service => service.id === serviceId);
+      if (!serviceToToggle) return;
+      
+      // Update the service status via API
+      await updateService(serviceId, { isActive: !serviceToToggle.active });
+      
+      // Update local state
+      setServices(prevServices => 
+        prevServices.map(service => 
+          service.id === serviceId ? { ...service, active: !service.active } : service
+        )
+      );
+    } catch (error) {
+      console.error('Error toggling service status:', error);
+      setError('Failed to update service status. Please try again.');
+    }
   };
 
   // Handle edit service
@@ -99,53 +102,69 @@ const ProviderServices = () => {
   };
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (editingService) {
-      // Update existing service
-      setServices(prevServices => 
-        prevServices.map(service => 
-          service.id === editingService 
-            ? { 
-                ...service, 
-                title: formData.title,
-                description: formData.description,
-                price: parseFloat(formData.price),
-                duration: formData.duration,
-                category: formData.category,
-                image: formData.image
-              } 
-            : service
-        )
-      );
-    } else {
-      // Add new service
-      const newService = {
-        id: `s${Date.now()}`,
+    try {
+      setLoading(true);
+      
+      // Prepare service data
+      const serviceData = {
         title: formData.title,
         description: formData.description,
         price: parseFloat(formData.price),
         duration: formData.duration,
         category: formData.category,
-        image: formData.image || 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60',
-        active: true
+        image: formData.image || 'https://via.placeholder.com/300x200?text=Service+Image',
+        isActive: true
       };
       
-      setServices(prev => [...prev, newService]);
+      if (editingService) {
+        // Update existing service via API
+        await updateService(editingService, serviceData);
+        
+        // Update local state
+        setServices(prevServices => 
+          prevServices.map(service => 
+            service.id === editingService 
+              ? { 
+                  ...service, 
+                  ...serviceData
+                } 
+              : service
+          )
+        );
+      } else {
+        // Create new service via API
+        const newService = await createService(serviceData);
+        
+        // Add to local state
+        setServices(prevServices => [
+          ...prevServices, 
+          {
+            id: newService._id,
+            ...serviceData
+          }
+        ]);
+      }
+      
+      // Reset form
+      setFormData({
+        title: '',
+        description: '',
+        price: '',
+        duration: '',
+        category: 'plumbing',
+        image: ''
+      });
+      setEditingService(null);
+      setShowAddForm(false);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error saving service:', error);
+      setError('Failed to save service. Please try again.');
+      setLoading(false);
     }
-    
-    // Reset form
-    setFormData({
-      title: '',
-      description: '',
-      price: '',
-      duration: '',
-      category: 'plumbing',
-      image: ''
-    });
-    setEditingService(null);
-    setShowAddForm(false);
   };
 
   // Categories for dropdown

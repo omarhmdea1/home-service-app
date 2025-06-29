@@ -1,87 +1,159 @@
 const express = require('express');
 const router = express.Router();
-
-// Mock data for bookings
-let bookings = [];
+const Booking = require('../models/Booking');
+const Service = require('../models/Service');
 
 // GET /api/bookings
-router.get('/', (req, res) => {
-  const userId = req.query.userId;
-  
-  // Filter bookings by user ID if provided
-  const userBookings = userId 
-    ? bookings.filter(booking => booking.userId === userId)
-    : bookings;
+// Get all bookings with optional filtering by userId or providerId
+router.get('/', async (req, res) => {
+  try {
+    const { userId, providerId } = req.query;
+    const query = {};
     
-  res.json(userBookings);
+    // Apply filters if provided
+    if (userId) query.userId = userId;
+    if (providerId) query.providerId = providerId;
+    
+    const bookings = await Booking.find(query).sort({ createdAt: -1 });
+    res.json(bookings);
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
 });
 
 // GET /api/bookings/:id
-router.get('/:id', (req, res) => {
-  const booking = bookings.find(b => b.id === req.params.id);
-  
-  if (!booking) {
-    return res.status(404).json({ message: 'Booking not found' });
+// Get single booking
+router.get('/:id', async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+    
+    res.json(booking);
+  } catch (error) {
+    console.error('Error fetching booking:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
-  
-  res.json(booking);
 });
 
 // POST /api/bookings
-router.post('/', (req, res) => {
-  const { serviceId, userId, date, time, address, notes } = req.body;
-  
-  // Generate a unique ID
-  const id = 'bk' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-  
-  // Create new booking with status
-  const newBooking = {
-    id,
-    serviceId,
-    userId,
-    date,
-    time,
-    address,
-    notes,
-    status: 'pending', // Default status is pending
-    createdAt: new Date().toISOString()
-  };
-  
-  // Add to bookings array (in a real app, this would be saved to a database)
-  bookings.push(newBooking);
-  
-  // Here you would typically save the booking to the database
-  console.log(`Booking received: Service ID ${serviceId}, Date ${date}, Time ${time}, Status: pending`);
-  res.status(201).json({ 
-    message: 'Booking request submitted successfully.',
-    booking: newBooking
-  });
+// Create a new booking
+router.post('/', async (req, res) => {
+  try {
+    // Check if the service exists
+    const service = await Service.findById(req.body.serviceId);
+    if (!service) {
+      return res.status(404).json({ message: 'Service not found' });
+    }
+    
+    // Create booking with service price and provider info
+    const bookingData = {
+      ...req.body,
+      price: service.price,
+      providerId: service.providerId,
+      status: 'pending',
+      paymentStatus: 'pending'
+    };
+    
+    const booking = await Booking.create(bookingData);
+    
+    console.log(`Booking created: Service ID ${booking.serviceId}, Date ${booking.date}, Status: pending`);
+    
+    res.status(201).json({ 
+      message: 'Booking request submitted successfully.',
+      booking
+    });
+  } catch (error) {
+    console.error('Error creating booking:', error);
+    
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(val => val.message);
+      return res.status(400).json({ message: messages.join(', ') });
+    }
+    
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// PUT /api/bookings/:id
+// Update a booking
+router.put('/:id', async (req, res) => {
+  try {
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, updatedAt: Date.now() },
+      { new: true, runValidators: true }
+    );
+    
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+    
+    res.json({
+      message: 'Booking updated successfully',
+      booking
+    });
+  } catch (error) {
+    console.error('Error updating booking:', error);
+    
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(val => val.message);
+      return res.status(400).json({ message: messages.join(', ') });
+    }
+    
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
 });
 
 // PUT /api/bookings/:id/status
-router.put('/:id/status', (req, res) => {
-  const { status } = req.body;
-  const bookingId = req.params.id;
-  
-  // Validate status
-  if (!['pending', 'confirmed', 'cancelled', 'completed'].includes(status)) {
-    return res.status(400).json({ message: 'Invalid status value' });
+// Update booking status
+router.put('/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    
+    // Validate status
+    if (!['pending', 'confirmed', 'cancelled', 'completed'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+    
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
+      { status, updatedAt: Date.now() },
+      { new: true }
+    );
+    
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+    
+    res.json({ 
+      message: 'Booking status updated successfully',
+      booking
+    });
+  } catch (error) {
+    console.error('Error updating booking status:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
-  
-  // Find the booking
-  const bookingIndex = bookings.findIndex(b => b.id === bookingId);
-  
-  if (bookingIndex === -1) {
-    return res.status(404).json({ message: 'Booking not found' });
+});
+
+// DELETE /api/bookings/:id
+// Delete a booking
+router.delete('/:id', async (req, res) => {
+  try {
+    const booking = await Booking.findByIdAndDelete(req.params.id);
+    
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+    
+    res.json({ message: 'Booking deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting booking:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
-  
-  // Update the status
-  bookings[bookingIndex].status = status;
-  
-  res.json({ 
-    message: 'Booking status updated successfully',
-    booking: bookings[bookingIndex]
-  });
 });
 
 module.exports = router;

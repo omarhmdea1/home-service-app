@@ -99,153 +99,43 @@ const MyBookings = () => {
     }
   }, [currentUser, authLoading]);
 
-  // Fetch bookings from Firebase
+  // Fetch bookings from API
   const fetchBookings = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Fetch bookings from Firebase
+      // Fetch bookings from API
       const userBookings = await getUserBookings(currentUser.uid);
       
-      // If no bookings found, use mock data for demo purposes
-      if (userBookings.length === 0) {
-        const mockBookings = [
-          {
-            id: 'bk1',
-            service: {
-              id: 's1',
-              title: 'Professional Plumbing Service',
-              image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80',
-              provider: {
-                id: 'provider123',
-                name: 'Mike\'s Plumbing',
-                rating: 4.8,
-                avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
-              }
-            },
-            date: new Date(Date.now() + 86400000 * 3), // 3 days from now
-            timeSlot: '10:00 AM',
-            address: '123 Main St, Anytown, CA 12345',
-            status: 'pending',
-            price: 95,
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 'bk2',
-            service: {
-              id: 's2',
-              title: 'House Cleaning Service',
-              image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80',
-              provider: {
-                id: 'provider456',
-                name: 'CleanHome Pro',
-                rating: 4.9,
-                avatar: 'https://randomuser.me/api/portraits/women/44.jpg'
-              }
-            },
-            date: new Date(Date.now() + 86400000 * 7), // 7 days from now
-            timeSlot: '02:00 PM',
-            address: '123 Main St, Anytown, CA 12345',
-            status: 'confirmed',
-            price: 80,
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 'bk3',
-            service: {
-              id: 's3',
-              title: 'Electrical Installation',
-              image: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80',
-              provider: {
-                id: 'provider789',
-                name: 'Abu Mazen Electrical',
-                rating: 4.7,
-                avatar: 'https://randomuser.me/api/portraits/men/67.jpg'
-              }
-            },
-            date: new Date('2023-06-25'),
-            timeSlot: '09:00 AM',
-            address: 'Rothschild Blvd 123, Tel Aviv',
-            status: 'confirmed',
-            notes: 'Install new ceiling fan in living room',
-            price: 400,
-            createdAt: new Date('2023-06-14').toISOString()
-          },
-          {
-            id: 'bk4',
-            service: {
-              id: 's4',
-              title: 'Gardening Service',
-              image: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80',
-              provider: {
-                id: 'provider101',
-                name: 'Gan Eden Landscaping',
-                rating: 4.6,
-                avatar: 'https://randomuser.me/api/portraits/women/28.jpg'
-              }
-            },
-            date: new Date('2023-05-30'),
-            timeSlot: '11:00 AM',
-            address: 'Rothschild Blvd 123, Tel Aviv',
-            status: 'cancelled',
-            notes: 'Front and back yard',
-            price: 200,
-            createdAt: new Date('2023-05-25').toISOString()
-          },
-          {
-            id: 'bk5',
-            service: {
-              id: 's5',
-              title: 'Air Conditioning Service',
-              image: 'https://images.unsplash.com/photo-1558317374-067fb5f30001?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80',
-              provider: {
-                id: 'provider202',
-                name: 'Kol Kar - Air Conditioning',
-                rating: 4.8,
-                avatar: 'https://randomuser.me/api/portraits/men/42.jpg'
-              }
-            },
-            date: new Date('2023-07-05'),
-            timeSlot: '01:00 PM',
-            address: 'Rothschild Blvd 123, Tel Aviv',
-            status: 'pending',
-            notes: 'Annual AC maintenance',
-            price: 450,
-            createdAt: new Date('2023-06-20').toISOString()
+      // Format the bookings from API
+      const formattedBookings = userBookings.map(booking => ({
+        id: booking._id || booking.id,
+        service: {
+          id: booking.serviceId,
+          title: booking.serviceName,
+          image: booking.serviceImage || 'https://via.placeholder.com/300x200?text=Service+Image',
+          provider: {
+            id: booking.providerId,
+            name: booking.providerName || 'Service Provider',
+            rating: booking.providerRating || 4.5,
+            avatar: booking.providerAvatar || 'https://via.placeholder.com/64x64?text=Provider'
           }
-        ];
-        
-        setBookings(mockBookings);
-      } else {
-        // Format the bookings from Firebase
-        const formattedBookings = userBookings.map(booking => ({
-          id: booking.id,
-          service: {
-            id: booking.serviceId,
-            title: booking.serviceName,
-            image: booking.serviceImage || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e',
-            provider: {
-              id: booking.providerId,
-              name: booking.providerName,
-              rating: booking.providerRating || 4.5,
-              avatar: booking.providerAvatar || 'https://randomuser.me/api/portraits/men/32.jpg'
-            }
-          },
-          date: new Date(booking.date),
-          timeSlot: booking.time,
-          address: booking.address,
-          notes: booking.notes,
-          status: booking.status,
-          price: booking.price,
-          createdAt: booking.createdAt?.toDate?.() || new Date()
-        }));
-        
-        setBookings(formattedBookings);
-      }
+        },
+        date: new Date(booking.date),
+        timeSlot: booking.time || '12:00 PM',
+        address: booking.address || 'No address provided',
+        status: booking.status || 'pending',
+        notes: booking.notes || '',
+        price: booking.price || 0,
+        createdAt: booking.createdAt || new Date().toISOString()
+      }));
+      
+      setBookings(formattedBookings);
     } catch (error) {
       console.error('Error fetching bookings:', error);
       setError('Failed to load your bookings. Please try again later.');
+      setBookings([]);
     } finally {
       setLoading(false);
     }

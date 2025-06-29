@@ -6,6 +6,7 @@ import { useAuth } from '../components/auth/AuthProvider';
 const ServiceList = () => {
   const { currentUser } = useAuth();
   const location = useLocation();
+  const [rawServices, setRawServices] = useState([]);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,163 +28,103 @@ const ServiceList = () => {
   // Booking states
   const [selectedService, setSelectedService] = useState(null);
 
+  // Fetch services from the API - only when search term or category filter changes
   useEffect(() => {
-    // Fetch services from the server
     const fetchServices = async () => {
       setLoading(true);
       setError(null);
       try {
-        // In a real app, this would fetch from your API
-        // For now, we'll use mock data
-        // const response = await axios.get('/api/services');
-        // setServices(response.data);
+        // Prepare query parameters for filtering
+        const params = new URLSearchParams();
         
-        // Mock data for development
-        const mockServices = [
-          {
-            id: 1,
-            title: 'House Cleaning',
-            description: 'Professional house cleaning services for all room types. Our team ensures a spotless home with eco-friendly products.',
-            price: 300,
-            priceUnit: 'per hour',
-            category: 'Cleaning',
-            rating: 4.8,
-            reviewCount: 127,
-            image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'Naki Babait'
-          },
-          {
-            id: 2,
-            title: 'Plumbing Repair',
-            description: 'Expert plumbing services for leaks, clogs, installations, and more. Available 24/7 for emergency calls.',
-            price: 350,
-            priceUnit: 'per hour',
-            category: 'Plumbing',
-            rating: 4.7,
-            reviewCount: 89,
-            image: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'Cohen Plumbing Solutions'
-          },
-          {
-            id: 3,
-            title: 'Electrical Installation',
-            description: 'Licensed electricians for all your electrical needs. From rewiring to new installations, we handle it all safely.',
-            price: 400,
-            priceUnit: 'per hour',
-            category: 'Electrical',
-            rating: 4.9,
-            reviewCount: 64,
-            image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'Abu Mazen Electrical'
-          },
-          {
-            id: 4,
-            title: 'Gardening Service',
-            description: 'Regular garden maintenance to keep your yard looking its best. Services include planting, pruning, and cleanup.',
-            price: 200,
-            priceUnit: 'per visit',
-            category: 'Gardening',
-            rating: 4.5,
-            reviewCount: 112,
-            image: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'Gan Eden Landscaping'
-          },
-          {
-            id: 5,
-            title: 'Air Conditioning Service',
-            description: 'Keep your cooling systems running efficiently with our comprehensive maintenance and repair services.',
-            price: 450,
-            priceUnit: 'per visit',
-            category: 'HVAC',
-            rating: 4.6,
-            reviewCount: 73,
-            image: 'https://images.unsplash.com/photo-1581275288578-bfb01a800c59?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'Kol Kar - Air Conditioning'
-          },
-          {
-            id: 6,
-            title: 'Interior Painting',
-            description: 'Transform your space with our professional painting services. We use premium paints for a lasting finish.',
-            price: 120,
-            priceUnit: 'per sqm',
-            category: 'Painting',
-            rating: 4.8,
-            reviewCount: 95,
-            image: 'https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'Tzeva Rishon'
-          },
-          {
-            id: 7,
-            title: 'Carpet Cleaning',
-            description: 'Deep clean your carpets to remove stains, odors, and allergens. Safe for all carpet types and pets.',
-            price: 280,
-            priceUnit: 'per room',
-            category: 'Cleaning',
-            rating: 4.7,
-            reviewCount: 83,
-            image: 'https://images.unsplash.com/photo-1558317374-067fb5f30001?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'Nasreen Cleaning Services'
-          },
-          {
-            id: 8,
-            title: 'Furniture Assembly',
-            description: 'Expert assembly of all types of furniture. Save time and avoid frustration with our professional service.',
-            price: 250,
-            priceUnit: 'per hour',
-            category: 'Handyman',
-            rating: 4.4,
-            reviewCount: 58,
-            image: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            provider: 'Tachles Handyman'
-          }
-        ];
+        if (searchTerm) {
+          params.append('search', searchTerm);
+        }
         
-        setServices(mockServices);
-      } catch (error) {
-        console.error('Error fetching services:', error);
+        if (categoryFilter) {
+          params.append('category', categoryFilter);
+        }
+        
+        // Direct API call to backend
+        console.log('Fetching services from API...');
+        const response = await fetch(`http://localhost:5001/api/services?${params.toString()}`);
+        
+        if (!response.ok) {
+          throw new Error(`API responded with status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Services fetched from API:', data);
+        console.log('Number of services:', data.length);
+        
+        // Map the response data to match our component's expected format
+        const formattedServices = data.map(service => ({
+          id: service._id,
+          title: service.title,
+          description: service.description,
+          price: service.price,
+          priceUnit: service.priceUnit || 'flat rate',
+          category: service.category,
+          rating: service.rating || 4.5,
+          reviewCount: service.reviewCount || 0,
+          image: service.image,
+          provider: service.providerName
+        }));
+        
+        // Store the raw services without filtering
+        setRawServices(formattedServices);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching services:', err);
         setError('Failed to load services. Please try again later.');
-      } finally {
         setLoading(false);
       }
     };
-
+    
     fetchServices();
-  }, []);
+    // Only refetch when search term or category changes - other filters are applied client-side
+  }, [searchTerm, categoryFilter]);
 
   // Get unique categories for the filter dropdown
-  const categories = [...new Set(services.map(service => service.category))].sort();
+  const categories = [...new Set(rawServices.map(service => service.category))].sort();
   
-  // Apply all filters
-  const filteredServices = services.filter(service => {
-    const matchesSearch = searchTerm ? (
-      service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.provider.toLowerCase().includes(searchTerm.toLowerCase())
-    ) : true;
+  // Apply client-side filters whenever filter criteria or raw services change
+  useEffect(() => {
+    // Apply all filters
+    const filteredResults = rawServices.filter(service => {
+      // Price and rating filters are applied client-side
+      const matchesPrice = 
+        service.price >= priceRange.min && service.price <= priceRange.max;
+        
+      const matchesRating = service.rating >= ratingFilter;
       
-    const matchesCategory = categoryFilter === '' || service.category === categoryFilter;
+      // We already filtered by search and category on the server
+      return matchesPrice && matchesRating;
+    });
     
-    const matchesPrice = 
-      service.price >= priceRange.min && service.price <= priceRange.max;
-      
-    const matchesRating = service.rating >= ratingFilter;
+    // Sort the filtered results
+    let sortedServices = [...filteredResults];
     
-    return matchesSearch && matchesCategory && matchesPrice && matchesRating;
-  });
-  
-  // Sort filtered services
-  const sortedServices = [...filteredServices].sort((a, b) => {
-    switch (sortBy) {
-      case 'price-low':
-        return a.price - b.price;
-      case 'price-high':
-        return b.price - a.price;
-      case 'rating':
-        return b.rating - a.rating;
-      default:
-        return 0; // Keep original order
+    if (sortBy === 'price-low') {
+      sortedServices.sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'price-high') {
+      sortedServices.sort((a, b) => b.price - a.price);
+    } else if (sortBy === 'rating') {
+      sortedServices.sort((a, b) => b.rating - a.rating);
     }
-  });
+    
+    // Update the services state with filtered and sorted results
+    setServices(sortedServices);
+  }, [rawServices, priceRange.min, priceRange.max, ratingFilter, sortBy]);
+  
+  // Check if any filters are currently active
+  const isFilteringActive = () => {
+    return searchTerm !== '' ||
+           categoryFilter !== '' || 
+           priceRange.min > 0 || 
+           priceRange.max < 1000 || 
+           ratingFilter > 0;
+  };
 
   const handleViewService = (service) => {
     setSelectedService(service);
@@ -200,8 +141,8 @@ const ServiceList = () => {
       return;
     }
     
-    if (!selectedService || !bookingDate || !bookingTime) {
-      alert('Please select a service, date, and time.');
+    if (!selectedService) {
+      alert('Please select a service.');
       return;
     }
     
@@ -218,8 +159,6 @@ const ServiceList = () => {
       setTimeout(() => {
         alert('Booking request submitted successfully!');
         setSelectedService(null);
-        setBookingDate('');
-        setBookingTime('');
       }, 1000);
     } catch (error) {
       console.error('Error submitting booking:', error);
@@ -254,8 +193,8 @@ const ServiceList = () => {
             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
           </svg>
         ))}
-        <span className="ml-1 text-gray-600 text-sm">
-          {rating.toFixed(1)} ({filteredServices.find(s => s.id === selectedService?.id)?.reviewCount || 0})
+        <span className="ml-1 text-gray-600">
+          {rating.toFixed(1)} ({services.find(s => s.id === selectedService?.id)?.reviewCount || 0})
         </span>
       </div>
     );
@@ -314,7 +253,7 @@ const ServiceList = () => {
       <div className="container mx-auto px-4 py-12">
         {/* Filter Section */}
         <div className="mb-12 bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-          <h2 className="text-xl font-semibold mb-4 flex items-center text-primary-700">
+          <h2 className="text-xl font-bold text-gray-800">
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
@@ -410,7 +349,16 @@ const ServiceList = () => {
           <h2 className="text-2xl font-bold text-gray-800">
             Available Services
             <span className="ml-2 text-sm font-normal text-gray-500">
-              ({filteredServices.length} {filteredServices.length === 1 ? 'service' : 'services'} found)
+              {services.length === 0 ? (
+                <span>No services found</span>
+              ) : services.length === 1 ? (
+                <span>1 service found</span>
+              ) : (
+                <span>{services.length} services found</span>
+              )}
+              {isFilteringActive() && (
+                <span> (filtered from {rawServices.length})</span>
+              )}
             </span>
           </h2>
           
@@ -457,7 +405,7 @@ const ServiceList = () => {
         {/* Services Grid */}
         {!loading && !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedServices.map(service => (
+            {services.map(service => (
               <div key={service.id} className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:translate-y-[-5px] border border-gray-100">
                 <div className="relative">
                   <img 
@@ -512,7 +460,7 @@ const ServiceList = () => {
         )}
         
         {/* No Results */}
-        {!loading && !error && filteredServices.length === 0 && (
+        {!loading && !error && services.length === 0 && (
           <div className="text-center py-12 bg-white rounded-xl shadow-md border border-gray-100">
             <div className="bg-primary-50 mx-auto w-24 h-24 flex items-center justify-center rounded-full mb-4">
               <svg className="h-12 w-12 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

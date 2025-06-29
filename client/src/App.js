@@ -1,8 +1,9 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
 import { AuthProvider } from './components/auth/AuthProvider';
 import PrivateRoute from './components/auth/PrivateRoute';
 import UserRoleBadge from './components/UserRoleBadge';
+import { initializeApp, cleanupApp } from './utils/initApp';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import VerifyEmail from './pages/VerifyEmail';
@@ -15,6 +16,7 @@ import BookService from './pages/BookService';
 import MyBookings from './pages/MyBookings';
 import BookingDetail from './pages/BookingDetail';
 import Profile from './pages/Profile';
+import RoleSelection from './components/auth/RoleSelection';
 import { useAuth } from './components/auth/AuthProvider';
 
 // Import the new provider profile page
@@ -452,7 +454,12 @@ const Navigation = () => {
 };
 
 function AppContent() {
-  const { userRole } = useAuth();
+  const { userRole, needsRoleSelection } = useAuth();
+  
+  // If user needs to select a role, redirect to role selection
+  if (needsRoleSelection) {
+    return <RoleSelection />;
+  }
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -548,6 +555,18 @@ const GoogleRedirectHandler = () => {
 };
 
 function App() {
+  // Initialize app when component mounts
+  useEffect(() => {
+    console.log('Initializing app with token management...');
+    initializeApp();
+    
+    // Clean up when component unmounts
+    return () => {
+      console.log('Cleaning up app resources...');
+      cleanupApp();
+    };
+  }, []);
+  
   return (
     <Router>
       <AuthProvider>

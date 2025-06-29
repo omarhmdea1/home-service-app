@@ -1,19 +1,7 @@
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  getDoc, 
-  doc, 
-  query, 
-  where, 
-  updateDoc, 
-  serverTimestamp,
-  orderBy,
-  limit
-} from 'firebase/firestore';
-import { db } from '../firebase';
+import { get, post, put, del } from './apiService';
+import { getAuth } from 'firebase/auth';
 
-const SERVICES_COLLECTION = 'services';
+// Only using Firebase for authentication, not for data storage
 
 /**
  * Get all services with optional filtering
@@ -23,28 +11,14 @@ const SERVICES_COLLECTION = 'services';
  */
 export const getServices = async (filters = {}, limitCount = 50) => {
   try {
-    let q = collection(db, SERVICES_COLLECTION);
+    // Prepare query parameters
+    const params = { ...filters, limit: limitCount };
     
-    // Apply filters if provided
-    if (filters.category) {
-      q = query(q, where('category', '==', filters.category));
-    }
-    
-    if (filters.providerId) {
-      q = query(q, where('providerId', '==', filters.providerId));
-    }
-    
-    // Apply ordering and limit
-    q = query(q, orderBy('createdAt', 'desc'), limit(limitCount));
-    
-    const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    // Call API to get services
+    const services = await get('/services', params);
+    return services;
   } catch (error) {
-    console.error('Error fetching services:', error);
+    console.error('Error fetching services from API:', error);
     throw error;
   }
 };
@@ -56,19 +30,11 @@ export const getServices = async (filters = {}, limitCount = 50) => {
  */
 export const getServiceById = async (serviceId) => {
   try {
-    const docRef = doc(db, SERVICES_COLLECTION, serviceId);
-    const docSnap = await getDoc(docRef);
-    
-    if (docSnap.exists()) {
-      return {
-        id: docSnap.id,
-        ...docSnap.data()
-      };
-    } else {
-      throw new Error('Service not found');
-    }
+    // Call API to get service by ID
+    const service = await get(`/services/${serviceId}`);
+    return service;
   } catch (error) {
-    console.error('Error fetching service:', error);
+    console.error('Error fetching service from API:', error);
     throw error;
   }
 };
@@ -80,20 +46,26 @@ export const getServiceById = async (serviceId) => {
  */
 export const createService = async (serviceData) => {
   try {
-    // Add timestamp
-    const serviceWithTimestamp = {
+    // Get current user ID from Firebase Auth
+    const auth = getAuth();
+    const user = auth.currentUser;
+    
+    if (!user) {
+      throw new Error('User must be logged in to create a service');
+    }
+    
+    // Add provider info to service data
+    const serviceWithProviderInfo = {
       ...serviceData,
-      createdAt: serverTimestamp(),
+      providerId: user.uid,
+      providerName: user.displayName || 'Service Provider',
+      providerPhoto: user.photoURL || '',
       isActive: true
     };
-
-    // Add to Firestore
-    const docRef = await addDoc(collection(db, SERVICES_COLLECTION), serviceWithTimestamp);
     
-    return {
-      id: docRef.id,
-      ...serviceWithTimestamp
-    };
+    // Call API to create service
+    const response = await post('/services', serviceWithProviderInfo);
+    return response;
   } catch (error) {
     console.error('Error creating service:', error);
     throw error;
@@ -108,21 +80,26 @@ export const createService = async (serviceData) => {
  */
 export const updateService = async (serviceId, serviceData) => {
   try {
-    const serviceRef = doc(db, SERVICES_COLLECTION, serviceId);
-    
-    // Add updated timestamp
-    const updatedData = {
-      ...serviceData,
-      updatedAt: serverTimestamp()
-    };
-    
-    await updateDoc(serviceRef, updatedData);
-    
-    // Get the updated service
-    const updatedService = await getServiceById(serviceId);
-    return updatedService;
+    // Call API to update service
+    const response = await put(`/services/${serviceId}`, serviceData);
+    return response;
   } catch (error) {
     console.error('Error updating service:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a service
+ * @param {string} serviceId - The service ID
+ * @returns {Promise<void>}
+ */
+export const deleteService = async (serviceId) => {
+  try {
+    // Call API to delete service
+    await del(`/services/${serviceId}`);
+  } catch (error) {
+    console.error('Error deleting service:', error);
     throw error;
   }
 };
