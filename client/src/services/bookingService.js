@@ -2,6 +2,7 @@ import { get, post, put, del } from './apiService';
 import { getAuth } from 'firebase/auth';
 
 // Only using Firebase for authentication, not for data storage
+// All booking data is stored in MongoDB
 
 /**
  * Create a new booking

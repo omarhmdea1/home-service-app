@@ -6,6 +6,34 @@ import { getAuthToken, getIdToken } from '../utils/authToken';
 const API_BASE_URL = 'http://localhost:5001/api';
 
 /**
+ * Safely parse JSON response, handling non-JSON responses
+ * @param {Response} response - Fetch API response
+ * @returns {Promise<any>} - Parsed JSON data
+ */
+async function safeJsonParse(response) {
+  try {
+    return await response.json();
+  } catch (error) {
+    console.error('Error parsing response as JSON:', error);
+    throw new Error(`Invalid response format from server (${response.status})`);
+  }
+}
+
+/**
+ * Safely handle error responses, with proper JSON parsing
+ * @param {Response} response - Fetch API response
+ */
+async function handleErrorResponse(response) {
+  try {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Something went wrong');
+  } catch (parseError) {
+    // If we can't parse as JSON, use status text
+    throw new Error(`Server error: ${response.status} ${response.statusText || 'Unknown error'}`);
+  }
+}
+
+/**
  * Make a GET request to the API
  * @param {string} endpoint - API endpoint
  * @param {Object} params - Query parameters
@@ -37,11 +65,11 @@ export const get = async (endpoint, params = {}) => {
     
     // Check if response is ok
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Something went wrong');
+      await handleErrorResponse(response);
     }
     
-    return await response.json();
+    // Safely parse the JSON response
+    return await safeJsonParse(response);
   } catch (error) {
     console.error(`Error in GET request to ${endpoint}:`, error);
     throw error;
@@ -71,11 +99,11 @@ export const post = async (endpoint, data = {}) => {
     
     // Check if response is ok
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Something went wrong');
+      await handleErrorResponse(response);
     }
     
-    return await response.json();
+    // Safely parse the JSON response
+    return await safeJsonParse(response);
   } catch (error) {
     console.error(`Error in POST request to ${endpoint}:`, error);
     throw error;
@@ -105,11 +133,11 @@ export const put = async (endpoint, data = {}) => {
     
     // Check if response is ok
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Something went wrong');
+      await handleErrorResponse(response);
     }
     
-    return await response.json();
+    // Safely parse the JSON response
+    return await safeJsonParse(response);
   } catch (error) {
     console.error(`Error in PUT request to ${endpoint}:`, error);
     throw error;
@@ -137,11 +165,11 @@ export const del = async (endpoint) => {
     
     // Check if response is ok
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Something went wrong');
+      await handleErrorResponse(response);
     }
     
-    return await response.json();
+    // Safely parse the JSON response
+    return await safeJsonParse(response);
   } catch (error) {
     console.error(`Error in DELETE request to ${endpoint}:`, error);
     throw error;

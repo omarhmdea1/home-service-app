@@ -192,32 +192,31 @@ export const AuthProvider = ({ children }) => {
     return signOut(auth);
   };
 
+  // Google Sign In
   const signInWithGoogle = async (additionalData = {}) => {
     try {
       const provider = new GoogleAuthProvider();
+      console.log('DEBUG: Starting Google sign-in process');
       const userCredential = await signInWithPopup(auth, provider);
       const { user } = userCredential;
       
-      console.log('Google sign-in successful in AuthProvider');
+      console.log('DEBUG: Google sign-in successful for:', user.email);
+      console.log('DEBUG: User UID:', user.uid);
+      console.log('DEBUG: Provider data:', JSON.stringify(user.providerData));
       
       try {
-        // Try to get existing user profile from API
+        console.log('DEBUG: Checking for existing user profile in our backend');
         const userProfile = await getCurrentUserProfile();
-        console.log('Existing user profile found for Google user');
+        console.log('DEBUG: User profile found:', userProfile);
         setUserRole(userProfile.role);
         setUserProfile(userProfile);
+        console.log('DEBUG: User role set to:', userProfile.role);
       } catch (error) {
-        // User doesn't exist in our backend
-        console.log('New Google user - needs role selection');
-        
-        // Store the user credential temporarily - we'll create the profile after role selection
-        setTempUserCredential({
-          user,
-          additionalData
-        });
-        
-        // Set a flag to show role selection UI
+        console.log('DEBUG: No existing user profile found, error:', error.message);
+        console.log('DEBUG: Setting up for role selection');
+        setTempUserCredential({ user, additionalData });
         setNeedsRoleSelection(true);
+        console.log('DEBUG: needsRoleSelection set to true, tempUserCredential stored');
         return { needsRoleSelection: true, userCredential };
       }
       
@@ -230,23 +229,31 @@ export const AuthProvider = ({ children }) => {
   
   // Function to complete profile creation after role selection
   const completeProfileWithRole = async (selectedRole) => {
+    console.log('DEBUG: completeProfileWithRole called with role:', selectedRole);
+    
+    if (!tempUserCredential) {
+      console.error('DEBUG: Error - No temporary user credential found');
+      throw new Error('No temporary user credential found');
+    }
+    
+    const { user, additionalData } = tempUserCredential;
+    console.log('DEBUG: Using tempUserCredential for user:', user.email);
+    
     try {
-      if (!tempUserCredential) {
-        throw new Error('No temporary user credential found');
-      }
+      console.log('DEBUG: Creating user profile with role:', selectedRole);
+      const profile = await createUserProfile(user, { ...additionalData, role: selectedRole });
+      console.log('DEBUG: User profile created successfully:', profile);
       
-      const { user, additionalData } = tempUserCredential;
+      // Update the user role state
+      setUserRole(selectedRole);
+      console.log('DEBUG: User role state updated to:', selectedRole);
       
-      // Create user profile with selected role
-      await createUserProfile(user, { ...additionalData, role: selectedRole });
-      
-      // Clear temporary storage
+      // Clear the temporary credential and role selection flag
       setTempUserCredential(null);
       setNeedsRoleSelection(false);
-      
-      return true;
+      console.log('DEBUG: Cleared tempUserCredential and needsRoleSelection');
     } catch (error) {
-      console.error('Error completing profile with role:', error);
+      console.error('DEBUG: Error creating user profile:', error);
       throw error;
     }
   };

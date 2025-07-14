@@ -3,6 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getServiceById } from '../services/serviceService';
 
+const defaultPlaceholderImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
 const ServiceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -29,7 +31,7 @@ const ServiceDetail = () => {
           category: serviceData.category || 'General',
           rating: serviceData.rating || 4.5,
           reviewCount: serviceData.reviewCount || 0,
-          image: serviceData.image || 'https://via.placeholder.com/800x600?text=Service+Image',
+          image: serviceData.image || defaultPlaceholderImage,
           provider: serviceData.providerName || 'Service Provider',
           features: serviceData.features || [
             'Professional service',
@@ -152,6 +154,10 @@ const ServiceDetail = () => {
             src={service.image} 
             alt={service.title}
             className="w-full h-full object-cover brightness-90 hover:scale-105 transition-transform duration-700"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = defaultPlaceholderImage;
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-gray-900/20"></div>
         </div>

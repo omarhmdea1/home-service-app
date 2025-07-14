@@ -1,0 +1,243 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../components/auth/AuthProvider';
+import { motion } from 'framer-motion';
+import { getUserBookings, getProviderBookings, updateBookingStatus } from '../services/bookingService';
+import { getServiceById } from '../services/serviceService';
+import { format, parseISO } from 'date-fns';
+
+const MyBookings = () => {
+  const { currentUser, userRole, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [activeTab, setActiveTab] = useState('upcoming');
+  const [cancelBookingId, setCancelBookingId] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [processingAction, setProcessingAction] = useState(false);
+  const [serviceDetails, setServiceDetails] = useState({});
+  
+  // Default placeholder images
+  const defaultServiceImage = 'https://via.placeholder.com/300x200?text=Service+Image';
+  const defaultAvatarImage = 'https://via.placeholder.com/64x64?text=User';
+  
+  // Check for success message from sessionStorage
+  useEffect(() => {
+    if (sessionStorage.getItem('bookingSuccess') === 'true') {
+      const message = sessionStorage.getItem('bookingMessage') || 'Booking was successful!';
+      setSuccess(message);
+      setActiveTab('upcoming');
+      
+      // Clear sessionStorage
+      sessionStorage.removeItem('bookingSuccess');
+      sessionStorage.removeItem('bookingMessage');
+      
+      // Auto-hide success message after 5 seconds
+      const timer = setTimeout(() => {
+        setSuccess(null);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
+  
+  // Handle role-based access
+  useEffect(() => {
+    if (!authLoading) {
+      if (!currentUser) {
+        navigate('/login', { state: { from: '/my-bookings' } });
+        return;
+      }
+      
+      fetchBookings();
+    }
+  }, [currentUser, authLoading, userRole]);
+  
+  // Fetch bookings from API
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
+      
+      let response;
+      
+      // Get bookings based on user role
+      if (userRole === 'provider') {
+        response = await getProviderBookings(currentUser.uid);
+        console.log('Provider bookings:', response);
+      } else {
+        response = await getUserBookings(currentUser.uid);
+        console.log('Customer bookings:', response);
+      }
+      
+      // Process bookings
+      if (response && Array.isArray(response)) {
+        // Sort by date (newest first)
+        const sortedBookings = response.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        // Fetch service details for each booking
+        const bookingsWithDetails = await Promise.all(sortedBookings.map(async (booking) => {
+          try {
+            const serviceData = await getServiceById(booking.serviceId);
+            // Store service details in state for quick access
+            setServiceDetails(prev => ({
+              ...prev,
+              [booking.serviceId]: serviceData
+            }));
+            
+            return {
+              ...booking,
+              serviceTitle: serviceData?.title || 'Unknown Service',
+              serviceImage: serviceData?.image || defaultServiceImage,
+              serviceCategory: serviceData?.category || 'General',
+              formattedDate: format(new Date(booking.date), 'PPP'),
+              formattedTime: booking.time
+            };
+          } catch (err) {
+            console.error(`Error fetching service details for booking ${booking._id}:`, err);
+            return {
+              ...booking,
+              serviceTitle: 'Service Details Unavailable',
+              serviceImage: defaultServiceImage,
+              serviceCategory: 'Unknown',
+              formattedDate: format(new Date(booking.date), 'PPP'),
+              formattedTime: booking.time
+            };
+          }
+        }));
+        
+        setBookings(bookingsWithDetails);
+      } else {
+        setBookings([]);
+      }
+      
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching bookings:', err);
+      setError('Failed to load bookings. Please try again later.');
+      setLoading(false);
+    }
+  };
+  
+  // Handle booking cancellation
+  const handleCancelBooking = async () => {
+    if (!cancelBookingId) return;
+    
+    try {
+      setProcessingAction(true);
+      
+      // Call API to update booking status
+      await updateBookingStatus(cancelBookingId, 'cancelled');
+      
+      // Update local state
+      setBookings(prevBookings => 
+        prevBookings.map(booking => 
+          booking._id === cancelBookingId 
+            ? { ...booking, status: 'cancelled' } 
+            : booking
+        )
+      );
+      
+      setShowCancelModal(false);
+      setSuccess('Booking cancelled successfully.');
+      setCancelBookingId(null);
+      setProcessingAction(false);
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      setError('Failed to cancel booking. Please try again.');
+      setProcessingAction(false);
+    }
+  };
+  
+  // Handle booking reschedule
+  const handleRescheduleBooking = (bookingId) => {
+    navigate(`/reschedule-booking/${bookingId}`);
+  };
+  
+  // Handle viewing booking details
+  const handleViewDetails = (booking) => {
+    setSelectedBooking(booking);
+    setShowDetailsModal(true);
+  };
+  
+  // Handle status update (for providers)
+  const handleStatusUpdate = async (bookingId, newStatus) => {
+    try {
+      setProcessingAction(true);
+      
+      // Call API to update booking status
+      await updateBookingStatus(bookingId, newStatus);
+      
+      // Update local state
+      setBookings(prevBookings => 
+        prevBookings.map(booking => 
+          booking._id === bookingId 
+            ? { ...booking, status: newStatus } 
+            : booking
+        )
+      );
+      
+      setSuccess(`Booking ${newStatus} successfully.`);
+      setProcessingAction(false);
+    } catch (error) {
+      console.error(`Error updating booking to ${newStatus}:`, error);
+      setError(`Failed to update booking status. Please try again.`);
+      setProcessingAction(false);
+    }
+  };
+  
+  // Format date function
+  const formatDate = (date) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('en-US', {
+      weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+    });
+  };
+  
+  // Status badge component
+  const StatusBadge = ({ status }) => {
+    let bgColor, textColor, label;
+    
+    switch (status) {
+      case 'pending':
+        bgColor = 'bg-yellow-100';
+        textColor = 'text-yellow-800';
+        label = 'Pending';
+        break;
+      case 'confirmed':
+        bgColor = 'bg-green-100';
+        textColor = 'text-green-800';
+        label = 'Confirmed';
+        break;
+      case 'cancelled':
+        bgColor = 'bg-red-100';
+        textColor = 'text-red-800';
+        label = 'Cancelled';
+        break;
+      case 'completed':
+        bgColor = 'bg-blue-100';
+        textColor = 'text-blue-800';
+        label = 'Completed';
+        break;
+      default:
+        bgColor = 'bg-gray-100';
+        textColor = 'text-gray-800';
+        label = status || 'Unknown';
+    }
+    
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bgColor} ${textColor}`}>
+        {label}
+      </span>
+    );
+  };

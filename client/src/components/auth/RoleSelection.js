@@ -1,38 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from './AuthProvider';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const RoleSelection = () => {
   const { completeProfileWithRole } = useAuth();
-  const [selectedRole, setSelectedRole] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [selectedRole, setSelectedRole] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleRoleSelect = async () => {
+  useEffect(() => {
+    console.log('DEBUG: RoleSelection component mounted');
+    return () => {
+      console.log('DEBUG: RoleSelection component unmounted');
+    };
+  }, []);
+
+  const handleRoleSelect = (role) => {
+    console.log('DEBUG: Role selected:', role);
+    setSelectedRole(role);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log('DEBUG: Submit button clicked with role:', selectedRole);
+
     if (!selectedRole) {
+      console.log('DEBUG: No role selected, showing alert');
       setError('Please select a role to continue');
       return;
     }
 
-    setLoading(true);
-    setError('');
+    setIsSubmitting(true);
+    console.log('DEBUG: Starting profile completion with role:', selectedRole);
 
     try {
+      console.log('DEBUG: Calling completeProfileWithRole');
       await completeProfileWithRole(selectedRole);
-      
+      console.log('DEBUG: Profile completed successfully');
+
       // Redirect based on role
       if (selectedRole === 'provider') {
+        console.log('DEBUG: Redirecting to provider dashboard');
         navigate('/provider/dashboard');
       } else {
+        console.log('DEBUG: Redirecting to home page');
         navigate('/');
       }
-    } catch (err) {
-      console.error('Error completing profile:', err);
-      setError('Failed to complete your profile. Please try again.');
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('DEBUG: Error completing profile:', error);
+      setError('There was an error setting up your profile. Please try again.');
+      setIsSubmitting(false);
     }
   };
 
