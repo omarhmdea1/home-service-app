@@ -14,33 +14,16 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/users/:firebaseUid
-// Get user by Firebase UID
-router.get('/:firebaseUid', async (req, res) => {
-  try {
-    const user = await User.findOne({ firebaseUid: req.params.firebaseUid }).select('-__v');
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    res.json(user);
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
 // GET /api/users/email/:email
 // Get user by email
 router.get('/email/:email', async (req, res) => {
   try {
     const user = await User.findOne({ email: req.params.email }).select('-__v');
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     res.json(user);
   } catch (error) {
     console.error('Error fetching user by email:', error);
@@ -53,14 +36,31 @@ router.get('/email/:email', async (req, res) => {
 router.get('/id/:id', async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-__v');
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     res.json(user);
   } catch (error) {
     console.error('Error fetching user by ID:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// GET /api/users/:firebaseUid
+// Get user by Firebase UID
+router.get('/:firebaseUid', async (req, res) => {
+  try {
+    const user = await User.findOne({ firebaseUid: req.params.firebaseUid }).select('-__v');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching user:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
