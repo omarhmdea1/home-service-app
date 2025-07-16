@@ -33,8 +33,10 @@ const protect = async (req, res, next) => {
       const decodedToken = await admin.auth().verifyIdToken(token);
       
       // Add user info to request
+      // Some routes expect `firebaseUid`, so expose both properties
       req.user = {
         uid: decodedToken.uid,
+        firebaseUid: decodedToken.uid,
         email: decodedToken.email,
         emailVerified: decodedToken.email_verified
       };
