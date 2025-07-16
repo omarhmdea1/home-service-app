@@ -49,7 +49,7 @@ npm install
 ### 5. Run the Server
 
 ```
-npm run dev
+npm start
 ```
 
-The server will run on port 5001 by default.
+This command starts the Express server. The server will run on port 5001 by default.
