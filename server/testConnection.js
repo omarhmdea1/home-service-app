@@ -1,7 +1,18 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 
+/**
+ * This script tests the MongoDB connection. It now checks for the
+ * `MONGO_URI` environment variable before attempting to connect. If the
+ * variable is not set, an error is logged and the process exits with a
+ * non-zero code.
+ */
+
 console.log('Testing MongoDB connection...');
+if (!process.env.MONGO_URI) {
+  console.error('MONGO_URI environment variable is not defined.');
+  process.exit(1);
+}
 console.log(`MongoDB URI: ${process.env.MONGO_URI.replace(/\/\/(.+?):(.+?)@/, '//***:***@')}`);
 
 mongoose.connect(process.env.MONGO_URI, {
