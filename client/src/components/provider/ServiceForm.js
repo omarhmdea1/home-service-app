@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import axios from 'axios';
 
 const ServiceForm = ({ 
   initialData, 
@@ -13,14 +14,61 @@ const ServiceForm = ({
     description: '',
     price: '',
     duration: '1 hour',
-    category: 'Plumbing',
+    category: '',
     image: '',
     tags: []
   });
+  
+  // Categories state
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
 
   // Image preview state
   const [imagePreview, setImagePreview] = useState(null);
   const [imageError, setImageError] = useState(false);
+  
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoadingCategories(true);
+        const response = await axios.get('/api/categories');
+        if (response.data && response.data.data) {
+          const activeCategories = response.data.data
+            .filter(category => category.isActive)
+            .sort((a, b) => a.order - b.order)
+            .map(category => ({
+              value: category.name,
+              label: category.name,
+              icon: category.icon
+            }));
+          setCategories(activeCategories);
+          
+          // Set default category if available and form doesn't have one yet
+          if (activeCategories.length > 0 && !formData.category) {
+            setFormData(prev => ({
+              ...prev,
+              category: activeCategories[0].value
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        // Fallback to default categories if API fails
+        setCategories([
+          { value: 'Cleaning', label: 'Cleaning' },
+          { value: 'Plumbing', label: 'Plumbing' },
+          { value: 'Electrical', label: 'Electrical' },
+          { value: 'Gardening', label: 'Gardening' },
+          { value: 'Other', label: 'Other' }
+        ]);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
   
   // Set initial data if provided (for editing)
   useEffect(() => {
@@ -92,16 +140,7 @@ const ServiceForm = ({
     onSubmit(formData);
   };
 
-  // Categories for dropdown - must match backend enum values exactly
-  const categories = [
-    { value: 'Cleaning', label: 'Cleaning' },
-    { value: 'Plumbing', label: 'Plumbing' },
-    { value: 'Electrical', label: 'Electrical' },
-    { value: 'Gardening', label: 'Gardening' },
-    { value: 'Painting', label: 'Painting' },
-    { value: 'Moving', label: 'Moving' },
-    { value: 'Other', label: 'Other' }
-  ];
+  // Duration options for dropdown
   
   // Duration options for dropdown
   const durationOptions = [

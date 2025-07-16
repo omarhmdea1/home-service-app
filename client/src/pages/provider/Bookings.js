@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { getProviderBookings, updateBookingStatus } from '../../services/bookingService';
 
 const ProviderBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -13,46 +15,32 @@ const ProviderBookings = () => {
     const fetchBookings = async () => {
       try {
         setLoading(true);
-        // In a real app, this would be a call to your backend API
-        // For now, we'll use mock data
-        const mockBookings = [
-          {
-            id: 'bk1',
-            customerName: 'John Doe',
-            service: 'Plumbing Repair',
-            date: '2025-05-10',
-            time: '10:00 AM',
-            status: 'pending',
-            address: '123 Main St, Anytown',
-            notes: 'Leaking faucet in kitchen'
-          },
-          {
-            id: 'bk2',
-            customerName: 'Jane Smith',
-            service: 'Electrical Wiring',
-            date: '2025-05-12',
-            time: '2:00 PM',
-            status: 'confirmed',
-            address: '456 Oak Ave, Somewhere',
-            notes: 'Need to install new outlets in living room'
-          },
-          {
-            id: 'bk3',
-            customerName: 'Robert Johnson',
-            service: 'Plumbing Repair',
-            date: '2025-05-15',
-            time: '9:30 AM',
-            status: 'completed',
-            address: '789 Pine St, Nowhere',
-            notes: 'Fixed bathroom sink'
-          }
-        ];
+        setError('');
         
-        // Simulate API delay
-        setTimeout(() => {
-          setBookings(mockBookings);
+        if (!userProfile || !userProfile.firebaseUid) {
+          setError('User profile not loaded');
           setLoading(false);
-        }, 1000);
+          return;
+        }
+        
+        // Call the real API service to get provider bookings
+        const bookingsData = await getProviderBookings(userProfile.firebaseUid);
+        
+        // Format the bookings data for display
+        const formattedBookings = bookingsData.map(booking => ({
+          id: booking._id,
+          customerName: booking.userName || booking.userEmail || 'Customer',
+          service: booking.serviceTitle || 'Service',
+          date: booking.date,
+          time: booking.timeSlot,
+          status: booking.status,
+          address: booking.address,
+          notes: booking.notes,
+          serviceId: booking.serviceId
+        }));
+        
+        setBookings(formattedBookings);
+        setLoading(false);
       } catch (err) {
         console.error('Error fetching bookings:', err);
         setError('Failed to load bookings. Please try again.');
@@ -61,15 +49,29 @@ const ProviderBookings = () => {
     };
 
     fetchBookings();
-  }, []);
+  }, [userProfile]);
 
   // Handle booking status update
-  const handleStatusUpdate = (bookingId, newStatus) => {
-    setBookings(prevBookings => 
-      prevBookings.map(booking => 
-        booking.id === bookingId ? { ...booking, status: newStatus } : booking
-      )
-    );
+  const handleStatusUpdate = async (bookingId, newStatus) => {
+    try {
+      setLoading(true);
+      
+      // Call the API to update the booking status
+      await updateBookingStatus(bookingId, newStatus);
+      
+      // Update the local state
+      setBookings(prevBookings => 
+        prevBookings.map(booking => 
+          booking.id === bookingId ? { ...booking, status: newStatus } : booking
+        )
+      );
+      
+      setLoading(false);
+    } catch (err) {
+      console.error('Error updating booking status:', err);
+      setError(`Failed to update booking status: ${err.message}`);
+      setLoading(false);
+    }
   };
 
   // Get status badge color
@@ -159,30 +161,39 @@ const ProviderBookings = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {booking.status === 'pending' && (
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleStatusUpdate(booking.id, 'confirmed')}
-                              className="text-primary-600 hover:text-primary-900"
-                            >
-                              Confirm
-                            </button>
-                            <button
-                              onClick={() => handleStatusUpdate(booking.id, 'cancelled')}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        )}
-                        {booking.status === 'confirmed' && (
-                          <button
-                            onClick={() => handleStatusUpdate(booking.id, 'completed')}
-                            className="text-green-600 hover:text-green-900"
+                        <div className="flex space-x-2 items-center">
+                          <Link 
+                            to={`/provider/bookings/${booking.id}`}
+                            className="text-blue-600 hover:text-blue-900 mr-2"
                           >
-                            Mark Complete
-                          </button>
-                        )}
+                            View Details
+                          </Link>
+                          
+                          {booking.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => handleStatusUpdate(booking.id, 'confirmed')}
+                                className="text-primary-600 hover:text-primary-900 mr-2"
+                              >
+                                Confirm
+                              </button>
+                              <button
+                                onClick={() => handleStatusUpdate(booking.id, 'cancelled')}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          )}
+                          {booking.status === 'confirmed' && (
+                            <button
+                              onClick={() => handleStatusUpdate(booking.id, 'completed')}
+                              className="text-green-600 hover:text-green-900"
+                            >
+                              Mark Complete
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

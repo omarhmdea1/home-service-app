@@ -18,6 +18,7 @@ import BookingDetail from './pages/BookingDetail';
 import Profile from './pages/Profile';
 import RoleSelection from './components/auth/RoleSelection';
 import { useAuth } from './components/auth/AuthProvider';
+import MessageNotificationBadge from './components/messaging/MessageNotificationBadge';
 
 // Import the new provider profile page
 import ProviderPublicProfile from './pages/ProviderProfile';
@@ -209,13 +210,14 @@ const Navigation = () => {
                       {userRole === 'customer' && (
                         <Link 
                           to="/bookings" 
-                          className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                          className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary-600 transition-colors duration-150"
                           onClick={closeDropdown}
                         >
-                          <svg className="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          <svg className="mr-3 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                           </svg>
                           My Bookings
+                          {currentUser && <MessageNotificationBadge className="ml-2" />}
                         </Link>
                       )}
                       <Link 
@@ -410,6 +412,7 @@ const Navigation = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     My Bookings
+                    {currentUser && <MessageNotificationBadge className="ml-2" />}
                   </Link>
                 )}
                 <Link 
@@ -520,6 +523,7 @@ function AppContent() {
                 <Routes>
                   <Route path="dashboard" element={<ProviderDashboard />} />
                   <Route path="bookings" element={<ProviderBookings />} />
+                  <Route path="bookings/:id" element={<BookingDetail />} />
                   <Route path="services" element={<ProviderServices />} />
                   <Route path="earnings" element={<ProviderEarnings />} />
                   <Route path="profile" element={<ProviderProfile />} />

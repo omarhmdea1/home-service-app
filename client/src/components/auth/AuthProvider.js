@@ -33,43 +33,65 @@ export const AuthProvider = ({ children }) => {
   const ensureUserRole = async (uid, email, isGoogleSignIn = false) => {
     console.log('Ensuring user role is set for:', email, 'Google Sign In:', isGoogleSignIn);
     try {
-      // Try to get user profile from our backend API
+      // Try to get user profile from our MongoDB backend API
       try {
         const userProfile = await getCurrentUserProfile();
-        console.log('User profile from API:', userProfile);
+        console.log('User profile from MongoDB API:', userProfile);
+        
+        // Set user role and profile in state
         setUserRole(userProfile.role);
+        setUserProfile(userProfile);
+        setNeedsRoleSelection(false); // Ensure role selection is not needed
+        
         return userProfile.role;
       } catch (apiError) {
-        console.warn('Could not fetch user from API:', apiError.message);
+        console.warn('Could not fetch user from MongoDB API:', apiError.message);
         
-        // If this is a Google sign-in, we should trigger role selection instead of creating a default profile
-        if (isGoogleSignIn) {
-          console.log('New Google user detected - will trigger role selection');
-          // Don't create a profile yet - we'll do that after role selection
-          return null; // Return null to indicate role selection is needed
-        } else {
-          console.log('Creating new profile with default customer role');
-          // For non-Google sign-ins, create with default customer role
-          const userData = {
-            firebaseUid: uid, 
-            email: email,
-            name: email.split('@')[0],
-            photoURL: '',
-            role: 'customer' // Default role
-          };
-          
-          await updateUserProfile(userData);
-          setUserRole('customer');
-          return 'customer';
-        }
+        // For all new users, create a default profile with customer role
+        // This prevents unnecessary role selection prompts
+        console.log('Creating new profile with default customer role in MongoDB');
+        const userData = {
+          firebaseUid: uid, 
+          email: email,
+          name: email.split('@')[0] || 'User',
+          photoURL: '',
+          role: 'customer', // Default role
+          isVerified: true
+        };
+        
+        // Create user profile in MongoDB
+        const newProfile = await updateUserProfile(userData);
+        console.log('Created new user profile:', newProfile);
+        
+        // Update state with new profile
+        setUserRole('customer');
+        setUserProfile(newProfile);
+        setNeedsRoleSelection(false); // Ensure role selection is not needed
+        
+        return 'customer';
       }
     } catch (error) {
       console.error('Error in ensureUserRole:', error);
-      if (isGoogleSignIn) {
-        return null; // Trigger role selection for Google users even on error
+      
+      // Even on error, create a default profile to prevent role selection issues
+      try {
+        const userData = {
+          firebaseUid: uid, 
+          email: email,
+          name: email.split('@')[0] || 'User',
+          photoURL: '',
+          role: 'customer', // Default role
+          isVerified: true
+        };
+        
+        const newProfile = await updateUserProfile(userData);
+        setUserRole('customer');
+        setUserProfile(newProfile);
+        setNeedsRoleSelection(false);
+      } catch (profileError) {
+        console.error('Failed to create fallback profile:', profileError);
       }
-      // Default to customer role in case of error for non-Google users
-      setUserRole('customer');
+      
       return 'customer';
     }
   };
@@ -88,48 +110,45 @@ export const AuthProvider = ({ children }) => {
           // Get fresh token for API calls
           await getIdToken();
           
-          try {
-            const userProfile = await getCurrentUserProfile();
-            setUserRole(userProfile.role);
-            setUserProfile(userProfile);
-            // If we have a user profile, we don't need role selection
-            setNeedsRoleSelection(false);
-          } catch (apiError) {
-            console.warn('Could not fetch user from API:', apiError.message);
-            
-            // Check if this is a Google sign-in by looking at the auth provider
-            const isGoogleSignIn = user.providerData && 
-              user.providerData.length > 0 && 
-              user.providerData[0].providerId === 'google.com';
-            
-            console.log('Is Google Sign In:', isGoogleSignIn);
-            
-            // Try to ensure user role, passing the Google sign-in flag
-            const role = await ensureUserRole(user.uid, user.email, isGoogleSignIn);
-            
-            // If role is null, it means we need role selection for a Google user
-            if (role === null && isGoogleSignIn) {
-              console.log('Setting up for role selection');
-              setTempUserCredential({
-                user,
-                additionalData: {}
-              });
-              setNeedsRoleSelection(true);
-            }
-          }
+          // Always ensure user has a role in MongoDB
+          const role = await ensureUserRole(user.uid, user.email, false);
+          console.log('User role ensured:', role);
+          
+          // We should never need role selection now as ensureUserRole creates a default profile
+          setNeedsRoleSelection(false);
         } catch (error) {
-          console.error('Error fetching user data:', error);
-          // Attempt to fix the issue by ensuring role
-          // For errors, don't pass Google flag to ensure we get a default role
-          await ensureUserRole(user.uid, user.email, false);
+          console.error('Error in auth state change handler:', error);
+          
+          try {
+            // Create a default user profile with customer role
+            const userData = {
+              firebaseUid: user.uid,
+              email: user.email,
+              name: user.displayName || user.email.split('@')[0],
+              photoURL: user.photoURL || '',
+              role: 'customer' // Default role
+            };
+            
+            await updateUserProfile(userData);
+            setUserRole('customer');
+            setNeedsRoleSelection(false);
+          } catch (profileError) {
+            console.error('Error creating default profile:', profileError);
+            // If we still can't create a profile, show role selection as fallback
+            setTempUserCredential({
+              user,
+              additionalData: {}
+            });
+            setNeedsRoleSelection(true);
+          }
         }
       } else {
         // User is signed out
         removeAuthToken();
-        setUserRole(null);
-        setUserProfile(null);
+        setUserRole('');
+        setUserProfile({});
         setNeedsRoleSelection(false);
-        setTempUserCredential(null);
+        setTempUserCredential(undefined);
       }
       
       setLoading(false);
@@ -241,17 +260,64 @@ export const AuthProvider = ({ children }) => {
     
     try {
       console.log('DEBUG: Creating user profile with role:', selectedRole);
-      const profile = await createUserProfile(user, { ...additionalData, role: selectedRole });
-      console.log('DEBUG: User profile created successfully:', profile);
+      
+      // Create user profile data
+      const userData = {
+        firebaseUid: user.uid,
+        email: user.email,
+        name: user.displayName || additionalData.name || user.email.split('@')[0],
+        photoURL: user.photoURL || '',
+        role: selectedRole,
+        isVerified: selectedRole === 'provider' ? false : true,
+        phoneNumber: additionalData.phoneNumber || '',
+        address: additionalData.address || ''
+      };
+      
+      // Update user profile in MongoDB through API
+      const profile = await updateUserProfile(userData);
+      console.log('DEBUG: User profile created successfully in MongoDB:', profile);
+      
+      // If this is a provider, create a provider profile as well
+      if (selectedRole === 'provider' && additionalData.businessName) {
+        try {
+          // Create a basic provider profile
+          const providerProfileData = {
+            userId: user.uid,
+            businessName: additionalData.businessName || `${userData.name}'s Business`,
+            description: additionalData.description || 'Professional service provider',
+            yearsOfExperience: additionalData.yearsOfExperience || 1,
+            serviceArea: additionalData.serviceArea || ['Tel Aviv'],
+            isVerified: false
+          };
+          
+          // Make API call to create provider profile
+          await fetch('/api/provider-profiles', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${await getIdToken()}`
+            },
+            body: JSON.stringify(providerProfileData)
+          });
+          
+          console.log('DEBUG: Provider profile created successfully');
+        } catch (providerProfileError) {
+          console.error('DEBUG: Error creating provider profile:', providerProfileError);
+          // Continue even if provider profile creation fails
+        }
+      }
       
       // Update the user role state
       setUserRole(selectedRole);
+      setUserProfile(profile);
       console.log('DEBUG: User role state updated to:', selectedRole);
       
       // Clear the temporary credential and role selection flag
       setTempUserCredential(null);
       setNeedsRoleSelection(false);
       console.log('DEBUG: Cleared tempUserCredential and needsRoleSelection');
+      
+      return profile;
     } catch (error) {
       console.error('DEBUG: Error creating user profile:', error);
       throw error;

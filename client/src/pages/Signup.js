@@ -188,7 +188,7 @@ const Signup = () => {
     
     const userData = {
       role,
-      createdAt: serverTimestamp(),
+      createdAt: new Date(),
     };
     
     if (role === 'provider') {

@@ -6,6 +6,10 @@ const colors = require('colors');
 const Service = require('./models/Service');
 const Booking = require('./models/Booking');
 const User = require('./models/User');
+const Category = require('./models/Category');
+const Favorite = require('./models/Favorite');
+const ProviderProfile = require('./models/ProviderProfile');
+const Review = require('./models/Review');
 
 // Load environment variables
 dotenv.config();
@@ -17,6 +21,66 @@ mongoose.connect(process.env.MONGO_URI, {
 });
 
 // Sample data for seeding with realistic information
+
+// Categories data
+const categories = [
+  {
+    name: 'Plumbing',
+    description: 'Professional plumbing services for your home and business',
+    icon: 'fa-faucet',
+    image: '/images/categories/plumbing.jpg',
+    isActive: true,
+    order: 1
+  },
+  {
+    name: 'Cleaning',
+    description: 'Keep your space spotless with our professional cleaning services',
+    icon: 'fa-broom',
+    image: '/images/categories/cleaning.jpg',
+    isActive: true,
+    order: 2
+  },
+  {
+    name: 'Electrical',
+    description: 'Professional electrical services for all your needs',
+    icon: 'fa-bolt',
+    image: '/images/categories/electrical.jpg',
+    isActive: true,
+    order: 3
+  },
+  {
+    name: 'Gardening',
+    description: 'Transform your outdoor space with our gardening services',
+    icon: 'fa-leaf',
+    image: '/images/categories/gardening.jpg',
+    isActive: true,
+    order: 4
+  },
+  {
+    name: 'Painting',
+    description: 'Professional painting services for interior and exterior',
+    icon: 'fa-paint-roller',
+    image: '/images/categories/painting.jpg',
+    isActive: true,
+    order: 5
+  },
+  {
+    name: 'Moving',
+    description: 'Reliable moving services to help you relocate',
+    icon: 'fa-truck',
+    image: '/images/categories/moving.jpg',
+    isActive: true,
+    order: 6
+  },
+  {
+    name: 'Other',
+    description: 'Additional home services not covered in other categories',
+    icon: 'fa-tools',
+    image: '/images/categories/other.jpg',
+    isActive: true,
+    order: 7
+  }
+];
 const users = [
   // Providers
   {
@@ -281,16 +345,51 @@ const importData = async () => {
     await User.deleteMany();
     await Service.deleteMany();
     await Booking.deleteMany();
+    await Category.deleteMany();
+    await Favorite.deleteMany();
+    await ProviderProfile.deleteMany();
+    await Review.deleteMany();
 
     console.log('Inserting users...'.yellow);
-    // Insert new data
+    // Insert data
     const createdUsers = await User.insertMany(users);
-    
-    console.log('Inserting services...'.yellow);
+    const createdCategories = await Category.insertMany(categories);
     const createdServices = await Service.insertMany(services);
 
+    console.log('Creating provider profiles...'.yellow);
+    // Create provider profiles
+    const providerProfiles = [];
+    for (const user of createdUsers) {
+      if (user.role === 'provider') {
+        providerProfiles.push({
+          userId: user.firebaseUid,
+          businessName: user.name,
+          description: user.bio || `Professional ${user.specialties[0]} services`,
+          yearsOfExperience: Math.floor(Math.random() * 15) + 3, // 3-18 years of experience
+          licenses: [
+            {
+              name: `${user.specialties[0]} Professional License`,
+              number: `LIC-${Math.floor(Math.random() * 10000)}`,
+              expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 2)),
+              verified: true
+            }
+          ],
+          insurance: {
+            hasInsurance: true,
+            provider: 'SafeGuard Insurance',
+            policyNumber: `POL-${Math.floor(Math.random() * 10000)}`,
+            expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+          },
+          serviceArea: ['Tel Aviv', 'Ramat Gan', 'Givatayim', 'Herzliya'],
+          isVerified: true
+        });
+      }
+    }
+    
+    const createdProviderProfiles = await ProviderProfile.insertMany(providerProfiles);
+
     console.log('Creating bookings...'.yellow);
-    // Create bookings with different statuses to simulate a full flow
+    // Create bookings with references to services
     const currentDate = new Date();
     const tomorrow = new Date(currentDate);
     tomorrow.setDate(currentDate.getDate() + 1);
@@ -303,6 +402,32 @@ const importData = async () => {
     
     const twoWeeksAgo = new Date(currentDate);
     twoWeeksAgo.setDate(currentDate.getDate() - 14);
+    
+    // Create some favorites
+    const favorites = [
+      {
+        userId: 'customer1',
+        serviceId: createdServices[0]._id
+      },
+      {
+        userId: 'customer1',
+        serviceId: createdServices[3]._id
+      },
+      {
+        userId: 'customer2',
+        serviceId: createdServices[1]._id
+      },
+      {
+        userId: 'customer2',
+        serviceId: createdServices[4]._id
+      },
+      {
+        userId: 'customer3',
+        serviceId: createdServices[6]._id
+      }
+    ];
+    
+    await Favorite.insertMany(favorites);
     
     const bookings = [
       // Customer 1 (David) bookings
@@ -445,7 +570,35 @@ const importData = async () => {
       }
     ];
 
-    await Booking.insertMany(bookings);
+    const createdBookings = await Booking.insertMany(bookings);
+    
+    // Create reviews for completed bookings
+    const reviews = [];
+    for (const booking of createdBookings) {
+      if (booking.status === 'completed') {
+        reviews.push({
+          bookingId: booking._id,
+          serviceId: booking.serviceId,
+          userId: booking.userId,
+          userName: booking.userName,
+          userPhoto: createdUsers.find(u => u.firebaseUid === booking.userId)?.photoURL || '',
+          providerId: booking.providerId,
+          rating: Math.floor(Math.random() * 2) + 4, // 4-5 star ratings
+          comment: 'Great service! Very professional and completed the work quickly.',
+          createdAt: new Date(new Date(booking.date).getTime() + 86400000) // 1 day after service date
+        });
+      }
+    }
+    
+    // Add some provider responses to reviews
+    if (reviews.length > 0) {
+      reviews[0].response = {
+        text: 'Thank you for your kind review! We appreciate your business.',
+        date: new Date(new Date(reviews[0].createdAt).getTime() + 86400000) // 1 day after review
+      };
+    }
+    
+    await Review.insertMany(reviews);
 
     console.log('Data imported successfully!'.green.inverse);
     process.exit();
@@ -461,6 +614,10 @@ const destroyData = async () => {
     await User.deleteMany();
     await Service.deleteMany();
     await Booking.deleteMany();
+    await Category.deleteMany();
+    await Favorite.deleteMany();
+    await ProviderProfile.deleteMany();
+    await Review.deleteMany();
 
     console.log('Data destroyed!'.red.inverse);
     process.exit();

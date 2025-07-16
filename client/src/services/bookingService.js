@@ -59,8 +59,15 @@ export const getUserBookings = async (userId) => {
  */
 export const getProviderBookings = async (providerId) => {
   try {
-    // Call API to get provider bookings
+    // Call API to get provider bookings with providerId as a query parameter
     const bookings = await get('/bookings', { providerId });
+    
+    // If the API returns an object with a bookings property, return that
+    if (bookings && bookings.bookings) {
+      return bookings.bookings;
+    }
+    
+    // Otherwise return the bookings array directly
     return bookings;
   } catch (error) {
     console.error('Error fetching provider bookings:', error);

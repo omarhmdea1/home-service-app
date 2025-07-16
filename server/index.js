@@ -21,6 +21,11 @@ try {
 const servicesRouter = require('./routes/services');
 const bookingsRouter = require('./routes/bookings');
 const usersRouter = require('./routes/users');
+const categoriesRouter = require('./routes/categories');
+const favoritesRouter = require('./routes/favorites');
+const providerProfilesRouter = require('./routes/providerProfiles');
+const reviewsRouter = require('./routes/reviews');
+const messagesRouter = require('./routes/messageRoutes');
 
 const app = express();
 
@@ -34,6 +39,11 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/api/services', servicesRouter);
 app.use('/api/bookings', bookingsRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/categories', categoriesRouter);
+app.use('/api/favorites', favoritesRouter);
+app.use('/api/provider-profiles', providerProfilesRouter);
+app.use('/api/reviews', reviewsRouter);
+app.use('/api/messages', messagesRouter);
 
 // Root route for easy testing
 app.get('/', (req, res) => {

@@ -125,9 +125,16 @@ const Login = () => {
     setLoading(true);
     
     try {
-      // Add a callback function to the signInWithGoogle call
+      // Call the signInWithGoogle function from AuthProvider
       const result = await signInWithGoogle();
       console.log('Google sign-in successful, redirecting...');
+      
+      // Check if we need role selection
+      if (result && result.needsRoleSelection) {
+        console.log('User needs to select a role');
+        // Role selection will be handled by AuthProvider
+        return;
+      }
       
       // Set a flag in localStorage to indicate successful login
       localStorage.setItem('googleLoginSuccess', 'true');
@@ -143,9 +150,6 @@ const Login = () => {
       } else {
         // This might be a navigation error after successful login
         console.log('Non-critical error during Google sign-in:', error);
-        // Still try to redirect if we might have logged in successfully
-        localStorage.setItem('googleLoginSuccess', 'true');
-        window.location.href = '/';
       }
       setLoading(false);
     }
