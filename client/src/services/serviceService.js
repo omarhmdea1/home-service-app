@@ -1,7 +1,6 @@
 import { get, post, put, del } from './apiService';
 import { getAuth } from 'firebase/auth';
 
-// Only using Firebase for authentication, not for data storage
 
 /**
  * Get all services with optional filtering
@@ -11,10 +10,8 @@ import { getAuth } from 'firebase/auth';
  */
 export const getServices = async (filters = {}, limitCount = 50) => {
   try {
-    // Prepare query parameters
     const params = { ...filters, limit: limitCount };
     
-    // Call API to get services
     const services = await get('/services', params);
     return services;
   } catch (error) {
@@ -30,7 +27,6 @@ export const getServices = async (filters = {}, limitCount = 50) => {
  */
 export const getServiceById = async (serviceId) => {
   try {
-    // Call API to get service by ID
     const service = await get(`/services/${serviceId}`);
     return service;
   } catch (error) {
@@ -46,7 +42,6 @@ export const getServiceById = async (serviceId) => {
  */
 export const createService = async (serviceData) => {
   try {
-    // Get current user ID from Firebase Auth
     const auth = getAuth();
     const user = auth.currentUser;
     
@@ -54,7 +49,6 @@ export const createService = async (serviceData) => {
       throw new Error('User must be logged in to create a service');
     }
     
-    // Add provider info to service data
     const serviceWithProviderInfo = {
       ...serviceData,
       providerId: user.uid,
@@ -63,7 +57,6 @@ export const createService = async (serviceData) => {
       isActive: true
     };
     
-    // Call API to create service
     const response = await post('/services', serviceWithProviderInfo);
     return response;
   } catch (error) {
@@ -80,7 +73,6 @@ export const createService = async (serviceData) => {
  */
 export const updateService = async (serviceId, serviceData) => {
   try {
-    // Call API to update service
     const response = await put(`/services/${serviceId}`, serviceData);
     return response;
   } catch (error) {
@@ -96,7 +88,6 @@ export const updateService = async (serviceId, serviceData) => {
  */
 export const deleteService = async (serviceId) => {
   try {
-    // Call API to delete service
     await del(`/services/${serviceId}`);
   } catch (error) {
     console.error('Error deleting service:', error);

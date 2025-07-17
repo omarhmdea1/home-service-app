@@ -1,8 +1,6 @@
 import { get, post, put, del } from './apiService';
 import { getAuth } from 'firebase/auth';
 
-// Only using Firebase for authentication, not for data storage
-// All booking data is stored in MongoDB
 
 /**
  * Create a new booking
@@ -11,7 +9,6 @@ import { getAuth } from 'firebase/auth';
  */
 export const createBooking = async (bookingData) => {
   try {
-    // Get current user ID from Firebase Auth
     const auth = getAuth();
     const user = auth.currentUser;
     
@@ -19,7 +16,6 @@ export const createBooking = async (bookingData) => {
       throw new Error('User must be logged in to create a booking');
     }
     
-    // Add user info to booking data
     const bookingWithUserInfo = {
       ...bookingData,
       userId: user.uid,
@@ -27,7 +23,6 @@ export const createBooking = async (bookingData) => {
       userEmail: user.email
     };
     
-    // Call API to create booking
     const response = await post('/bookings', bookingWithUserInfo);
     return response.booking;
   } catch (error) {
@@ -43,7 +38,6 @@ export const createBooking = async (bookingData) => {
  */
 export const getUserBookings = async (userId) => {
   try {
-    // Call API to get user bookings
     const bookings = await get('/bookings', { userId });
     return bookings;
   } catch (error) {
@@ -59,15 +53,12 @@ export const getUserBookings = async (userId) => {
  */
 export const getProviderBookings = async (providerId) => {
   try {
-    // Call API to get provider bookings with providerId as a query parameter
     const bookings = await get('/bookings', { providerId });
     
-    // If the API returns an object with a bookings property, return that
     if (bookings && bookings.bookings) {
       return bookings.bookings;
     }
     
-    // Otherwise return the bookings array directly
     return bookings;
   } catch (error) {
     console.error('Error fetching provider bookings:', error);
@@ -82,7 +73,6 @@ export const getProviderBookings = async (providerId) => {
  */
 export const getBookingById = async (bookingId) => {
   try {
-    // Call API to get booking by ID
     const booking = await get(`/bookings/${bookingId}`);
     return booking;
   } catch (error) {
@@ -105,7 +95,6 @@ export const updateBookingStatus = async (bookingId, status) => {
       throw new Error('Invalid status');
     }
     
-    // Call API to update booking status
     const response = await put(`/bookings/${bookingId}/status`, { status });
     return response.booking;
   } catch (error) {
@@ -121,7 +110,6 @@ export const updateBookingStatus = async (bookingId, status) => {
  */
 export const deleteBooking = async (bookingId) => {
   try {
-    // Call API to delete booking
     await del(`/bookings/${bookingId}`);
   } catch (error) {
     console.error('Error deleting booking:', error);
