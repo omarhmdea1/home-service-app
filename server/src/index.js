@@ -5,14 +5,10 @@ const connectDB = require('./config/db');
 
 // Load environment variables
 dotenv.config();
-console.log('Environment variables loaded');
-console.log(`MONGO_URI exists: ${!!process.env.MONGO_URI}`);
-console.log(`PORT: ${process.env.PORT || 5001}`);
 
 // Connect to database
 try {
   connectDB();
-  console.log('Database connection initiated');
 } catch (error) {
   console.error(`Failed to connect to database: ${error.message}`);
 }
