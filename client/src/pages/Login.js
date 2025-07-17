@@ -136,11 +136,8 @@ const Login = () => {
         return;
       }
       
-      // Set a flag in localStorage to indicate successful login
-      localStorage.setItem('googleLoginSuccess', 'true');
-      
-      // Force immediate redirect to home page
-      window.location.href = '/';
+      // Navigate to home page on successful login
+      navigate('/');
     } catch (error) {
       // Only show error if it's an actual authentication error
       // Some errors might be thrown even on successful login due to navigation

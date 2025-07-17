@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../components/auth/AuthProvider';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { reload } from 'firebase/auth';
 import { motion } from 'framer-motion';
 
 const VerifyEmail = () => {
@@ -53,9 +54,10 @@ const VerifyEmail = () => {
     }
   };
   
-  const handleRefresh = () => {
-    // Force refresh of the user object to check if email has been verified
-    window.location.reload();
+  const handleRefresh = async () => {
+    if (currentUser) {
+      await reload(currentUser);
+    }
   };
   
   return (
