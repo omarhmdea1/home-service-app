@@ -14,6 +14,7 @@ A full-stack application for booking home services, connecting customers with se
 - Service browsing and booking
 - Provider dashboard for managing services and bookings
 - MongoDB database integration for persistent storage
+- Customer–provider messaging (chat available on the Booking Detail page)
 
 ## Tech Stack
 
@@ -130,6 +131,12 @@ node seeder.js -d
 - `POST /api/bookings` - Create a booking
 - `PUT /api/bookings/:id/status` - Update booking status
 - `DELETE /api/bookings/:id` - Delete a booking
+
+### Messages
+- `POST /api/messages` - Send a message
+- `GET /api/messages/booking/:bookingId` - Get messages for a booking
+- `GET /api/messages/unread` - Get unread message count
+- `PUT /api/messages/:id/read` - Mark a message as read
 
 ## Client-Server Integration
 
