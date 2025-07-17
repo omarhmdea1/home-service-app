@@ -122,7 +122,7 @@ router.put('/:id/status', async (req, res) => {
     const booking = await Booking.findByIdAndUpdate(
       req.params.id,
       { status, updatedAt: Date.now() },
-      { new: true }
+      { new: true, runValidators: true }
     );
     
     if (!booking) {
