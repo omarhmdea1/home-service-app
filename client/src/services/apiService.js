@@ -28,7 +28,6 @@ async function handleErrorResponse(response) {
     const errorData = await response.json();
     throw new Error(errorData.message || 'Something went wrong');
   } catch (parseError) {
-    // If we can't parse as JSON, use status text
     throw new Error(`Server error: ${response.status} ${response.statusText || 'Unknown error'}`);
   }
 }
@@ -41,20 +40,16 @@ async function handleErrorResponse(response) {
  */
 export const get = async (endpoint, params = {}) => {
   try {
-    // Build URL with query parameters
     const url = new URL(`${API_BASE_URL}${endpoint}`);
     
-    // Add query parameters
     Object.keys(params).forEach(key => {
       if (params[key] !== undefined && params[key] !== null) {
         url.searchParams.append(key, params[key]);
       }
     });
     
-    // Get auth token from our utility
     const token = getAuthToken();
     
-    // Make the request
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
@@ -63,12 +58,10 @@ export const get = async (endpoint, params = {}) => {
       }
     });
     
-    // Check if response is ok
     if (!response.ok) {
       await handleErrorResponse(response);
     }
     
-    // Safely parse the JSON response
     return await safeJsonParse(response);
   } catch (error) {
     console.error(`Error in GET request to ${endpoint}:`, error);
@@ -84,10 +77,8 @@ export const get = async (endpoint, params = {}) => {
  */
 export const post = async (endpoint, data = {}) => {
   try {
-    // Get auth token from our utility
     const token = getAuthToken();
     
-    // Make the request
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
@@ -97,12 +88,10 @@ export const post = async (endpoint, data = {}) => {
       body: JSON.stringify(data)
     });
     
-    // Check if response is ok
     if (!response.ok) {
       await handleErrorResponse(response);
     }
     
-    // Safely parse the JSON response
     return await safeJsonParse(response);
   } catch (error) {
     console.error(`Error in POST request to ${endpoint}:`, error);
@@ -118,10 +107,8 @@ export const post = async (endpoint, data = {}) => {
  */
 export const put = async (endpoint, data = {}) => {
   try {
-    // Get auth token from our utility
     const token = getAuthToken();
     
-    // Make the request
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',
       headers: {
@@ -131,12 +118,10 @@ export const put = async (endpoint, data = {}) => {
       body: JSON.stringify(data)
     });
     
-    // Check if response is ok
     if (!response.ok) {
       await handleErrorResponse(response);
     }
     
-    // Safely parse the JSON response
     return await safeJsonParse(response);
   } catch (error) {
     console.error(`Error in PUT request to ${endpoint}:`, error);
@@ -151,10 +136,8 @@ export const put = async (endpoint, data = {}) => {
  */
 export const del = async (endpoint) => {
   try {
-    // Get auth token from our utility
     const token = getAuthToken();
     
-    // Make the request
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'DELETE',
       headers: {
@@ -163,12 +146,10 @@ export const del = async (endpoint) => {
       }
     });
     
-    // Check if response is ok
     if (!response.ok) {
       await handleErrorResponse(response);
     }
     
-    // Safely parse the JSON response
     return await safeJsonParse(response);
   } catch (error) {
     console.error(`Error in DELETE request to ${endpoint}:`, error);
