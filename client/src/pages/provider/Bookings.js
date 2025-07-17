@@ -3,11 +3,13 @@ import { useAuth } from '../../components/auth/AuthProvider';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { getProviderBookings, updateBookingStatus } from '../../services/bookingService';
+import StatusBadge from "../../components/common/StatusBadge";
 
 const ProviderBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState("");
   const { userProfile } = useAuth();
 
   // Fetch provider bookings
@@ -32,7 +34,7 @@ const ProviderBookings = () => {
           customerName: booking.userName || booking.userEmail || 'Customer',
           service: booking.serviceTitle || 'Service',
           date: booking.date,
-          time: booking.timeSlot,
+          time: booking.time,
           status: booking.status,
           address: booking.address,
           notes: booking.notes,
@@ -50,45 +52,47 @@ const ProviderBookings = () => {
 
     fetchBookings();
   }, [userProfile]);
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
 
   // Handle booking status update
   const handleStatusUpdate = async (bookingId, newStatus) => {
     try {
       setLoading(true);
-      
-      // Call the API to update the booking status
+      setError('');
+
+      // Update status on the server
       await updateBookingStatus(bookingId, newStatus);
-      
-      // Update the local state
-      setBookings(prevBookings => 
-        prevBookings.map(booking => 
-          booking.id === bookingId ? { ...booking, status: newStatus } : booking
-        )
-      );
-      
-      setLoading(false);
+
+      // Refresh bookings from the API to ensure state is in sync
+      const updated = await getProviderBookings(userProfile.firebaseUid);
+      const formatted = updated.map(b => ({
+        id: b._id,
+        customerName: b.userName || b.userEmail || 'Customer',
+        service: b.serviceTitle || 'Service',
+        date: b.date,
+        time: b.time,
+        status: b.status,
+        address: b.address,
+        notes: b.notes,
+        serviceId: b.serviceId
+      }));
+
+      setBookings(formatted);
+      setSuccess('Booking status updated');
     } catch (err) {
       console.error('Error updating booking status:', err);
       setError(`Failed to update booking status: ${err.message}`);
+    } finally {
       setLoading(false);
     }
   };
 
-  // Get status badge color
-  const getStatusBadgeColor = (status) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'confirmed':
-        return 'bg-blue-100 text-blue-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -104,6 +108,12 @@ const ProviderBookings = () => {
             <p className="text-red-700 text-sm">{error}</p>
           </div>
         )}
+          {success && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-green-700 text-sm">{success}</p>
+            </div>
+          )}
+
         
         {loading ? (
           <div className="flex justify-center items-center h-64">
@@ -156,10 +166,7 @@ const ProviderBookings = () => {
                         <div className="text-sm text-gray-900">{booking.address}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(booking.status)}`}>
-                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                        </span>
-                      </td>
+                        <StatusBadge status={booking.status} />
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2 items-center">
                           <Link 

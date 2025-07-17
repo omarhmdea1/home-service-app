@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/auth/AuthProvider';
 import { getUserBookings, getProviderBookings, updateBookingStatus, deleteBooking } from '../services/bookingService';
+import StatusBadge from '../components/common/StatusBadge';
 import { getServiceById } from '../services/serviceService';
 import { format } from 'date-fns';
 
@@ -179,48 +180,6 @@ const MyBookings = () => {
     return timeString || 'Not specified';
   };
 
-  // Status badge component
-  const StatusBadge = ({ status }) => {
-    let bgColor, textColor, label;
-    
-    switch (status) {
-      case 'pending':
-        bgColor = 'bg-yellow-100';
-        textColor = 'text-yellow-800';
-        label = 'Pending';
-        break;
-      case 'confirmed':
-        bgColor = 'bg-green-100';
-        textColor = 'text-green-800';
-        label = 'Confirmed';
-        break;
-      case 'completed':
-        bgColor = 'bg-blue-100';
-        textColor = 'text-blue-800';
-        label = 'Completed';
-        break;
-      case 'cancelled':
-        bgColor = 'bg-red-100';
-        textColor = 'text-red-800';
-        label = 'Cancelled';
-        break;
-      case 'expired':
-        bgColor = 'bg-gray-100';
-        textColor = 'text-gray-800';
-        label = 'Expired';
-        break;
-      default:
-        bgColor = 'bg-gray-100';
-        textColor = 'text-gray-800';
-        label = status || 'Unknown';
-    }
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bgColor} ${textColor}`}>
-        {label}
-      </span>
-    );
-  };
 
   // Loading state
   if (loading && bookings.length === 0) {
