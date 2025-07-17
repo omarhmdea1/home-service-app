@@ -159,14 +159,12 @@ const Signup = () => {
       setSuccess(true);
       setVerificationSent(true);
       
-      // Redirect based on role after a delay to show verification message
-      setTimeout(() => {
-        if (role === 'provider') {
-          navigate('/provider/dashboard');
-        } else {
-          navigate('/services');
-        }
-      }, 3000);
+      // Redirect based on role
+      if (role === 'provider') {
+        navigate('/provider/dashboard');
+      } else {
+        navigate('/services');
+      }
     } catch (error) {
       console.error('Failed to signup', error);
       if (error.code === 'auth/email-already-in-use') {
@@ -203,14 +201,12 @@ const Signup = () => {
       .then(() => {
         setSuccess(true);
         setLoading(false);
-        
-        setTimeout(() => {
-          if (role === 'provider') {
-            navigate('/provider/dashboard');
-          } else {
-            navigate('/services');
-          }
-        }, 2000);
+
+        if (role === 'provider') {
+          navigate('/provider/dashboard');
+        } else {
+          navigate('/services');
+        }
       })
       .catch((error) => {
         if (error && error.code && error.code.startsWith('auth/')) {

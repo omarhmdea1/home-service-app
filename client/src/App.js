@@ -541,22 +541,6 @@ function AppContent() {
   );
 }
 
-// Component to handle Google sign-in redirection
-const GoogleRedirectHandler = () => {
-  React.useEffect(() => {
-    // Check if we have a Google login success flag
-    const googleLoginSuccess = localStorage.getItem('googleLoginSuccess');
-    if (googleLoginSuccess === 'true') {
-      console.log('Detected Google login success flag, redirecting to home');
-      // Clear the flag
-      localStorage.removeItem('googleLoginSuccess');
-      // Redirect to home page
-      window.location.href = '/';
-    }
-  }, []);
-  
-  return null; // This component doesn't render anything
-};
 
 function App() {
   // Initialize app when component mounts
@@ -574,7 +558,6 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <GoogleRedirectHandler />
         <AppContent />
       </AuthProvider>
     </Router>
