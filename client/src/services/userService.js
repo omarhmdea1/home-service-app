@@ -18,10 +18,8 @@ export const getCurrentUserProfile = async () => {
       throw new Error('User not authenticated');
     }
     
-    // Get fresh token before making the request
     await getIdToken();
     
-    // Get user profile from backend using the firebaseUid parameter
     const userProfile = await get(`/users/${user.uid}`);
     return userProfile;
   } catch (error) {
@@ -44,26 +42,20 @@ export const updateUserProfile = async (userData) => {
       throw new Error('User not authenticated');
     }
     
-    // Get fresh token before making the request
     await getIdToken();
     
     try {
-      // Try to update existing user profile using the firebaseUid parameter
       const updatedProfile = await put(`/users/${user.uid}`, userData);
       return updatedProfile;
     } catch (error) {
-      // If user doesn't exist, create a new profile
-      // Handle both 'User not found' and duplicate email errors
       if (error.message === 'User not found' || error.message.includes('duplicate key error')) {
         console.log('User not found in database or duplicate email, trying to find existing user by email');
         
         try {
-          // First try to find if a user with this email already exists
           const existingUser = await get(`/users/email/${user.email}`);
           
           if (existingUser && existingUser._id) {
             console.log('Found existing user by email, updating with Firebase UID');
-            // Update the existing user with the Firebase UID
             const updatedUser = await put(`/users/id/${existingUser._id}`, {
               ...userData,
               firebaseUid: user.uid
@@ -74,7 +66,6 @@ export const updateUserProfile = async (userData) => {
           console.log('No existing user found by email, creating new profile');
         }
         
-        // Create new user with unique email
         const newProfile = await post('/users', {
           ...userData,
           firebaseUid: user.uid,
@@ -83,7 +74,6 @@ export const updateUserProfile = async (userData) => {
         });
         return newProfile;
       } else {
-        // Re-throw if it's not a 'User not found' error
         throw error;
       }
     }
@@ -107,10 +97,8 @@ export const registerProvider = async (providerData) => {
       throw new Error('User not authenticated');
     }
     
-    // Get fresh token before making the request
     await getIdToken();
     
-    // Register as provider
     const providerProfile = await post('/users/provider-registration', {
       ...providerData,
       firebaseUid: user.uid,
@@ -133,7 +121,6 @@ export const setupAuthListener = () => {
   
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      // User is signed in, get and store token
       try {
         const token = await user.getIdToken();
         setAuthToken(token);
@@ -141,7 +128,6 @@ export const setupAuthListener = () => {
         console.error('Error getting token:', error);
       }
     } else {
-      // User is signed out, remove token
       setAuthToken(null);
     }
   });
@@ -154,10 +140,8 @@ export const setupAuthListener = () => {
  */
 export const getProviders = async (filters = {}) => {
   try {
-    // Add role=provider filter
     const params = { ...filters, role: 'provider' };
     
-    // Get providers from backend
     const providers = await get('/users', params);
     return providers;
   } catch (error) {
@@ -173,7 +157,6 @@ export const getProviders = async (filters = {}) => {
  */
 export const getProviderById = async (providerId) => {
   try {
-    // Get provider from backend
     const provider = await get(`/users/${providerId}`);
     return provider;
   } catch (error) {
