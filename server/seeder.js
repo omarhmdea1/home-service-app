@@ -3,13 +3,13 @@ const dotenv = require('dotenv');
 const colors = require('colors');
 
 // Load models
-const Service = require('./models/Service');
-const Booking = require('./models/Booking');
-const User = require('./models/User');
-const Category = require('./models/Category');
-const Favorite = require('./models/Favorite');
-const ProviderProfile = require('./models/ProviderProfile');
-const Review = require('./models/Review');
+const Service = require('./src/models/Service');
+const Booking = require('./src/models/Booking');
+const User = require('./src/models/User');
+const Category = require('./src/models/Category');
+const Favorite = require('./src/models/Favorite');
+const ProviderProfile = require('./src/models/ProviderProfile');
+const Review = require('./src/models/Review');
 
 // Load environment variables
 dotenv.config();
