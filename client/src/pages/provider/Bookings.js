@@ -167,6 +167,7 @@ const ProviderBookings = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <StatusBadge status={booking.status} />
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2 items-center">
                           <Link 

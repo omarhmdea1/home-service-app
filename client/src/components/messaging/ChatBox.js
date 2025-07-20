@@ -4,16 +4,17 @@ import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import { useAuth } from '../auth/AuthProvider';
 
-const ChatBox = ({ booking, onClose }) => {
+const ChatBox = ({ booking, onClose, isStandalone = false }) => {
   const { userRole } = useAuth();
   const [recipientId, setRecipientId] = useState('');
   
   useEffect(() => {
-    // Determine the recipient based on user role
-    if (userRole === 'provider') {
-      setRecipientId(booking.userId); // If provider, send to customer
-    } else {
-      setRecipientId(booking.providerId); // If customer, send to provider
+    if (booking) {
+      if (userRole === 'provider') {
+        setRecipientId(booking.userId);
+      } else {
+        setRecipientId(booking.providerId);
+      }
     }
   }, [booking, userRole]);
 
@@ -22,25 +23,57 @@ const ChatBox = ({ booking, onClose }) => {
     // We could trigger a refresh of the message list here if needed
   };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-lg shadow-lg overflow-hidden"
-    >
-      <div className="bg-blue-500 text-white px-4 py-3 flex justify-between items-center">
-        <h3 className="font-medium">
-          Chat - Booking #{booking._id.substring(booking._id.length - 6)}
-        </h3>
-        <button
-          onClick={onClose}
-          className="text-white hover:text-gray-200 focus:outline-none"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+  // Determine the appropriate container based on whether this is standalone or modal
+  const Container = isStandalone ? React.Fragment : motion.div;
+  const InnerContainer = isStandalone ? React.Fragment : motion.div;
+  
+  // If no booking is selected in standalone mode, show a message
+  if (isStandalone && !booking) {
+    return (
+      <div className="bg-white shadow rounded-lg p-6 h-96 flex items-center justify-center">
+        <div className="text-center text-gray-500">
+          <svg 
+            className="mx-auto h-12 w-12 text-gray-400" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth="2" 
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" 
+            />
           </svg>
-        </button>
+          <p className="mt-2 text-sm font-medium">
+            Select a conversation to start messaging
+          </p>
+        </div>
       </div>
+    );
+  }
+  
+  // If no booking is provided at all, return null
+  if (!booking) return null;
+  
+  return (
+    <div className={isStandalone ? "" : "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"}>
+      <div className={isStandalone ? "bg-white shadow rounded-lg overflow-hidden" : "bg-white rounded-lg shadow-xl w-full max-w-2xl overflow-hidden"}>
+        <div className="flex justify-between items-center border-b p-4">
+          <h2 className="text-xl font-semibold text-gray-800">
+            Chat - {booking.serviceTitle || 'Service Booking'}
+          </h2>
+          {onClose && (
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
       
       <div className="p-4">
         <div className="mb-4">
@@ -60,7 +93,8 @@ const ChatBox = ({ booking, onClose }) => {
           onMessageSent={handleMessageSent}
         />
       </div>
-    </motion.div>
+      </div>
+    </div>
   );
 };
 

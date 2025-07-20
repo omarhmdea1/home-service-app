@@ -16,6 +16,7 @@ import BookService from './pages/BookService';
 import MyBookings from './pages/MyBookings';
 import BookingDetail from './pages/BookingDetail';
 import Profile from './pages/Profile';
+import Chat from './pages/Chat';
 import RoleSelection from './components/auth/RoleSelection';
 import { useAuth } from './components/auth/AuthProvider';
 import MessageNotificationBadge from './components/messaging/MessageNotificationBadge';
@@ -96,6 +97,12 @@ const Navigation = () => {
             <Link to="/contact" className="text-gray-600 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors duration-200">
               Contact
             </Link>
+            {currentUser && (
+              <Link to="/chat" className="text-gray-600 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors duration-200 relative">
+                Messages
+                <MessageNotificationBadge />
+              </Link>
+            )}
             {currentUser && userRole === 'provider' && (
               <Link 
                 to="/provider/dashboard" 
@@ -307,6 +314,14 @@ const Navigation = () => {
           <Link to="/contact" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50" onClick={closeMobileMenu}>
             Contact
           </Link>
+          {currentUser && (
+            <Link to="/chat" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50 relative" onClick={closeMobileMenu}>
+              Messages
+              <span className="inline-block ml-2">
+                <MessageNotificationBadge />
+              </span>
+            </Link>
+          )}
           {currentUser && userRole === 'provider' && (
             <Link to="/provider/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50" onClick={closeMobileMenu}>
               Provider Dashboard
@@ -502,6 +517,13 @@ function AppContent() {
           <Route path="/profile" element={
             <PrivateRoute>
               <Profile />
+            </PrivateRoute>
+          } />
+          
+          {/* Chat page (available to all authenticated users) */}
+          <Route path="/chat" element={
+            <PrivateRoute>
+              <Chat />
             </PrivateRoute>
           } />
           
