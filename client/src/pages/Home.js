@@ -36,8 +36,11 @@ const CustomerDashboard = () => {
       // Fetch services and bookings in parallel
       const [servicesRes, bookingsRes] = await Promise.all([
         fetch('http://localhost:5001/api/services'),
-        fetch('http://localhost:5001/api/bookings', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        fetch(`http://localhost:5001/api/bookings?userId=${currentUser.uid}`, {
+          headers: { 
+            'Content-Type': 'application/json',
+            // Add auth header if needed
+          }
         })
       ]);
 
@@ -48,10 +51,65 @@ const CustomerDashboard = () => {
 
       if (bookingsRes.ok) {
         const bookingsData = await bookingsRes.json();
-        setBookings(bookingsData.slice(0, 3)); // Show only recent 3 bookings
+        // Sort by date (newest first) and take only recent 3
+        const sortedBookings = bookingsData
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          .slice(0, 3);
+        
+        // Fetch service details for each booking
+        const bookingsWithServiceDetails = await Promise.all(
+          sortedBookings.map(async (booking) => {
+            try {
+              const serviceRes = await fetch(`http://localhost:5001/api/services/${booking.serviceId}`);
+              if (serviceRes.ok) {
+                const serviceData = await serviceRes.json();
+                return {
+                  ...booking,
+                  serviceName: serviceData.title,
+                  serviceCategory: serviceData.category,
+                  date: new Date(booking.date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  }),
+                  time: booking.time || 'Time TBD'
+                };
+              }
+              return {
+                ...booking,
+                serviceName: 'Service',
+                serviceCategory: 'general',
+                date: new Date(booking.date).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                }),
+                time: booking.time || 'Time TBD'
+              };
+            } catch (error) {
+              console.error('Error fetching service details for booking:', error);
+              return {
+                ...booking,
+                serviceName: 'Service',
+                serviceCategory: 'general',
+                date: new Date(booking.date).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                }),
+                time: booking.time || 'Time TBD'
+              };
+            }
+          })
+        );
+        
+        setBookings(bookingsWithServiceDetails);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      // Set empty arrays on error so UI doesn't break
+      setServices([]);
+      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -253,21 +311,116 @@ const ProviderDashboard = () => {
 
   const fetchProviderData = async () => {
     try {
-      // In a real app, you'd fetch this from your API
-      // For now, we'll use mock data
-      setStats({
-        totalBookings: 24,
-        pendingRequests: 3,
-        totalEarnings: 1250,
-        activeServices: 5
+      // Fetch provider bookings
+      const bookingsRes = await fetch(`http://localhost:5001/api/bookings?providerId=${currentUser.uid}`, {
+        headers: { 
+          'Content-Type': 'application/json',
+        }
       });
-      setRecentBookings([
-        { id: 1, service: 'House Cleaning', customer: 'John D.', date: 'Today, 2:00 PM', status: 'confirmed', amount: 120 },
-        { id: 2, service: 'Plumbing Repair', customer: 'Sarah M.', date: 'Tomorrow, 10:00 AM', status: 'pending', amount: 95 },
-        { id: 3, service: 'Garden Maintenance', customer: 'Mike R.', date: 'Dec 28, 3:00 PM', status: 'completed', amount: 80 },
-      ]);
+
+      if (bookingsRes.ok) {
+        const bookingsData = await bookingsRes.json();
+        
+        // Calculate stats from real data
+        const totalBookings = bookingsData.length;
+        const pendingRequests = bookingsData.filter(b => b.status === 'pending').length;
+        const completedBookings = bookingsData.filter(b => b.status === 'completed');
+        const totalEarnings = completedBookings.reduce((sum, booking) => sum + (booking.price || 0), 0);
+        
+        // Get active services count
+        const servicesRes = await fetch(`http://localhost:5001/api/services?providerId=${currentUser.uid}`);
+        let activeServices = 0;
+        if (servicesRes.ok) {
+          const servicesData = await servicesRes.json();
+          activeServices = servicesData.length;
+        }
+
+        setStats({
+          totalBookings,
+          pendingRequests,
+          totalEarnings,
+          activeServices
+        });
+
+        // Sort bookings and take recent 3
+        const sortedBookings = bookingsData
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          .slice(0, 3);
+
+        // Fetch service details and format booking data
+        const bookingsWithServiceDetails = await Promise.all(
+          sortedBookings.map(async (booking) => {
+            try {
+              const serviceRes = await fetch(`http://localhost:5001/api/services/${booking.serviceId}`);
+              if (serviceRes.ok) {
+                const serviceData = await serviceRes.json();
+                return {
+                  id: booking._id,
+                  service: serviceData.title,
+                  customer: booking.userName || booking.userEmail?.split('@')[0] || 'Customer',
+                  date: new Date(booking.date).toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric'
+                  }),
+                  time: booking.time || 'Time TBD',
+                  status: booking.status,
+                  amount: booking.price || 0
+                };
+              }
+              return {
+                id: booking._id,
+                service: 'Service',
+                customer: booking.userName || booking.userEmail?.split('@')[0] || 'Customer',
+                date: new Date(booking.date).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric'
+                }),
+                time: booking.time || 'Time TBD',
+                status: booking.status,
+                amount: booking.price || 0
+              };
+            } catch (error) {
+              console.error('Error fetching service details for provider booking:', error);
+              return {
+                id: booking._id,
+                service: 'Service',
+                customer: booking.userName || booking.userEmail?.split('@')[0] || 'Customer',
+                date: new Date(booking.date).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric'
+                }),
+                time: booking.time || 'Time TBD',
+                status: booking.status,
+                amount: booking.price || 0
+              };
+            }
+          })
+        );
+
+        setRecentBookings(bookingsWithServiceDetails);
+      } else {
+        // Fallback to default values if API fails
+        setStats({
+          totalBookings: 0,
+          pendingRequests: 0,
+          totalEarnings: 0,
+          activeServices: 0
+        });
+        setRecentBookings([]);
+      }
     } catch (error) {
       console.error('Error fetching provider data:', error);
+      // Fallback to default values
+      setStats({
+        totalBookings: 0,
+        pendingRequests: 0,
+        totalEarnings: 0,
+        activeServices: 0
+      });
+      setRecentBookings([]);
     }
   };
 
@@ -623,6 +776,21 @@ const BookingCard = ({ booking, index }) => {
     pending: 'bg-amber-100 text-amber-800 border-amber-200'
   };
 
+  const getCategoryIcon = (category) => {
+    const icons = {
+      cleaning: '🧹',
+      plumbing: '🔧', 
+      electrical: '⚡',
+      gardening: '🌱',
+      painting: '🎨',
+      moving: '📦',
+      repair: '🔨',
+      emergency: '🚨',
+      general: '🏠'
+    };
+    return icons[category] || icons.general;
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, x: -20 }}
@@ -632,13 +800,19 @@ const BookingCard = ({ booking, index }) => {
     >
       <div className="flex items-center">
         <div className="p-2 bg-primary-100 rounded-lg mr-4 group-hover:scale-110 transition-transform duration-300">
-          <svg className="h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-          </svg>
+          <span className="text-lg">{getCategoryIcon(booking.serviceCategory)}</span>
         </div>
         <div>
           <p className="font-semibold text-gray-900">{booking.serviceName || 'Service'}</p>
-          <p className="text-sm text-gray-600">{booking.date}</p>
+          <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <span>{booking.date}</span>
+            {booking.time && (
+              <>
+                <span>•</span>
+                <span>{booking.time}</span>
+              </>
+            )}
+          </div>
         </div>
       </div>
       <span className={`px-3 py-1 text-xs font-medium rounded-full border ${statusColors[booking.status] || statusColors.pending}`}>
