@@ -567,18 +567,27 @@ function AppContent() {
 function App() {
   // Initialize app when component mounts
   useEffect(() => {
-    console.log('Initializing app with token management...');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Initializing app with token management...');
+    }
     initializeApp();
     
     // Clean up when component unmounts
     return () => {
-      console.log('Cleaning up app resources...');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Cleaning up app resources...');
+      }
       cleanupApp();
     };
   }, []);
   
   return (
-    <Router>
+    <Router 
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}
+    >
       <AuthProvider>
         <AppContent />
       </AuthProvider>

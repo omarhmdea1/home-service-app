@@ -7,33 +7,66 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS via CDN - FOR DEVELOPMENT ONLY -->
+    <!-- TODO: Replace with proper Tailwind installation for production -->
+    <script>
+      // Suppress only harmless development noise
+      (function() {
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        
+        console.warn = function(...args) {
+          const message = args[0] ? args[0].toString() : '';
+          if (message.includes('cdn.tailwindcss.com should not be used in production')) {
+            return; // Suppress Tailwind CDN warning
+          }
+          originalWarn.apply(console, args);
+        };
+
+        console.error = function(...args) {
+          const message = args[0] ? args[0].toString() : '';
+          if (
+            message.includes('Could not establish connection') ||
+            message.includes('Receiving end does not exist') ||
+            message.includes('runtime.lastError') ||
+            message.includes('Cross-Origin-Opener-Policy policy would block')
+          ) {
+            return; // Suppress Chrome extension noise
+          }
+          originalError.apply(console, args);
+        };
+      })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              primary: {
-                50: '#f0f9ff',
-                100: '#e0f2fe',
-                200: '#bae6fd',
-                300: '#7dd3fc',
-                400: '#38bdf8',
-                500: '#0ea5e9',
-                600: '#0284c7',
-                700: '#0369a1',
-                800: '#075985',
-                900: '#0c4a6e',
-                950: '#082f49',
+      // Tailwind configuration
+      if (typeof tailwind !== 'undefined') {
+        tailwind.config = {
+          theme: {
+            extend: {
+              colors: {
+                primary: {
+                  50: '#f0f9ff',
+                  100: '#e0f2fe',
+                  200: '#bae6fd',
+                  300: '#7dd3fc',
+                  400: '#38bdf8',
+                  500: '#0ea5e9',
+                  600: '#0284c7',
+                  700: '#0369a1',
+                  800: '#075985',
+                  900: '#0c4a6e',
+                  950: '#082f49',
+                },
+                background: '#f8f9fa',
+                text: '#222222',
               },
-              background: '#f8f9fa',
-              text: '#222222',
-            },
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
+              fontFamily: {
+                sans: ['Inter', 'sans-serif'],
+              },
             },
           },
-        },
+        }
       }
     </script>
     <style>

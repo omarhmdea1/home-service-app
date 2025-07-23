@@ -4,11 +4,11 @@ import { useAuth } from '../auth/AuthProvider';
 
 const MessageNotificationBadge = () => {
   const [unreadCount, setUnreadCount] = useState(0);
-  const { currentUser } = useAuth();
+  const { currentUser, userRole, userProfile, needsRoleSelection } = useAuth();
 
   useEffect(() => {
-    // Only fetch unread messages if user is logged in
-    if (!currentUser) {
+    // Only fetch unread messages if user is fully authenticated and has a profile
+    if (!currentUser || !userRole || !userProfile || needsRoleSelection) {
       setUnreadCount(0);
       return;
     }
@@ -18,7 +18,10 @@ const MessageNotificationBadge = () => {
         const count = await getUnreadMessageCount();
         setUnreadCount(count);
       } catch (error) {
-        console.error('Error fetching unread message count:', error);
+        // Only log error if it's not an authentication issue during setup
+        if (!error.message.includes('401') && !error.message.includes('Unauthorized')) {
+          console.error('Error fetching unread message count:', error);
+        }
       }
     };
 
@@ -28,15 +31,17 @@ const MessageNotificationBadge = () => {
     // Set up polling interval (every 30 seconds)
     const intervalId = setInterval(fetchUnreadCount, 30000);
 
+    // Cleanup interval on unmount
     return () => clearInterval(intervalId);
-  }, [currentUser]);
+  }, [currentUser, userRole, userProfile, needsRoleSelection]);
 
+  // Don't show badge if no unread messages
   if (unreadCount === 0) {
     return null;
   }
 
   return (
-    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
+    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
       {unreadCount > 99 ? '99+' : unreadCount}
     </span>
   );

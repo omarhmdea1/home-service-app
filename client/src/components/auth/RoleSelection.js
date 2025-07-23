@@ -1,59 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from './AuthProvider';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const RoleSelection = () => {
-  const { completeProfileWithRole } = useAuth();
+  const { pendingUserData, completeProfile } = useAuth();
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    console.log('DEBUG: RoleSelection component mounted');
-    return () => {
-      console.log('DEBUG: RoleSelection component unmounted');
-    };
-  }, []);
+  // If no pending user data, redirect to login
+  if (!pendingUserData) {
+    navigate('/login');
+    return null;
+  }
 
   const handleRoleSelect = (role) => {
-    console.log('DEBUG: Role selected:', role);
     setSelectedRole(role);
+    setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('DEBUG: Submit button clicked with role:', selectedRole);
-
+    
     if (!selectedRole) {
-      console.log('DEBUG: No role selected, showing alert');
       setError('Please select a role to continue');
       return;
     }
 
     setIsSubmitting(true);
-    console.log('DEBUG: Starting profile completion with role:', selectedRole);
+    setError('');
 
     try {
-      console.log('DEBUG: Calling completeProfileWithRole');
-      await completeProfileWithRole(selectedRole);
-      console.log('DEBUG: Profile completed successfully');
-
-      // Redirect based on role
-      if (selectedRole === 'provider') {
-        console.log('DEBUG: Redirecting to provider dashboard');
-        navigate('/provider/dashboard');
-      } else {
-        console.log('DEBUG: Redirecting to home page');
-        navigate('/');
-      }
+      await completeProfile(selectedRole);
+      
+      // Navigate to appropriate page
+      navigate(selectedRole === 'provider' ? '/provider/dashboard' : '/');
     } catch (error) {
-      console.error('DEBUG: Error completing profile:', error);
-      setError('There was an error setting up your profile. Please try again.');
+      setError('Failed to complete setup. Please try again.');
+    } finally {
       setIsSubmitting(false);
     }
   };
+
+  const userName = pendingUserData.name || pendingUserData.email?.split('@')[0] || 'there';
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -63,92 +54,118 @@ const RoleSelection = () => {
         transition={{ duration: 0.5 }}
         className="sm:mx-auto sm:w-full sm:max-w-md"
       >
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Welcome to Home Services
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Please select your role to continue
-        </p>
-      </motion.div>
+        <div className="text-center">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Welcome to Home Services
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Hello {userName}! Please select your role to continue
+          </p>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {error && (
-            <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-md bg-red-50 p-4"
+                >
+                  <div className="text-sm text-red-700">{error}</div>
+                </motion.div>
+              )}
+
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-gray-700 mb-4">
+                  Choose how you'd like to use our platform:
+                </p>
+
+                {/* Customer Option */}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all duration-200 ${
+                    selectedRole === 'customer'
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  onClick={() => handleRoleSelect('customer')}
+                >
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      id="customer"
+                      name="role"
+                      value="customer"
+                      checked={selectedRole === 'customer'}
+                      onChange={() => handleRoleSelect('customer')}
+                      className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+                    />
+                    <div className="ml-3">
+                      <label htmlFor="customer" className="block text-sm font-medium text-gray-900 cursor-pointer">
+                        I'm a Customer
+                      </label>
+                      <p className="text-sm text-gray-500 mt-1">
+                        I need home services and want to book providers
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Provider Option */}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all duration-200 ${
+                    selectedRole === 'provider'
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  onClick={() => handleRoleSelect('provider')}
+                >
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      id="provider"
+                      name="role"
+                      value="provider"
+                      checked={selectedRole === 'provider'}
+                      onChange={() => handleRoleSelect('provider')}
+                      className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+                    />
+                    <div className="ml-3">
+                      <label htmlFor="provider" className="block text-sm font-medium text-gray-900 cursor-pointer">
+                        I'm a Service Provider
+                      </label>
+                      <p className="text-sm text-gray-500 mt-1">
+                        I provide home services and want to find customers
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
               </div>
-            </div>
-          )}
 
-          <div className="space-y-6">
-            <div>
-              <div className="mt-4 space-y-4">
-                <div className="flex items-center">
-                  <input
-                    id="role-customer"
-                    name="role"
-                    type="radio"
-                    value="customer"
-                    checked={selectedRole === 'customer'}
-                    onChange={() => setSelectedRole('customer')}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
-                  />
-                  <label htmlFor="role-customer" className="ml-3 block text-sm font-medium text-gray-700">
-                    Customer - I want to book services
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    id="role-provider"
-                    name="role"
-                    type="radio"
-                    value="provider"
-                    checked={selectedRole === 'provider'}
-                    onChange={() => setSelectedRole('provider')}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
-                  />
-                  <label htmlFor="role-provider" className="ml-3 block text-sm font-medium text-gray-700">
-                    Service Provider - I want to offer services
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isSubmitting || !selectedRole}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                  isSubmitting || !selectedRole
-                    ? 'bg-primary-400 cursor-not-allowed'
-                    : 'bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500'
-                }`}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                type="submit"
+                disabled={!selectedRole || isSubmitting}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 {isSubmitting ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
-                  </span>
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                    Setting up your account...
+                  </div>
                 ) : (
                   'Continue'
                 )}
-              </button>
-            </div>
+              </motion.button>
+            </form>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

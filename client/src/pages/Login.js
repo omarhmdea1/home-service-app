@@ -125,30 +125,43 @@ const Login = () => {
     setLoading(true);
     
     try {
+      console.log('Starting Google sign-in from Login component');
+      
       // Call the signInWithGoogle function from AuthProvider
       const result = await signInWithGoogle();
-      console.log('Google sign-in successful, redirecting...');
+      console.log('Google sign-in result:', result);
       
       // Check if we need role selection
       if (result && result.needsRoleSelection) {
-        console.log('User needs to select a role');
-        // Role selection will be handled by AuthProvider
+        console.log('User needs to select a role - staying on current page to let AuthProvider handle role selection');
+        setLoading(false);
+        // Don't navigate - let the AuthProvider handle showing the role selection
         return;
       }
       
-      // Navigate to home page on successful login
-      navigate('/');
+      // If we get here, user has existing profile and should be redirected
+      console.log('User has existing profile, navigating based on role');
+      setLoading(false);
+      
+      // Small delay to let auth state settle
+      setTimeout(() => {
+        navigate(from);
+      }, 100);
+      
     } catch (error) {
+      setLoading(false);
+      
       // Only show error if it's an actual authentication error
-      // Some errors might be thrown even on successful login due to navigation
       if (error && error.code && error.code.startsWith('auth/')) {
-        console.error('Google sign-in error:', error);
+        console.error('Google sign-in authentication error:', error);
         setError('Failed to sign in with Google. Please try again.');
+      } else if (error && error.message) {
+        console.error('Google sign-in error:', error);
+        setError(error.message);
       } else {
         // This might be a navigation error after successful login
         console.log('Non-critical error during Google sign-in:', error);
       }
-      setLoading(false);
     }
   };
 

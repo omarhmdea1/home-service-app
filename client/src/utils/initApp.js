@@ -57,7 +57,9 @@ export const initializeApp = () => {
   // Add axios interceptor for API errors (if using axios)
   // This would handle 401 errors and trigger token refresh
   
-  console.log('App initialization complete');
+  if (process.env.NODE_ENV === 'development') {
+    console.log('App initialization complete');
+  }
 };
 
 /**
