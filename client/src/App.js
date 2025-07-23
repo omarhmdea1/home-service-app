@@ -570,7 +570,7 @@ function AppContent() {
               <BookService />
             </PrivateRoute>
           } />
-          <Route path="/bookings" element={
+          <Route path="/my-bookings" element={
             <PrivateRoute allowedRoles={['customer']}>
               <MyBookings />
             </PrivateRoute>
