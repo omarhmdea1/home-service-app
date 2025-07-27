@@ -57,6 +57,11 @@ router.post('/', protect, async (req, res) => {
 
     const message = await newMessage.save();
 
+    // Emit real-time message via Socket.io
+    if (req.io) {
+      req.io.to(bookingId).emit('message_received', message);
+    }
+
     res.status(201).json({
       success: true,
       data: message
@@ -114,6 +119,16 @@ router.get('/booking/:bookingId', protect, async (req, res) => {
         },
         { isRead: true }
       );
+
+      // Emit real-time event for messages marked as read
+      if (req.io) {
+        req.io.to(bookingId).emit('messages_marked_read', {
+          bookingId,
+          readBy: userId,
+          messageIds: unreadMessages.map(msg => msg._id),
+          count: unreadMessages.length
+        });
+      }
     }
 
     res.status(200).json({
@@ -123,6 +138,100 @@ router.get('/booking/:bookingId', protect, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching messages:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
+ * @route   GET /api/messages/conversations
+ * @desc    Get all conversations for the current user with last message and unread count
+ * @access  Private
+ */
+router.get('/conversations', protect, async (req, res) => {
+  try {
+    const userId = req.user.firebaseUid;
+    
+    // Get all bookings where user is involved
+    const bookings = await Booking.find({
+      $or: [
+        { userId: userId },
+        { providerId: userId }
+      ]
+    }).sort({ updatedAt: -1 });
+
+    if (bookings.length === 0) {
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        data: []
+      });
+    }
+
+    // Get conversation data for each booking
+    const conversations = await Promise.all(
+      bookings.map(async (booking) => {
+        try {
+          // Get last message for this booking
+          const lastMessage = await Message.findOne({ bookingId: booking._id })
+            .sort({ createdAt: -1 });
+
+          // Get unread count for this booking
+          const unreadCount = await Message.countDocuments({
+            bookingId: booking._id,
+            recipientId: userId,
+            isRead: false
+          });
+
+          // Get total message count
+          const totalMessages = await Message.countDocuments({
+            bookingId: booking._id
+          });
+
+          return {
+            bookingId: booking._id,
+            booking: booking,
+            lastMessage: lastMessage ? {
+              _id: lastMessage._id,
+              content: lastMessage.content,
+              senderId: lastMessage.senderId,
+              recipientId: lastMessage.recipientId,
+              isRead: lastMessage.isRead,
+              createdAt: lastMessage.createdAt,
+              isFromCurrentUser: lastMessage.senderId === userId
+            } : null,
+            unreadCount,
+            totalMessages,
+            updatedAt: lastMessage ? lastMessage.createdAt : booking.updatedAt
+          };
+        } catch (error) {
+          console.error(`Error processing booking ${booking._id}:`, error);
+          return {
+            bookingId: booking._id,
+            booking: booking,
+            lastMessage: null,
+            unreadCount: 0,
+            totalMessages: 0,
+            updatedAt: booking.updatedAt
+          };
+        }
+      })
+    );
+
+    // Sort by last message time (most recent first)
+    conversations.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+    res.status(200).json({
+      success: true,
+      count: conversations.length,
+      data: conversations
+    });
+
+  } catch (error) {
+    console.error('Error fetching conversations:', error);
     res.status(500).json({
       success: false,
       message: 'Server error',
@@ -203,7 +312,7 @@ router.put('/:id/read', protect, async (req, res) => {
       message: 'Server error',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
-  }
-});
-
-module.exports = router;
+      }
+  });
+ 
+ module.exports = router;

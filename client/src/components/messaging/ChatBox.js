@@ -85,10 +85,10 @@ const ChatBox = ({ booking, onClose, isStandalone = false }) => {
           </p>
         </div>
         
-        <MessageList bookingId={booking._id} />
+        <MessageList bookingId={booking?._id || booking?.id} />
         
         <MessageInput
-          bookingId={booking._id}
+          bookingId={booking?._id || booking?.id}
           recipientId={recipientId}
           onMessageSent={handleMessageSent}
         />

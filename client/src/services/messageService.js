@@ -8,7 +8,7 @@ import { get, post, put } from './apiService';
 export const sendMessage = async (messageData) => {
   try {
     const response = await post('/messages', messageData);
-    return response.data;
+    return response?.data || response;
   } catch (error) {
     console.error('Error sending message:', error);
     throw error;
@@ -18,12 +18,12 @@ export const sendMessage = async (messageData) => {
 /**
  * Get all messages for a specific booking
  * @param {string} bookingId - The booking ID
- * @returns {Promise<Array>} - Array of messages
+ * @returns {Promise<Object>} - Response object with data array
  */
 export const getBookingMessages = async (bookingId) => {
   try {
     const response = await get(`/messages/booking/${bookingId}`);
-    return response.data;
+    return response;
   } catch (error) {
     console.error('Error fetching booking messages:', error);
     throw error;
@@ -55,6 +55,20 @@ export const markMessageAsRead = async (messageId) => {
     return response.data;
   } catch (error) {
     console.error('Error marking message as read:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all conversations for the current user
+ * @returns {Promise<Array>} - Array of conversations with last message and unread count
+ */
+export const getConversations = async () => {
+  try {
+    const response = await get('/messages/conversations');
+    return response?.data || response || [];
+  } catch (error) {
+    console.error('Error fetching conversations:', error);
     throw error;
   }
 };

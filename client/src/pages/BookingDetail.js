@@ -839,9 +839,9 @@ const ChatModal = ({ isOpen, onClose, booking, currentUser }) => (
           
           <div className="h-full">
             <ChatBox
-              bookingId={booking?._id}
-              otherUserId={booking?.providerId === currentUser?.uid ? booking?.userId : booking?.providerId}
-              otherUserName={booking?.providerId === currentUser?.uid ? booking?.userName : booking?.provider?.name}
+              booking={booking}
+              onClose={onClose}
+              isStandalone={false}
             />
           </div>
         </motion.div>

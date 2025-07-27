@@ -20,6 +20,7 @@ import Chat from './pages/Chat';
 import RoleSelection from './components/auth/RoleSelection';
 import { useAuth } from './components/auth/AuthProvider';
 import MessageNotificationBadge from './components/messaging/MessageNotificationBadge';
+import socketService from './services/socketService';
 
 // Import the new provider profile page
 import ProviderPublicProfile from './pages/ProviderProfile';
@@ -640,12 +641,16 @@ function App() {
     }
     initializeApp();
     
+    // Initialize Socket.io connection when app starts
+    socketService.connect();
+    
     // Clean up when component unmounts
     return () => {
       if (process.env.NODE_ENV === 'development') {
         console.log('Cleaning up app resources...');
       }
       cleanupApp();
+      socketService.disconnect();
     };
   }, []);
   

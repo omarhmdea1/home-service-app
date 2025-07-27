@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { sendMessage } from '../../services/messageService';
+import socketService from '../../services/socketService';
+import { useAuth } from '../auth/AuthProvider';
 
 const MessageInput = ({ bookingId, recipientId, onMessageSent }) => {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef(null);
+  const { currentUser } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,11 +20,21 @@ const MessageInput = ({ bookingId, recipientId, onMessageSent }) => {
       setSending(true);
       setError(null);
       
-      await sendMessage({
+      // Send message via API
+      const sentMessage = await sendMessage({
         bookingId,
         recipientId,
         content: message.trim()
       });
+      
+      // Emit real-time message via Socket.io
+      socketService.sendMessage(bookingId, sentMessage);
+      
+      // Stop typing indicator
+      if (isTyping) {
+        socketService.sendTypingIndicator(bookingId, false, currentUser?.displayName);
+        setIsTyping(false);
+      }
       
       setMessage('');
       if (onMessageSent) onMessageSent();
@@ -31,6 +46,40 @@ const MessageInput = ({ bookingId, recipientId, onMessageSent }) => {
     }
   };
 
+  // Handle typing indicators
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setMessage(value);
+
+    // Send typing indicator
+    if (value.trim() && !isTyping) {
+      setIsTyping(true);
+      socketService.sendTypingIndicator(bookingId, true, currentUser?.displayName);
+    }
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Set new timeout to stop typing indicator
+    typingTimeoutRef.current = setTimeout(() => {
+      if (isTyping) {
+        setIsTyping(false);
+        socketService.sendTypingIndicator(bookingId, false, currentUser?.displayName);
+      }
+    }, 1000);
+  };
+
+  // Cleanup typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <form onSubmit={handleSubmit} className="mt-4">
       {error && (
@@ -40,7 +89,7 @@ const MessageInput = ({ bookingId, recipientId, onMessageSent }) => {
         <input
           type="text"
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={handleInputChange}
           placeholder="Type your message..."
           className="flex-grow px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           disabled={sending}

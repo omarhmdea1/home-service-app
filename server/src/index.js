@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const http = require('http');
+const { Server } = require('socket.io');
 const connectDB = require('./config/db');
 
 // Load environment variables
@@ -30,6 +32,12 @@ app.use(cors());
 // Increase payload size limit to 50MB for handling base64 encoded images
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Make io available to routes via middleware
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 
 // Mount routes
 app.use('/api/services', servicesRouter);
@@ -72,8 +80,57 @@ app.get('/api/test-db', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5001;
-const server = app.listen(PORT, () => {
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Setup Socket.io
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
+});
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  // Join a booking room for real-time messaging
+  socket.on('join_booking_room', (bookingId) => {
+    socket.join(bookingId);
+    console.log(`Socket ${socket.id} joined booking room: ${bookingId}`);
+  });
+
+  // Leave a booking room
+  socket.on('leave_booking_room', (bookingId) => {
+    socket.leave(bookingId);
+    console.log(`Socket ${socket.id} left booking room: ${bookingId}`);
+  });
+
+  // Handle new messages (emit to room)
+  socket.on('new_message', (data) => {
+    const { bookingId, message } = data;
+    // Broadcast the message to all users in this booking room
+    socket.to(bookingId).emit('message_received', message);
+  });
+
+  // Handle typing indicators
+  socket.on('typing', (data) => {
+    const { bookingId, isTyping, userName } = data;
+    socket.to(bookingId).emit('user_typing', { isTyping, userName });
+  });
+
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
+
+// Start server
+server.listen(PORT, () => {
   console.log(`Server is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(`Socket.io is ready and listening for connections`);
 });
 
 // Keep the process running
