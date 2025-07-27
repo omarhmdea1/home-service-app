@@ -1,8 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../components/auth/AuthProvider';
-import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { getProviderBookings, updateBookingStatus } from '../../services/bookingService';
+
+// ✅ NEW: Import our design system components
+import {
+  ListPageTemplate,
+} from '../../components/layout';
+
+import {
+  Card,
+  CardContent,
+  Button,
+  Badge,
+  Icon,
+  Heading,
+  Text,
+  Alert,
+  LoadingState,
+} from '../../components/ui';
+
 import StatusBadge from "../../components/common/StatusBadge";
 
 const ProviderBookings = () => {
@@ -10,6 +27,8 @@ const ProviderBookings = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const { userProfile } = useAuth();
 
   // Fetch provider bookings
@@ -25,10 +44,8 @@ const ProviderBookings = () => {
           return;
         }
         
-        // Call the real API service to get provider bookings
         const bookingsData = await getProviderBookings(userProfile.firebaseUid);
         
-        // Format the bookings data for display
         const formattedBookings = bookingsData.map(booking => ({
           id: booking._id,
           customerName: booking.userName || booking.userEmail || 'Customer',
@@ -38,7 +55,8 @@ const ProviderBookings = () => {
           status: booking.status,
           address: booking.address,
           notes: booking.notes,
-          serviceId: booking.serviceId
+          serviceId: booking.serviceId,
+          createdAt: booking.createdAt || new Date()
         }));
         
         setBookings(formattedBookings);
@@ -52,6 +70,7 @@ const ProviderBookings = () => {
 
     fetchBookings();
   }, [userProfile]);
+
   useEffect(() => {
     if (success) {
       const timer = setTimeout(() => setSuccess(""), 3000);
@@ -59,17 +78,14 @@ const ProviderBookings = () => {
     }
   }, [success]);
 
-
   // Handle booking status update
   const handleStatusUpdate = async (bookingId, newStatus) => {
     try {
       setLoading(true);
       setError('');
 
-      // Update status on the server
       await updateBookingStatus(bookingId, newStatus);
 
-      // Refresh bookings from the API to ensure state is in sync
       const updated = await getProviderBookings(userProfile.firebaseUid);
       const formatted = updated.map(b => ({
         id: b._id,
@@ -80,11 +96,12 @@ const ProviderBookings = () => {
         status: b.status,
         address: b.address,
         notes: b.notes,
-        serviceId: b.serviceId
+        serviceId: b.serviceId,
+        createdAt: b.createdAt || new Date()
       }));
 
       setBookings(formatted);
-      setSuccess('Booking status updated');
+      setSuccess(`Booking ${newStatus === 'confirmed' ? 'confirmed' : newStatus === 'completed' ? 'completed' : 'cancelled'} successfully`);
     } catch (err) {
       console.error('Error updating booking status:', err);
       setError(`Failed to update booking status: ${err.message}`);
@@ -93,125 +110,245 @@ const ProviderBookings = () => {
     }
   };
 
+  // ✅ NEW: Filter bookings based on search and status
+  const filteredBookings = bookings.filter(booking => {
+    const matchesSearch = !searchTerm || 
+      booking.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.service.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.address.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = !statusFilter || booking.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  // ✅ NEW: Enhanced BookingCard component
+  const BookingCard = ({ booking }) => (
+    <Card className="hover:shadow-card-hover transition-all duration-150">
+      <CardContent>
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-start space-x-4">
+            <div className="p-3 bg-primary-100 rounded-lg">
+              <Icon name="calendar" className="h-6 w-6 text-primary-600" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center space-x-3 mb-2">
+                <Heading level={4} className="text-neutral-900">
+                  {booking.customerName}
+                </Heading>
+                <StatusBadge status={booking.status} />
+              </div>
+              <Text className="text-neutral-600 mb-1">{booking.service}</Text>
+              <div className="flex items-center space-x-4 text-sm text-neutral-500">
+                <div className="flex items-center space-x-1">
+                  <Icon name="calendar" size="xs" />
+                  <span>{booking.date}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Icon name="clock" size="xs" />
+                  <span>{booking.time}</span>
+                </div>
+              </div>
+              {booking.address && (
+                <div className="flex items-center space-x-1 mt-2 text-sm text-neutral-500">
+                  <Icon name="location" size="xs" />
+                  <span>{booking.address}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-between pt-4 border-t border-neutral-200">
+          <div className="flex items-center space-x-2">
+            <Link to={`/provider/bookings/${booking.id}`}>
+              <Button variant="outline" size="sm">
+                <Icon name="info" size="xs" className="mr-1" />
+                View Details
+              </Button>
+            </Link>
+            
+            {booking.status === 'pending' && (
+              <>
+                <Button
+                  variant="success"
+                  size="sm"
+                  onClick={() => handleStatusUpdate(booking.id, 'confirmed')}
+                >
+                  <Icon name="check" size="xs" className="mr-1" />
+                  Confirm
+                </Button>
+                <Button
+                  variant="error"
+                  size="sm"
+                  onClick={() => handleStatusUpdate(booking.id, 'cancelled')}
+                >
+                  <Icon name="close" size="xs" className="mr-1" />
+                  Cancel
+                </Button>
+              </>
+            )}
+            
+            {booking.status === 'confirmed' && (
+              <Button
+                variant="success"
+                size="sm"
+                onClick={() => handleStatusUpdate(booking.id, 'completed')}
+              >
+                <Icon name="check" size="xs" className="mr-1" />
+                Mark Complete
+              </Button>
+            )}
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="sm">
+              <Icon name="chat" size="xs" className="mr-1" />
+              Message
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // ✅ NEW: Enhanced filter panel
+  const filtersPanel = (
+    <Card>
+      <CardContent>
+        <div className="flex items-center mb-6">
+          <Icon name="services" className="text-primary-600 mr-2" />
+          <Heading level={3}>Filter Bookings</Heading>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Search Input */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Search</label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by customer, service, or address..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-3 pl-10 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-150"
+              />
+              <Icon 
+                name="services" 
+                size="sm" 
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" 
+              />
+            </div>
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Status</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-150"
+            >
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-neutral-200">
+          {[
+            { label: 'Total', count: bookings.length, color: 'text-neutral-600' },
+            { label: 'Pending', count: bookings.filter(b => b.status === 'pending').length, color: 'text-warning-600' },
+            { label: 'Confirmed', count: bookings.filter(b => b.status === 'confirmed').length, color: 'text-success-600' },
+            { label: 'Completed', count: bookings.filter(b => b.status === 'completed').length, color: 'text-primary-600' }
+          ].map((stat, index) => (
+            <div key={index} className="text-center">
+              <Text className={`text-2xl font-bold ${stat.color}`}>{stat.count}</Text>
+              <Text size="small" className="text-neutral-500">{stat.label}</Text>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // ✅ NEW: Enhanced empty state
+  const emptyAction = (
+    <div className="text-center space-y-4">
+      <Text className="text-neutral-600">
+        Start providing services to receive booking requests from customers.
+      </Text>
+      <Link to="/provider/services">
+        <Button variant="primary">
+          <Icon name="add" size="sm" className="mr-2" />
+          Add Your Services
+        </Button>
+      </Link>
+    </div>
+  );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Manage Bookings</h1>
-        
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-red-700 text-sm">{error}</p>
-          </div>
-        )}
-          {success && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-green-700 text-sm">{success}</p>
-            </div>
-          )}
+    <>
+      {/* Success/Error Alerts */}
+      {success && (
+        <Alert variant="success" className="mb-6">
+          <Icon name="success" size="sm" className="mr-2" />
+          {success}
+        </Alert>
+      )}
+      
+      {error && (
+        <Alert variant="error" className="mb-6">
+          <Icon name="error" size="sm" className="mr-2" />
+          {error}
+        </Alert>
+      )}
 
-        
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-          </div>
-        ) : bookings.length === 0 ? (
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6 text-center">
-            <p className="text-gray-500">You don't have any bookings yet.</p>
-          </div>
-        ) : (
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Customer
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Service
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date & Time
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Address
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {bookings.map((booking) => (
-                    <tr key={booking.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{booking.customerName}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{booking.service}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{booking.date}</div>
-                        <div className="text-sm text-gray-500">{booking.time}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{booking.address}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge status={booking.status} />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2 items-center">
-                          <Link 
-                            to={`/provider/bookings/${booking.id}`}
-                            className="text-blue-600 hover:text-blue-900 mr-2"
-                          >
-                            View Details
-                          </Link>
-                          
-                          {booking.status === 'pending' && (
-                            <>
-                              <button
-                                onClick={() => handleStatusUpdate(booking.id, 'confirmed')}
-                                className="text-primary-600 hover:text-primary-900 mr-2"
-                              >
-                                Confirm
-                              </button>
-                              <button
-                                onClick={() => handleStatusUpdate(booking.id, 'cancelled')}
-                                className="text-red-600 hover:text-red-900"
-                              >
-                                Cancel
-                              </button>
-                            </>
-                          )}
-                          {booking.status === 'confirmed' && (
-                            <button
-                              onClick={() => handleStatusUpdate(booking.id, 'completed')}
-                              className="text-green-600 hover:text-green-900"
-                            >
-                              Mark Complete
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+      <ListPageTemplate
+        title="Manage Bookings"
+        subtitle="Review and manage your service booking requests"
+        description="Track customer bookings, update status, and communicate with clients"
+        icon={<Icon name="calendar" />}
+        breadcrumbs={[
+          { label: 'Provider Dashboard', href: '/provider/dashboard' },
+          { label: 'Bookings' }
+        ]}
+        primaryAction={{
+          label: 'View Calendar',
+          onClick: () => console.log('Calendar view'),
+          icon: <Icon name="calendar" />
+        }}
+        actions={[
+          { 
+            label: 'Export',
+            variant: 'outline',
+            onClick: () => console.log('Export bookings')
+          }
+        ]}
+        filters={filtersPanel}
+        items={filteredBookings}
+        renderItem={(booking, index) => (
+          <BookingCard key={booking.id} booking={booking} />
         )}
-      </motion.div>
-    </div>
+        layout="list"
+        loading={loading}
+        error={error ? { message: error } : null}
+        empty={filteredBookings.length === 0 && !loading}
+        emptyTitle="No bookings found"
+        emptyDescription={
+          searchTerm || statusFilter 
+            ? "No bookings match your current filters. Try adjusting your search criteria."
+            : "You don't have any bookings yet."
+        }
+        emptyAction={emptyAction}
+        background="bg-neutral-50"
+      />
+    </>
   );
 };
 
