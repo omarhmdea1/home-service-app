@@ -1,25 +1,45 @@
 import React from 'react';
+import { Badge } from '../ui';
 
-const STATUS_STYLES = {
-  pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending' },
-  confirmed: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Confirmed' },
-  completed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Completed' },
-  cancelled: { bg: 'bg-red-100', text: 'text-red-800', label: 'Cancelled' },
-  expired: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Expired' }
+const STATUS_CONFIG = {
+  pending: { variant: 'warning', label: 'Pending', icon: '⏳' },
+  confirmed: { variant: 'primary', label: 'Confirmed', icon: '✓' },
+  completed: { variant: 'success', label: 'Completed', icon: '✅' },
+  cancelled: { variant: 'error', label: 'Cancelled', icon: '❌' },
+  expired: { variant: 'neutral', label: 'Expired', icon: '⏰' }
 };
 
 /**
- * Display a colored badge for a booking status.
+ * Display a colored badge for a booking status using the design system.
+ * 
+ * @param {string} status - The booking status
+ * @param {boolean} showIcon - Whether to show status icon
+ * @param {string} size - Badge size: 'sm' | 'md' | 'lg'
+ * @param {string} className - Additional CSS classes
  */
-const StatusBadge = ({ status }) => {
-  const style = STATUS_STYLES[status] || {
-    bg: 'bg-gray-100',
-    text: 'text-gray-800',
-    label: status || 'Unknown'
+const StatusBadge = ({ 
+  status, 
+  showIcon = true, 
+  size = 'md', 
+  className = '' 
+}) => {
+  const config = STATUS_CONFIG[status] || {
+    variant: 'neutral',
+    label: status || 'Unknown',
+    icon: '❓'
   };
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${style.bg} ${style.text}`}>{style.label}</span>
+    <Badge 
+      variant={config.variant} 
+      size={size}
+      className={className}
+    >
+      {showIcon && (
+        <span className="mr-1">{config.icon}</span>
+      )}
+      {config.label}
+    </Badge>
   );
 };
 

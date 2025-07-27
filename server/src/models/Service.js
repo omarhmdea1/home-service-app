@@ -61,4 +61,16 @@ const ServiceSchema = new mongoose.Schema({
   }
 });
 
+// ✅ PERFORMANCE: Add database indexes for faster queries
+ServiceSchema.index({ title: 'text', description: 'text', category: 'text', providerName: 'text' });
+ServiceSchema.index({ category: 1 }); // ✅ Essential for categories endpoint
+ServiceSchema.index({ providerId: 1 });
+ServiceSchema.index({ createdAt: -1 });
+ServiceSchema.index({ price: 1 });
+ServiceSchema.index({ rating: -1 });
+
+// ✅ COMPOUND INDEXES for common query patterns
+ServiceSchema.index({ category: 1, createdAt: -1 });
+ServiceSchema.index({ providerId: 1, category: 1 });
+
 module.exports = mongoose.model('Service', ServiceSchema);
