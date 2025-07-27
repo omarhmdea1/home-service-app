@@ -123,6 +123,20 @@ class SocketService {
     }
   }
 
+  // Listen for conversation deletion
+  onConversationDeleted(callback) {
+    if (this.socket) {
+      this.socket.on('conversation_deleted', callback);
+    }
+  }
+
+  // Remove conversation deletion listener
+  offConversationDeleted() {
+    if (this.socket) {
+      this.socket.off('conversation_deleted');
+    }
+  }
+
   // Get socket instance
   getSocket() {
     return this.socket;

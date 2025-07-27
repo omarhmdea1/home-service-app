@@ -518,4 +518,5 @@ export {
 } from './Form';
 
 // Role-based components
-export { default as RoleRestrictionAlert } from './RoleRestrictionAlert'; 
+export { default as RoleRestrictionAlert } from './RoleRestrictionAlert';
+export { default as ConfirmationDialog } from './ConfirmationDialog'; 

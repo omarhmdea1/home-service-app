@@ -37,16 +37,17 @@ const ProviderServices = () => {
 
   const defaultPlaceholderImage = 'https://via.placeholder.com/600x400?text=Service+Image';
 
+  // ✅ Memoize currentUser.uid to prevent unnecessary re-fetches
+  const currentUserId = currentUser?.uid;
+  
   // Fetch provider services
   useEffect(() => {
     const fetchProviderServices = async () => {
       try {
         setLoading(true);
         
-        const providerIdToUse = (currentUser && currentUser.uid) ? currentUser.uid : null;
-
-        if (providerIdToUse) {
-          const response = await getServices({ providerId: providerIdToUse });
+        if (currentUserId) {
+          const response = await getServices({ providerId: currentUserId });
           
           const formattedServices = response.map(service => ({
             id: service._id,
@@ -70,8 +71,13 @@ const ProviderServices = () => {
       }
     };
 
-    fetchProviderServices();
-  }, [currentUser]);
+    // Only fetch if we have a valid user ID
+    if (currentUserId) {
+      fetchProviderServices();
+    } else {
+      setLoading(false);
+    }
+  }, [currentUserId]); // Use memoized ID instead of full currentUser object
 
   // Handle service status toggle
   const handleToggleStatus = async (serviceId) => {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '../components/auth/AuthProvider';
 import ChatBox from '../components/messaging/ChatBox';
-import { getConversations } from '../services/messageService';
+import { getConversations, deleteConversation } from '../services/messageService';
 import { getServiceById } from '../services/serviceService';
 import StatusBadge from '../components/common/StatusBadge';
 import socketService from '../services/socketService';
@@ -25,6 +25,7 @@ import {
   Input,
   Alert,
   LoadingState,
+  ConfirmationDialog,
 } from '../components/ui';
 
 const Chat = () => {
@@ -34,6 +35,9 @@ const Chat = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [serviceDetails, setServiceDetails] = useState({});
+  const [deletingConversation, setDeletingConversation] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState(null);
   const { userRole, currentUser } = useAuth();
   
   const defaultServiceImage = 'https://via.placeholder.com/100';
@@ -144,12 +148,28 @@ const Chat = () => {
         });
       };
 
+      const handleConversationDeleted = (data) => {
+        console.log('🗑️ Conversation deleted by other user:', data);
+        
+        // Remove conversation from list
+        setConversations(prevConversations => 
+          prevConversations.filter(conv => conv.bookingId !== data.bookingId)
+        );
+        
+        // If this was the selected conversation, clear selection
+        if (selectedConversation?.bookingId === data.bookingId) {
+          setSelectedConversation(null);
+        }
+      };
+
       socketService.onMessageReceived(handleNewMessage);
       socketService.onMessagesMarkedRead(handleMessagesRead);
+      socketService.onConversationDeleted(handleConversationDeleted);
 
       return () => {
         socketService.offMessageReceived();
         socketService.offMessagesMarkedRead();
+        socketService.offConversationDeleted();
       };
     }
   }, [currentUser]);
@@ -160,21 +180,81 @@ const Chat = () => {
     }));
   }, []);
 
-  // Helper functions
-  const truncateMessage = (message, maxLength = 40) => {
+  // Helper function to format relative time
+  const formatRelativeTime = (timestamp) => {
+    if (!timestamp) return '';
+    
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffInMs = now - time;
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m`;
+    if (diffInHours < 24) return `${diffInHours}h`;
+    if (diffInDays < 7) return `${diffInDays}d`;
+    
+    return time.toLocaleDateString();
+  };
+
+  // Helper function to truncate messages
+  const truncateMessage = (message, maxLength = 50) => {
     if (!message) return '';
     return message.length > maxLength ? message.substring(0, maxLength) + '...' : message;
   };
 
-  const formatRelativeTime = (timestamp) => {
-    const now = new Date();
-    const messageTime = new Date(timestamp);
-    const diffInSeconds = Math.floor((now - messageTime) / 1000);
-    
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  // Handle delete conversation
+  const handleDeleteConversation = async (conversation) => {
+    setConversationToDelete(conversation);
+    setShowDeleteConfirm(true);
+  };
+
+  // Confirm delete conversation
+  const confirmDeleteConversation = async () => {
+    if (!conversationToDelete) return;
+
+    try {
+      setDeletingConversation(conversationToDelete.bookingId);
+      
+      console.log('🗑️ Attempting to delete conversation:', conversationToDelete.bookingId);
+      
+      await deleteConversation(conversationToDelete.bookingId);
+      
+      // Remove from conversations list
+      setConversations(prev => prev.filter(conv => conv.bookingId !== conversationToDelete.bookingId));
+      
+      // If this was the selected conversation, clear selection
+      if (selectedConversation?.bookingId === conversationToDelete.bookingId) {
+        setSelectedConversation(null);
+      }
+      
+      console.log('✅ Conversation deleted successfully');
+      
+      // Close dialog
+      setShowDeleteConfirm(false);
+      setConversationToDelete(null);
+    } catch (error) {
+      console.error('❌ Error deleting conversation:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.status,
+        response: error.response
+      });
+      
+      // Show more specific error message
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
+      alert(`Failed to delete conversation: ${errorMessage}. Please try again.`);
+    } finally {
+      setDeletingConversation(null);
+    }
+  };
+
+  // Cancel delete conversation
+  const cancelDeleteConversation = () => {
+    setShowDeleteConfirm(false);
+    setConversationToDelete(null);
   };
 
   // Filter conversations based on search
@@ -187,7 +267,7 @@ const Chat = () => {
   // ✅ NEW: Enhanced ConversationCard component
   const ConversationCard = ({ conversation, isSelected, onClick }) => (
     <Card 
-      className={`cursor-pointer transition-all duration-150 hover:shadow-sm ${
+      className={`cursor-pointer transition-all duration-150 hover:shadow-sm group ${
         isSelected ? 'ring-2 ring-primary-500 bg-primary-50' : 'hover:bg-neutral-50'
       }`}
       onClick={onClick}
@@ -226,6 +306,28 @@ const Chat = () => {
                     {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
                   </Badge>
                 )}
+                {/* Delete Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent card click
+                    handleDeleteConversation(conversation);
+                  }}
+                  disabled={deletingConversation === conversation.bookingId}
+                  className={`
+                    opacity-0 group-hover:opacity-100 transition-opacity duration-150 
+                    p-1 h-auto w-auto hover:bg-error-100 hover:text-error-600
+                    ${isSelected ? 'opacity-100' : ''}
+                  `}
+                  title="Delete conversation"
+                >
+                  {deletingConversation === conversation.bookingId ? (
+                    <Icon name="loading" size="xs" className="animate-spin" />
+                  ) : (
+                    <Icon name="delete" size="xs" />
+                  )}
+                </Button>
               </div>
             </div>
             
@@ -393,6 +495,24 @@ const Chat = () => {
           </div>
         )}
       </ContentSection>
+
+      <ConfirmationDialog
+        isOpen={showDeleteConfirm}
+        onClose={cancelDeleteConversation}
+        onConfirm={confirmDeleteConversation}
+        title="Delete Conversation"
+        message={`Are you sure you want to delete this conversation with ${conversationToDelete?.otherParty?.name}?`}
+        details={
+          conversationToDelete && (
+            `This will permanently delete ${conversationToDelete.totalMessages || 0} message${(conversationToDelete.totalMessages || 0) !== 1 ? 's' : ''} for the service "${conversationToDelete.serviceTitle}". This action cannot be undone.`
+          )
+        }
+        confirmText="Delete Conversation"
+        cancelText="Keep Conversation"
+        variant="primary"
+        icon="delete"
+        loading={deletingConversation === conversationToDelete?.bookingId}
+      />
     </PageLayout>
   );
 };

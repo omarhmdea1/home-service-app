@@ -191,6 +191,11 @@ router.get('/conversations', protect, async (req, res) => {
             bookingId: booking._id
           });
 
+          // Only return conversations that have messages
+          if (totalMessages === 0) {
+            return null; // Filter out conversations with no messages
+          }
+
           return {
             bookingId: booking._id,
             booking: booking,
@@ -221,13 +226,14 @@ router.get('/conversations', protect, async (req, res) => {
       })
     );
 
-    // Sort by last message time (most recent first)
-    conversations.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    // Filter out null conversations and sort by last message time (most recent first)
+    const filteredConversations = conversations.filter(conv => conv !== null);
+    filteredConversations.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
     res.status(200).json({
       success: true,
-      count: conversations.length,
-      data: conversations
+      count: filteredConversations.length,
+      data: filteredConversations
     });
 
   } catch (error) {
@@ -315,4 +321,60 @@ router.put('/:id/read', protect, async (req, res) => {
       }
   });
  
- module.exports = router;
+/**
+ * @route   DELETE /api/messages/conversation/:bookingId
+ * @desc    Delete entire conversation (all messages for a booking)
+ * @access  Private
+ */
+router.delete('/conversation/:bookingId', protect, async (req, res) => {
+  try {
+    const bookingId = req.params.bookingId;
+    
+    // Verify the booking exists
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    // Ensure the user is either the customer or provider for this booking
+    const userId = req.user.firebaseUid;
+    if (booking.userId !== userId && booking.providerId !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to delete this conversation'
+      });
+    }
+
+    // Delete all messages for this booking
+    const deleteResult = await Message.deleteMany({ bookingId });
+
+    console.log(`🗑️ Deleted ${deleteResult.deletedCount} messages for booking ${bookingId} by user ${userId}`);
+
+    // Emit real-time event for conversation deletion
+    if (req.io) {
+      req.io.to(bookingId).emit('conversation_deleted', {
+        bookingId,
+        deletedBy: userId,
+        deletedCount: deleteResult.deletedCount
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Conversation deleted successfully',
+      deletedCount: deleteResult.deletedCount
+    });
+  } catch (error) {
+    console.error('❌ Error deleting conversation:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+module.exports = router;

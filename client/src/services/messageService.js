@@ -1,4 +1,4 @@
-import { get, post, put } from './apiService';
+import { get, post, put, del } from './apiService';
 
 /**
  * Send a new message
@@ -69,6 +69,21 @@ export const getConversations = async () => {
     return response?.data || response || [];
   } catch (error) {
     console.error('Error fetching conversations:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete entire conversation (all messages for a booking)
+ * @param {string} bookingId - The booking ID
+ * @returns {Promise<Object>} - Delete result
+ */
+export const deleteConversation = async (bookingId) => {
+  try {
+    const response = await del(`/messages/conversation/${bookingId}`);
+    return response;
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
     throw error;
   }
 };

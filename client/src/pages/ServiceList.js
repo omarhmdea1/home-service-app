@@ -108,7 +108,7 @@ const ServiceList = () => {
       const cacheKey = params.toString();
       const cachedData = servicesCache.get(cacheKey);
       
-      if (cachedData) {
+      if (cachedData && Date.now() - cachedData.timestamp < 300000) { // 5 min cache
         console.log('💾 Using cached data for:', cacheKey);
         setRawServices(cachedData.services);
         setLoading(false);
@@ -155,28 +155,27 @@ const ServiceList = () => {
         
         setRawServices(formattedServices);
         
-        // ✅ CACHING: Store this result for future use (limit cache size)
-        const cacheData = {
-          services: formattedServices,
-          timestamp: Date.now()
-        };
-        
+        // ✅ CACHING: Store with timestamp
         setServicesCache(prev => {
-          const newCache = new Map(prev);
-          newCache.set(params.toString(), cacheData);
+          const newCache = new Map(prev.set(cacheKey, {
+            services: formattedServices,
+            timestamp: Date.now()
+          }));
           
-          // ✅ MEMORY MANAGEMENT: Keep only last 10 searches
-          if (newCache.size > 10) {
-            const firstKey = newCache.keys().next().value;
-            newCache.delete(firstKey);
+          // ✅ MEMORY MANAGEMENT: Keep only last 5 searches and clean stale entries
+          if (newCache.size > 5) {
+            // Remove oldest entries
+            const entries = [...newCache.entries()];
+            const sortedEntries = entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+            const keepEntries = sortedEntries.slice(-5); // Keep last 5
+            return new Map(keepEntries);
           }
           
           return newCache;
         });
-                 console.log('💾 Cached result for:', params.toString());
         
-        // ✅ FALLBACK: Update categories if not loaded yet
-        if (allCategories.length === 0 && formattedServices.length > 0) {
+        // ✅ FALLBACK: Extract categories if categories endpoint failed
+        if (allCategories.length === 0) {
           const extractedCategories = [...new Set(formattedServices.map(service => service.category))].sort();
           setAllCategories(extractedCategories);
           console.log('📝 Extracted categories from services:', extractedCategories);
@@ -190,18 +189,37 @@ const ServiceList = () => {
       }
     };
 
-    // ✅ DEBOUNCING: Wait 500ms after user stops typing
-    const timeoutId = setTimeout(() => {
-      if (searchTerm && searchTerm.length > 0) {
-        setIsSearching(true);
-      }
-      fetchServices().finally(() => {
-        setIsSearching(false);
-      });
-    }, searchTerm ? 500 : 0); // Immediate for category changes, debounced for search
+    // ✅ PERFORMANCE: Only fetch if we don't have the data or cache is stale
+    const params = new URLSearchParams();
+    if (searchTerm?.trim()) params.append('search', searchTerm.trim());
+    if (categoryFilter) params.append('category', categoryFilter);
+    params.append('limit', '50');
+    params.append('page', '1');
+    
+    const cacheKey = params.toString();
+    const cachedData = servicesCache.get(cacheKey);
+    const isStale = !cachedData || Date.now() - cachedData.timestamp > 300000;
+    
+    if (isStale) {
+      // ✅ DEBOUNCING: Wait 500ms after user stops typing for search, immediate for category
+      const debounceTime = searchTerm ? 500 : 0;
+      const timeoutId = setTimeout(() => {
+        if (searchTerm && searchTerm.length > 0) {
+          setIsSearching(true);
+        }
+        fetchServices().finally(() => {
+          setIsSearching(false);
+        });
+      }, debounceTime);
 
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, categoryFilter]);
+      return () => clearTimeout(timeoutId);
+    } else {
+      // Use cached data immediately
+      console.log('💾 Using fresh cached data for:', cacheKey);
+      setRawServices(cachedData.services);
+      setLoading(false);
+    }
+  }, [searchTerm, categoryFilter]); // Removed servicesCache to prevent infinite loops
 
   // ✅ FIXED: Use all categories instead of only from filtered results
   const categories = allCategories;
@@ -539,7 +557,43 @@ const ServiceList = () => {
   // ✅ NEW: Use ListPageTemplate for consistent layout
   return (
     <>
-             <ListPageTemplate
+      {/* ✅ NEW: Guest Welcome Banner */}
+      {!currentUser && (
+        <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-6 mb-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Icon name="services" className="w-8 h-8 text-primary-200" />
+                <div>
+                  <Heading level={3} className="text-white font-semibold">
+                    Browse All Services
+                  </Heading>
+                  <Text className="text-primary-100">
+                    Explore our marketplace of trusted professionals. Sign up to book services instantly!
+                  </Text>
+                </div>
+              </div>
+              <div className="hidden md:flex space-x-3">
+                <Button
+                  variant="outline"
+                  className="border-white text-white hover:bg-white hover:text-primary-600"
+                  onClick={() => window.location.href = '/login'}
+                >
+                  Sign In
+                </Button>
+                <Button
+                  className="bg-white text-primary-600 hover:bg-primary-50"
+                  onClick={() => window.location.href = '/signup'}
+                >
+                  Get Started
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ListPageTemplate
          title="Professional Home Services"
          subtitle="Find and book trusted professionals for all your home service needs"
          description="Browse our comprehensive catalog of verified service providers"
@@ -548,11 +602,11 @@ const ServiceList = () => {
           { label: 'Home', href: '/' },
           { label: 'Services' }
         ]}
-        primaryAction={{
+        primaryAction={userRole === 'provider' ? {
           label: 'Add Your Service',
           onClick: () => window.location.href = '/provider/services',
           icon: <Icon name="add" />
-        }}
+        } : null}
         actions={[
           { 
             label: 'Categories',

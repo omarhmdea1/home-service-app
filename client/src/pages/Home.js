@@ -33,28 +33,36 @@ const Home = () => {
     return <WelcomeScreen />;
   }
 
-  return (
-    <div className="min-h-screen bg-neutral-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {userRole === 'provider' ? <ProviderDashboard /> : <CustomerDashboard />}
-      </div>
-    </div>
-  );
+  // Return the appropriate dashboard based on user role
+  return userRole === 'provider' ? <ProviderDashboard /> : <CustomerDashboard />;
 };
 
 // Customer Dashboard
 const CustomerDashboard = () => {
   const navigate = useNavigate();
-  const { currentUser } = useAuth(); 
+  const { currentUser, userProfile } = useAuth(); 
   const [services, setServices] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [lastFetch, setLastFetch] = useState(0);
+
+  // ✅ Memoize currentUser.uid to prevent unnecessary re-fetches
+  const currentUserId = currentUser?.uid;
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [currentUser]); 
+    // Only fetch if we have a valid user ID and data is stale (5 minutes)
+    const isStale = Date.now() - lastFetch > 300000; // 5 minutes
+    if (currentUserId && (isStale || services.length === 0)) {
+      fetchDashboardData();
+    } else if (currentUserId && !isStale) {
+      console.log('💾 Using cached dashboard data');
+      setLoading(false);
+    } else {
+      setLoading(false);
+    }
+  }, [currentUserId]); // Use memoized ID instead of full currentUser object
 
   // ✅ Enhanced API call with timeout and better error handling
   const apiCall = async (url, options = {}, timeout = 10000) => {
@@ -89,7 +97,7 @@ const CustomerDashboard = () => {
   // ✅ Enhanced data fetching with retry logic and better error handling
   const fetchDashboardData = async (isRetry = false) => {
     try {
-      if (!currentUser?.uid) {
+      if (!currentUserId) {
         console.log('No currentUser available, skipping data fetch');
         setLoading(false);
         return;
@@ -124,7 +132,7 @@ const CustomerDashboard = () => {
       let bookingsData = [];
       try {
         const bookingsResponse = await apiCall(
-          `http://localhost:5001/api/bookings?userId=${currentUser.uid}`
+          `http://localhost:5001/api/bookings?userId=${currentUserId}`
         );
         
         // Handle multiple response formats
@@ -176,6 +184,7 @@ const CustomerDashboard = () => {
 
       setLoading(false);
       setRetryCount(0); // Reset retry count on success
+      setLastFetch(Date.now()); // Update last fetch timestamp
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       setError(error.message || 'Failed to load dashboard data');
@@ -192,150 +201,238 @@ const CustomerDashboard = () => {
   // ✅ Enhanced loading state
   if (loading) {
     return (
-      <div className="space-y-8">
-        <div className="text-center py-12 bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl text-white">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white mx-auto mb-4"></div>
-          <h1 className="text-4xl font-bold mb-4">Welcome to HomeServices</h1>
-          <p className="text-xl text-primary-100">Loading your personalized dashboard...</p>
-        </div>
-      </div>
+      <PageLayout background="bg-neutral-50">
+        <LoadingState 
+          title="Loading your dashboard..."
+          description="Gathering your personalized home service experience"
+        />
+      </PageLayout>
     );
   }
 
   // ✅ Enhanced error state
   if (error && retryCount < 3) {
     return (
-      <div className="space-y-8">
-        <Alert variant="error" className="mx-auto max-w-2xl">
-          <Icon name="error" size="sm" className="mr-2" />
-          <div className="flex-1">
-            <Text className="font-medium">Failed to Load Dashboard</Text>
-            <Text size="small" className="text-neutral-600 mt-1">
-              {error}
-            </Text>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRetry}
-            className="ml-4"
-          >
-            <Icon name="spinner" size="xs" className="mr-1" />
-            Retry {retryCount > 0 && `(${retryCount}/3)`}
-          </Button>
-        </Alert>
-      </div>
+      <PageLayout background="bg-neutral-50">
+        <div className="max-w-2xl mx-auto">
+          <Alert variant="error">
+            <Icon name="error" size="sm" className="mr-2" />
+            <div className="flex-1">
+              <Text className="font-medium">Failed to Load Dashboard</Text>
+              <Text size="small" className="text-neutral-600 mt-1">
+                {error}
+              </Text>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRetry}
+              className="ml-4"
+            >
+              <Icon name="spinner" size="xs" className="mr-1" />
+              Retry {retryCount > 0 && `(${retryCount}/3)`}
+            </Button>
+          </Alert>
+        </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <div className="text-center py-12 bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl text-white">
-        <h1 className="text-4xl font-bold mb-4">Welcome to HomeServices</h1>
-        <p className="text-xl text-primary-100 mb-8">Find trusted professionals for all your home service needs</p>
-        <div className="space-x-4">
-          <button
-            onClick={() => navigate('/services')}
-            className="bg-white text-primary-600 px-6 py-3 rounded-lg font-medium hover:bg-primary-50 transition-colors"
-          >
-            Browse Services
-          </button>
-          <button
-            onClick={() => navigate('/book-service')}
-            className="border-2 border-white text-white px-6 py-3 rounded-lg font-medium hover:bg-white hover:text-primary-600 transition-colors"
-          >
-            Book Now
-          </button>
-        </div>
-      </div>
+    <PageLayout background="bg-neutral-50">
+      <PageHeader
+        title={`Welcome back, ${userProfile?.name || currentUser?.displayName || 'Customer'}!`}
+        subtitle="Your trusted home service marketplace"
+        description="Find and book reliable professionals for all your home maintenance needs"
+        icon={<Icon name="home" />}
+        breadcrumbs={[
+          { label: 'Home' }
+        ]}
+        actions={[
+          {
+            label: 'Browse Services',
+            variant: 'primary',
+            onClick: () => navigate('/services'),
+            icon: <Icon name="services" size="sm" />
+          },
+          {
+            label: 'Book Service',
+            variant: 'outline',
+            onClick: () => navigate('/book-service'),
+            icon: <Icon name="plus" size="sm" />
+          }
+        ]}
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <ActionCard
-          icon="⚡"
-          title="Quick Service"
-          subtitle="Book emergency services"
-          onClick={() => navigate('/book-service')}
-          variant="emergency"
-        />
-        <ActionCard
-          icon="🔍"
-          title="Browse Services"
-          subtitle="Explore all available services"
-          onClick={() => navigate('/services')}
-          variant="primary"
-        />
-        <ActionCard
-          icon="📅"
-          title="My Bookings"
-          subtitle="View your appointments"
-          onClick={() => navigate('/my-bookings')}
-          variant="secondary"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Featured Services</h2>
-            <Link to="/services" className="text-primary-600 hover:text-primary-700 text-sm font-medium">
-              View all →
-            </Link>
-          </div>
-          {services.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {services.map((service, index) => (
-                <ServiceCard key={service._id} service={service} index={index} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Icon name="services" className="w-8 h-8 text-neutral-400" />
-              </div>
-              <Text className="text-neutral-600 mb-4">
-                No services available at the moment
-              </Text>
-              <Button
-                variant="outline"
-                onClick={() => window.location.reload()}
-                size="sm"
-              >
-                Refresh
-              </Button>
-            </div>
-          )}
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Recent Bookings</h2>
-            <Link to="/my-bookings" className="text-primary-600 hover:text-primary-700 text-sm font-medium">
-              View all →
-            </Link>
-          </div>
-          <div className="space-y-4">
-            {bookings.length > 0 ? (
-              bookings.map((booking, index) => (
-                <BookingCard key={booking._id} booking={booking} index={index} />
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Icon name="calendar" className="w-8 h-8 text-neutral-400" />
+      <ContentSection>
+        {/* Hero Section */}
+        <Card className="relative overflow-hidden mb-8 bg-gradient-to-r from-primary-600 to-primary-700 border-0">
+          <CardContent className="p-8 text-white relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              <div>
+                <Heading level={1} className="text-white mb-4">
+                  Your Home, Our Experts
+                </Heading>
+                <Text className="text-primary-100 text-lg mb-6 leading-relaxed">
+                  Connect with verified professionals for cleaning, repairs, maintenance, and more. 
+                  Quality service guaranteed.
+                </Text>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button
+                    onClick={() => navigate('/services')}
+                    className="bg-white text-primary-600 hover:bg-primary-50 border-0"
+                  >
+                    <Icon name="services" size="sm" className="mr-2" />
+                    Explore Services
+                  </Button>
+                  <Button
+                    onClick={() => navigate('/book-service')}
+                    variant="outline"
+                    className="border-white text-white hover:bg-white hover:text-primary-600"
+                  >
+                    <Icon name="calendar" size="sm" className="mr-2" />
+                    Book Now
+                  </Button>
                 </div>
-                <Text className="text-neutral-600 mb-4">No bookings yet</Text>
-                <Button 
-                  onClick={() => navigate('/services')}
+              </div>
+              
+              <div className="text-center lg:text-right">
+                <div className="inline-flex items-center justify-center w-32 h-32 bg-white/10 rounded-full">
+                  <Icon name="home" className="w-16 h-16 text-white" />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+          
+          {/* Background Pattern */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full transform translate-x-32 -translate-y-32"></div>
+          <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full transform -translate-x-20 translate-y-20"></div>
+        </Card>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <CustomerActionCard
+            title="Emergency Service"
+            subtitle="24/7 urgent repairs"
+            icon="emergency"
+            onClick={() => navigate('/book-service?category=emergency')}
+            variant="error"
+            badge="24/7"
+          />
+          <CustomerActionCard
+            title="Browse Services"
+            subtitle="Explore all categories"
+            icon="services"
+            onClick={() => navigate('/services')}
+            variant="primary"
+          />
+          <CustomerActionCard
+            title="My Bookings"
+            subtitle="Track appointments"
+            icon="calendar"
+            onClick={() => navigate('/my-bookings')}
+            variant="default"
+            badge={bookings.length > 0 ? bookings.length : null}
+          />
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Featured Services */}
+          <Card>
+            <CardHeader className="border-b border-neutral-200">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="star" size="sm" />
+                  Featured Services
+                </CardTitle>
+                <Button
+                  variant="outline"
                   size="sm"
+                  onClick={() => navigate('/services')}
                 >
-                  Book your first service →
+                  View All
                 </Button>
               </div>
-            )}
-          </div>
+            </CardHeader>
+            
+            <CardContent className="p-6">
+              {services.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4">
+                  {services.map((service, index) => (
+                    <CustomerServiceCard key={service._id} service={service} index={index} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Icon name="services" className="w-8 h-8 text-neutral-400" />
+                  </div>
+                  <Heading level={3} className="text-neutral-900 mb-2">No services available</Heading>
+                  <Text className="text-neutral-600 mb-4">
+                    Check back later for new service offerings
+                  </Text>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.location.reload()}
+                    size="sm"
+                  >
+                    <Icon name="spinner" size="xs" className="mr-1" />
+                    Refresh
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Bookings */}
+          <Card>
+            <CardHeader className="border-b border-neutral-200">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="calendar" size="sm" />
+                  Recent Bookings
+                </CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/my-bookings')}
+                >
+                  View All
+                </Button>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="p-6">
+              {bookings.length > 0 ? (
+                <div className="space-y-4">
+                  {bookings.map((booking, index) => (
+                    <CustomerBookingCard key={booking._id} booking={booking} index={index} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Icon name="calendar" className="w-8 h-8 text-neutral-400" />
+                  </div>
+                  <Heading level={3} className="text-neutral-900 mb-2">No bookings yet</Heading>
+                  <Text className="text-neutral-600 mb-4">
+                    Ready to book your first service? We're here to help!
+                  </Text>
+                  <Button 
+                    onClick={() => navigate('/services')}
+                    className="flex items-center gap-2"
+                  >
+                    <Icon name="plus" size="sm" />
+                    Book Your First Service
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
-      </div>
-    </div>
+      </ContentSection>
+    </PageLayout>
   );
 };
 
@@ -346,6 +443,7 @@ const ProviderDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [lastFetch, setLastFetch] = useState(0);
   const [stats, setStats] = useState({
     totalBookings: 0,
     pendingRequests: 0,
@@ -354,9 +452,21 @@ const ProviderDashboard = () => {
   });
   const [recentBookings, setRecentBookings] = useState([]);
 
+  // ✅ Memoize currentUser.uid to prevent unnecessary re-fetches
+  const currentUserId = currentUser?.uid;
+
   useEffect(() => {
-    fetchProviderData();
-  }, [currentUser]); 
+    // Only fetch if we have a valid user ID and data is stale (5 minutes)
+    const isStale = Date.now() - lastFetch > 300000; // 5 minutes
+    if (currentUserId && (isStale || stats.totalBookings === 0)) {
+      fetchProviderData();
+    } else if (currentUserId && !isStale) {
+      console.log('💾 Using cached provider dashboard data');
+      setLoading(false);
+    } else {
+      setLoading(false);
+    }
+  }, [currentUserId]); // Use memoized ID instead of full currentUser object
 
   // ✅ Enhanced API call with timeout and better error handling
   const apiCall = async (url, options = {}, timeout = 10000) => {
@@ -391,7 +501,7 @@ const ProviderDashboard = () => {
   // ✅ Enhanced provider data fetching
   const fetchProviderData = async (isRetry = false) => {
     try {
-      if (!currentUser?.uid) {
+      if (!currentUserId) {
         console.log('No currentUser available, skipping provider data fetch');
         setLoading(false);
         return;
@@ -406,7 +516,7 @@ const ProviderDashboard = () => {
       let bookingsData = [];
       try {
         const bookingsResponse = await apiCall(
-          `http://localhost:5001/api/bookings?providerId=${currentUser.uid}`
+          `http://localhost:5001/api/bookings?providerId=${currentUserId}`
         );
         
         bookingsData = Array.isArray(bookingsResponse) 
@@ -434,7 +544,7 @@ const ProviderDashboard = () => {
       // ✅ Fetch services count with better error handling
       let activeServices = 0;
       try {
-        const servicesResponse = await apiCall(`http://localhost:5001/api/services?providerId=${currentUser.uid}`);
+        const servicesResponse = await apiCall(`http://localhost:5001/api/services?providerId=${currentUserId}`);
         const servicesData = Array.isArray(servicesResponse) 
           ? servicesResponse 
           : (servicesResponse.data || servicesResponse.services || []);
@@ -487,6 +597,7 @@ const ProviderDashboard = () => {
 
       setLoading(false);
       setRetryCount(0);
+      setLastFetch(Date.now()); // Update last fetch timestamp
     } catch (error) {
       console.error('Error fetching provider data:', error);
       setError(error.message || 'Failed to load provider dashboard');
@@ -828,53 +939,617 @@ const ProviderDashboard = () => {
   );
 };
 
-// Welcome Screen for non-logged-in users
+// Welcome Screen for non-logged-in users - Beautiful Marketing Landing Page
 const WelcomeScreen = () => {
   const navigate = useNavigate();
   
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-      <Card className="max-w-md w-full">
-        <CardContent className="p-8 text-center">
-          <div className="text-6xl mb-4">🏠</div>
-          <Heading level={2} className="text-neutral-900 mb-2">
-            Welcome to HomeServices
+    <div className="min-h-screen bg-neutral-50">
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 text-white overflow-hidden min-h-screen flex items-center">
+        {/* Background Image Overlay */}
+        <div className="absolute inset-0 bg-black/20">
+          <img 
+            src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2073&q=80" 
+            alt="Beautiful modern home" 
+            className="w-full h-full object-cover opacity-30" 
+          />
+        </div>
+        
+        {/* Animated Floating Pattern Elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full transform -translate-x-48 -translate-y-48 animate-pulse"></div>
+          <div className="absolute bottom-0 right-0 w-80 h-80 bg-white/10 rounded-full transform translate-x-40 translate-y-40 animate-pulse delay-300"></div>
+          <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-white/5 rounded-full animate-bounce"></div>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <Badge variant="primary" className="bg-white/20 text-white border-white/30 mb-4">
+                ⭐ Trusted by 10,000+ Homeowners
+              </Badge>
+              
+              <Heading level={1} className="text-5xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+                Your Home,<br />
+                <span className="text-primary-200 bg-gradient-to-r from-primary-200 to-white bg-clip-text text-transparent">
+                  Perfect Care
+                </span>
+              </Heading>
+              
+              <Text className="text-xl lg:text-2xl text-primary-100 mb-8 leading-relaxed">
+                Connect with verified, trusted professionals for cleaning, repairs, maintenance, and more. 
+                <span className="font-semibold text-white">Quality service guaranteed, every time.</span>
+              </Text>
+              
+              <div className="flex flex-col sm:flex-row gap-4 mb-12">
+                <Button 
+                  onClick={() => navigate('/services')}
+                  className="bg-white text-primary-600 hover:bg-primary-50 border-0 text-lg px-8 py-6 shadow-2xl transform hover:scale-105 transition-all duration-300"
+                >
+                  <Icon name="services" size="sm" className="mr-2" />
+                  Browse Services
+                  <span className="ml-2">→</span>
+                </Button>
+                
+                <Button 
+                  onClick={() => navigate('/signup')}
+                  variant="outline"
+                  className="border-2 border-white text-white hover:bg-white hover:text-primary-600 text-lg px-8 py-6 transform hover:scale-105 transition-all duration-300"
+                >
+                  <Icon name="user" size="sm" className="mr-2" />
+                  Join as Provider
+                </Button>
+              </div>
+              
+              {/* Enhanced Trust Indicators */}
+              <div className="grid grid-cols-3 gap-8 text-center lg:text-left">
+                <div className="group">
+                  <div className="text-3xl lg:text-4xl font-bold text-white mb-1 group-hover:scale-110 transition-transform duration-300">10K+</div>
+                  <div className="text-primary-200 text-sm">Happy Customers</div>
+                </div>
+                <div className="group">
+                  <div className="text-3xl lg:text-4xl font-bold text-white mb-1 group-hover:scale-110 transition-transform duration-300">500+</div>
+                  <div className="text-primary-200 text-sm">Verified Providers</div>
+                </div>
+                <div className="group">
+                  <div className="text-3xl lg:text-4xl font-bold text-white mb-1 group-hover:scale-110 transition-transform duration-300">4.9★</div>
+                  <div className="text-primary-200 text-sm">Average Rating</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative lg:block">
+              {/* Hero Image Showcase */}
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                <Card className="bg-white p-4 shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500">
+                  <img 
+                    src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" 
+                    alt="Professional cleaning service" 
+                    className="w-full h-32 object-cover rounded-lg mb-3" 
+                  />
+                  <Text size="small" className="font-semibold text-neutral-900">House Cleaning</Text>
+                  <Text size="tiny" className="text-neutral-600">Starting at $80</Text>
+                </Card>
+                
+                <Card className="bg-white p-4 shadow-2xl transform -rotate-3 hover:rotate-0 transition-transform duration-500">
+                  <img 
+                    src="https://images.unsplash.com/photo-1621905251918-48416bd8575a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" 
+                    alt="Professional plumbing service" 
+                    className="w-full h-32 object-cover rounded-lg mb-3" 
+                  />
+                  <Text size="small" className="font-semibold text-neutral-900">Plumbing Repair</Text>
+                  <Text size="tiny" className="text-neutral-600">Starting at $120</Text>
+                </Card>
+              </div>
+              
+              {/* Quick Booking Card */}
+              <Card className="bg-white p-8 shadow-2xl backdrop-blur-sm bg-white/95">
+                <div className="flex items-center mb-6">
+                  <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mr-4">
+                    <Icon name="home" className="w-6 h-6 text-primary-600" />
+                  </div>
+                  <div>
+                    <Heading level={3} className="text-neutral-900">Quick Booking</Heading>
+                    <Text size="small" className="text-neutral-600">Get service in 3 easy steps</Text>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center group">
+                    <div className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3 group-hover:scale-110 transition-transform duration-300">1</div>
+                    <Text>Choose your service</Text>
+                  </div>
+                  <div className="flex items-center group">
+                    <div className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3 group-hover:scale-110 transition-transform duration-300">2</div>
+                    <Text>Select a provider</Text>
+                  </div>
+                  <div className="flex items-center group">
+                    <div className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3 group-hover:scale-110 transition-transform duration-300">3</div>
+                    <Text>Book and relax</Text>
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={() => navigate('/services')}
+                  className="w-full mt-6 shadow-lg transform hover:scale-105 transition-all duration-300"
+                >
+                  <Icon name="calendar" size="sm" className="mr-2" />
+                  Start Booking Now
+                </Button>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Heading level={2} className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-4">
+              Why Choose HomeServices?
+            </Heading>
+            <Text className="text-xl text-neutral-600 max-w-3xl mx-auto">
+              We make home maintenance simple, reliable, and stress-free with our comprehensive platform
+            </Text>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <FeatureCard
+              icon="check"
+              title="Verified Professionals"
+              description="All service providers are thoroughly vetted, background-checked, and insured for your peace of mind."
+              color="success"
+            />
+            <FeatureCard
+              icon="clock"
+              title="24/7 Support"
+              description="Round-the-clock customer support and emergency services available when you need them most."
+              color="primary"
+            />
+            <FeatureCard
+              icon="dollar"
+              title="Transparent Pricing"
+              description="No hidden fees or surprise charges. See upfront pricing and pay securely through our platform."
+              color="warning"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Services Showcase */}
+      <section className="py-24 bg-neutral-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge variant="primary" className="mb-4">
+              🏆 Most Popular Services
+            </Badge>
+            <Heading level={2} className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-4">
+              Popular Services
+            </Heading>
+            <Text className="text-xl text-neutral-600">
+              From routine maintenance to emergency repairs, we've got you covered
+            </Text>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+            <ServiceShowcaseCard
+              image="https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
+              icon="home"
+              title="House Cleaning"
+              description="Professional deep cleaning and regular maintenance"
+              price="Starting at $80"
+              rating="4.9"
+              reviews="1.2k"
+            />
+            <ServiceShowcaseCard
+              image="https://images.unsplash.com/photo-1621905251918-48416bd8575a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
+              icon="services"
+              title="Plumbing"
+              description="Expert plumbing repairs and installations"
+              price="Starting at $120"
+              rating="4.8"
+              reviews="890"
+            />
+            <ServiceShowcaseCard
+              image="https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
+              icon="emergency"
+              title="Electrical"
+              description="Safe and reliable electrical services"
+              price="Starting at $150"
+              rating="4.9"
+              reviews="756"
+            />
+            <ServiceShowcaseCard
+              image="https://images.unsplash.com/photo-1632833239869-a37e3a5806d2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
+              icon="home"
+              title="HVAC"
+              description="Heating, cooling, and ventilation services"
+              price="Starting at $200"
+              rating="4.7"
+              reviews="634"
+            />
+          </div>
+          
+          <div className="text-center">
+            <Button
+              onClick={() => navigate('/services')}
+              className="text-lg px-8 py-4 shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+              View All Services
+              <Icon name="arrowRight" size="sm" className="ml-2" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Customer Testimonials Section */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge variant="success" className="mb-4">
+              💬 Customer Stories
+            </Badge>
+            <Heading level={2} className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-4">
+              What Our Customers Say
+            </Heading>
+            <Text className="text-xl text-neutral-600">
+              Real experiences from real homeowners who trust HomeServices
+            </Text>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <TestimonialCard
+              image="https://images.unsplash.com/photo-1494790108755-2616b612b1e5?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"
+              name="Sarah Johnson"
+              location="San Francisco, CA"
+              rating={5}
+              text="Amazing service! The cleaning team was professional, thorough, and my house has never looked better. Scheduling was so easy through the app."
+              service="House Cleaning"
+            />
+            <TestimonialCard
+              image="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"
+              name="Mike Chen"
+              location="Austin, TX"
+              rating={5}
+              text="Had a plumbing emergency at 11 PM. Found a certified plumber through HomeServices who came within an hour. Saved my weekend!"
+              service="Emergency Plumbing"
+            />
+            <TestimonialCard
+              image="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"
+              name="Emily Rodriguez"
+              location="Miami, FL"
+              rating={5}
+              text="The electrical work was done perfectly and the technician explained everything clearly. Great value and peace of mind knowing it's done right."
+              service="Electrical Repair"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Before & After Transformations */}
+      <section className="py-24 bg-gradient-to-br from-neutral-50 to-primary-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge variant="warning" className="mb-4">
+              ✨ Amazing Transformations
+            </Badge>
+            <Heading level={2} className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-4">
+              See the Difference We Make
+            </Heading>
+            <Text className="text-xl text-neutral-600">
+              Real transformations from our professional service providers
+            </Text>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <BeforeAfterCard
+              beforeImage="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+              afterImage="https://images.unsplash.com/photo-1616627404449-8162f1de6c6b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+              title="Kitchen Deep Clean"
+              description="Professional deep cleaning transformed this kitchen from cluttered to spotless in just 3 hours."
+              service="House Cleaning"
+              duration="3 hours"
+              provider="CleanCo Professionals"
+            />
+            <BeforeAfterCard
+              beforeImage="https://images.unsplash.com/photo-1607400201889-565b1ee75f8e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+              afterImage="https://images.unsplash.com/photo-1600585152220-90363fe7e115?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+              title="Bathroom Renovation"
+              description="Complete bathroom makeover with new fixtures, tiles, and modern design elements."
+              service="Home Renovation"
+              duration="5 days"
+              provider="Elite Home Solutions"
+            />
+          </div>
+          
+          <div className="text-center mt-12">
+            <Button
+              onClick={() => navigate('/services')}
+              className="text-lg px-8 py-4 shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+              <Icon name="camera" size="sm" className="mr-2" />
+              Start Your Transformation
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Heading level={2} className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-4">
+              How It Works
+            </Heading>
+            <Text className="text-xl text-neutral-600">
+              Getting your home serviced has never been easier
+            </Text>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <ProcessStep
+              step="1"
+              title="Book Online"
+              description="Choose your service, select date and time that works for you. No phone calls needed."
+              icon="calendar"
+            />
+            <ProcessStep
+              step="2"
+              title="We Match You"
+              description="Our algorithm connects you with the best verified professionals in your area."
+              icon="user"
+            />
+            <ProcessStep
+              step="3"
+              title="Get It Done"
+              description="Your service provider arrives on time, completes the work, and you pay securely online."
+              icon="check"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-24 bg-gradient-to-r from-primary-600 to-primary-700 text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <Heading level={2} className="text-3xl lg:text-4xl font-bold text-white mb-6">
+            Ready to Transform Your Home?
           </Heading>
-          <Text className="text-neutral-600 mb-8">
-            Connect with trusted professionals for all your home service needs
+          <Text className="text-xl text-primary-100 mb-8">
+            Join thousands of satisfied customers who trust HomeServices for all their home maintenance needs.
           </Text>
           
-          <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               onClick={() => navigate('/signup')}
-              className="w-full"
+              className="bg-white text-primary-600 hover:bg-primary-50 border-0 text-lg px-8 py-4"
             >
-              Get Started
+              Get Started Today
             </Button>
             <Button
+              onClick={() => navigate('/services')}
               variant="outline"
-              onClick={() => navigate('/login')}
-              className="w-full"
+              className="border-white text-white hover:bg-white hover:text-primary-600 text-lg px-8 py-4"
             >
-              Sign In
+              Browse Services
             </Button>
           </div>
-          
-          <div className="mt-6 pt-6 border-t border-neutral-200">
-            <Link 
-              to="/services" 
-              className="text-primary-600 hover:text-primary-700 text-sm font-medium"
-            >
-              Browse services without signing up →
-            </Link>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-neutral-900 text-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center mb-4">
+                <Icon name="home" className="w-8 h-8 text-primary-400 mr-2" />
+                <span className="text-xl font-bold">HomeServices</span>
+              </div>
+              <Text className="text-neutral-400 mb-4">
+                Your trusted partner for all home service needs. Quality, reliability, and peace of mind guaranteed.
+              </Text>
+            </div>
+            
+            <div>
+              <Heading level={4} className="text-white mb-4">Services</Heading>
+              <ul className="space-y-2 text-neutral-400">
+                <li><a href="#" className="hover:text-white transition-colors">Cleaning</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Plumbing</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Electrical</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">HVAC</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <Heading level={4} className="text-white mb-4">Company</Heading>
+              <ul className="space-y-2 text-neutral-400">
+                <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Support</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <Heading level={4} className="text-white mb-4">Connect</Heading>
+              <ul className="space-y-2 text-neutral-400">
+                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
+              </ul>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          
+          <div className="border-t border-neutral-800 mt-12 pt-8 text-center">
+            <Text className="text-neutral-400">
+              © 2024 HomeServices. All rights reserved.
+            </Text>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
 
-// Reusable Components for Customer Dashboard (keeping existing for now)
+// Reusable Components for Customer Dashboard
+const CustomerActionCard = ({ title, subtitle, icon, onClick, variant = 'default', badge = null }) => {
+  const variants = {
+    error: 'bg-gradient-to-r from-error-50 to-error-100 border-error-200 hover:from-error-100 hover:to-error-200',
+    primary: 'bg-gradient-to-r from-primary-50 to-primary-100 border-primary-200 hover:from-primary-100 hover:to-primary-200',
+    success: 'bg-gradient-to-r from-success-50 to-success-100 border-success-200 hover:from-success-100 hover:to-success-200',
+    default: 'bg-white border-neutral-200 hover:border-neutral-300 hover:shadow-md'
+  };
+
+  const iconColors = {
+    error: 'text-error-600',
+    primary: 'text-primary-600',
+    success: 'text-success-600',
+    default: 'text-neutral-600'
+  };
+
+  return (
+    <Card
+      onClick={onClick}
+      className={`cursor-pointer transition-all duration-300 border-2 hover:scale-105 relative overflow-hidden group ${variants[variant]}`}
+    >
+      <CardContent className="p-6 relative z-10">
+        <div className="flex items-start justify-between mb-4">
+          <div className={`p-3 rounded-xl bg-white/50 ${iconColors[variant]} group-hover:scale-110 transition-transform duration-300`}>
+            <Icon name={icon} size="lg" />
+          </div>
+          {badge && (
+            <Badge variant={variant === 'default' ? 'neutral' : variant} size="sm">
+              {badge}
+            </Badge>
+          )}
+        </div>
+        
+        <Heading level={3} className="text-neutral-900 mb-2">
+          {title}
+        </Heading>
+        <Text className="text-neutral-600">
+          {subtitle}
+        </Text>
+      </CardContent>
+      
+      {/* Background decoration */}
+      <div className="absolute top-0 right-0 w-20 h-20 bg-white/20 rounded-full transform translate-x-10 -translate-y-10 group-hover:scale-110 transition-transform duration-300"></div>
+    </Card>
+  );
+};
+
+const CustomerServiceCard = ({ service, index }) => {
+  const navigate = useNavigate();
+  
+  return (
+    <Card
+      className="cursor-pointer hover:shadow-md transition-all duration-200 group border border-neutral-200"
+      onClick={() => navigate(`/services/${service._id}`)}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+              <Icon name="services" className="w-6 h-6 text-primary-600" />
+            </div>
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between mb-2">
+              <Heading level={4} className="text-neutral-900 line-clamp-1 group-hover:text-primary-600 transition-colors">
+                {service.title}
+              </Heading>
+              <div className="flex items-center gap-1 text-neutral-500">
+                <Icon name="star" size="xs" />
+                <Text size="small">4.8</Text>
+              </div>
+            </div>
+            
+            <Text size="small" className="text-neutral-600 mb-3 line-clamp-2">
+              {service.description}
+            </Text>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Text className="text-lg font-bold text-neutral-900">
+                  ${service.price}
+                </Text>
+                <Badge variant="neutral" size="sm">
+                  {service.category}
+                </Badge>
+              </div>
+              
+              <Icon name="arrowRight" size="sm" className="text-neutral-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all duration-200" />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const CustomerBookingCard = ({ booking, index }) => {
+  const navigate = useNavigate();
+  
+  const statusConfig = {
+    pending: { variant: 'warning', icon: 'clock' },
+    confirmed: { variant: 'primary', icon: 'check' },
+    completed: { variant: 'success', icon: 'check' },
+    cancelled: { variant: 'error', icon: 'close' }
+  };
+
+  const config = statusConfig[booking.status] || statusConfig.pending;
+
+  return (
+    <Card 
+      className="cursor-pointer hover:shadow-sm transition-all duration-200 group border border-neutral-200"
+      onClick={() => navigate(`/booking/${booking._id}`)}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-center gap-4">
+          <div className="flex-shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-neutral-100 to-neutral-200 flex items-center justify-center">
+              <Icon name="calendar" className="w-5 h-5 text-neutral-600" />
+            </div>
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between mb-1">
+              <Heading level={4} className="text-neutral-900 line-clamp-1 group-hover:text-primary-600 transition-colors">
+                {booking.serviceName}
+              </Heading>
+              <Badge variant={config.variant} size="sm" className="flex items-center gap-1">
+                <Icon name={config.icon} size="xs" />
+                {booking.status}
+              </Badge>
+            </div>
+            
+            <Text size="small" className="text-neutral-600 mb-2">
+              Provider: {booking.providerName}
+            </Text>
+            
+            <div className="flex items-center justify-between">
+              <Text size="small" className="text-neutral-500">
+                {new Date(booking.date).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric'
+                })}
+              </Text>
+              
+              <Icon name="arrowRight" size="sm" className="text-neutral-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all duration-200" />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Legacy components (keeping for backwards compatibility)
 const ActionCard = ({ icon, title, subtitle, onClick, variant = 'default' }) => {
   const variants = {
     emergency: 'bg-gradient-to-r from-red-50 to-red-100 border-red-200 hover:from-red-100 hover:to-red-200',
@@ -952,6 +1627,210 @@ const BookingCard = ({ booking, index }) => {
           {booking.status}
         </span>
       </div>
+    </div>
+  );
+};
+
+// Marketing Landing Page Components
+const FeatureCard = ({ icon, title, description, color = 'primary' }) => {
+  const colorMap = {
+    primary: 'text-primary-600 bg-primary-100',
+    success: 'text-success-600 bg-success-100',
+    warning: 'text-warning-600 bg-warning-100',
+    error: 'text-error-600 bg-error-100'
+  };
+
+  return (
+    <Card className="text-center p-8 hover:shadow-lg transition-all duration-300 group">
+      <CardContent>
+        <div className={`w-16 h-16 ${colorMap[color]} rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}>
+          <Icon name={icon} className="w-8 h-8" />
+        </div>
+        
+        <Heading level={3} className="text-neutral-900 mb-4">
+          {title}
+        </Heading>
+        
+        <Text className="text-neutral-600 leading-relaxed">
+          {description}
+        </Text>
+      </CardContent>
+    </Card>
+  );
+};
+
+const ServiceShowcaseCard = ({ image, icon, title, description, price, rating, reviews }) => {
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    
+    // Add filled stars
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<Icon key={`star-${i}`} name="star" size="sm" className="text-yellow-500" />);
+    }
+    
+    // Add empty stars
+    for (let i = fullStars; i < 5; i++) {
+      stars.push(<Icon key={`star-${i}`} name="starOutline" size="sm" className="text-yellow-300" />);
+    }
+    
+    return stars;
+  };
+
+  return (
+    <Card className="hover:shadow-lg transition-all duration-300 group cursor-pointer relative overflow-hidden">
+      <CardContent className="p-6">
+        <div className="relative h-48 mb-4 rounded-lg overflow-hidden">
+          <img src={image} alt={title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+        </div>
+        <div className="text-center">
+          <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+            <Icon name={icon} className="w-8 h-8 text-primary-600" />
+          </div>
+          
+          <Heading level={4} className="text-neutral-900 mb-2 group-hover:text-primary-600 transition-colors">
+            {title}
+          </Heading>
+          
+          <Text size="small" className="text-neutral-600 mb-4">
+            {description}
+          </Text>
+          
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="flex items-center">
+              {renderStars(parseFloat(rating))}
+            </div>
+            <Text size="small" className="text-neutral-500">
+              {rating} ({reviews} reviews)
+            </Text>
+          </div>
+
+          <div className="pt-4 border-t border-neutral-200">
+            <Text className="font-semibold text-primary-600">
+              {price}
+            </Text>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const TestimonialCard = ({ image, name, location, rating, text, service }) => {
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    
+    // Add filled stars
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<Icon key={`star-${i}`} name="star" size="sm" className="text-yellow-500" />);
+    }
+    
+    // Add empty stars
+    for (let i = fullStars; i < 5; i++) {
+      stars.push(<Icon key={`star-${i}`} name="starOutline" size="sm" className="text-yellow-300" />);
+    }
+    
+    return stars;
+  };
+
+  return (
+    <Card className="hover:shadow-lg transition-all duration-300 group">
+      <CardContent className="p-6">
+        <div className="flex items-center mb-4">
+          <img src={image} alt={name} className="w-12 h-12 rounded-full object-cover mr-3 group-hover:scale-110 transition-transform duration-300" />
+          <div>
+            <Heading level={4} className="text-neutral-900">{name}</Heading>
+            <Text size="small" className="text-neutral-600">{location}</Text>
+          </div>
+        </div>
+        <div className="flex items-center mb-3">
+          {renderStars(rating)}
+        </div>
+        <Text className="text-neutral-600 leading-relaxed mb-4 italic">"{text}"</Text>
+        <Badge variant="primary" size="sm">
+          {service}
+        </Badge>
+      </CardContent>
+    </Card>
+  );
+};
+
+const BeforeAfterCard = ({ beforeImage, afterImage, title, description, service, duration, provider }) => {
+  const [showAfter, setShowAfter] = useState(false);
+
+  return (
+    <Card className="hover:shadow-xl transition-all duration-300 group overflow-hidden">
+      <CardContent className="p-0">
+        <div className="relative h-64 overflow-hidden">
+          <div className="grid grid-cols-2 h-full">
+            <div className="relative">
+              <img src={beforeImage} alt="Before" className="w-full h-full object-cover" />
+              <div className="absolute bottom-2 left-2">
+                <Badge variant="error" size="sm">Before</Badge>
+              </div>
+            </div>
+            <div className="relative">
+              <img src={afterImage} alt="After" className="w-full h-full object-cover" />
+              <div className="absolute bottom-2 right-2">
+                <Badge variant="success" size="sm">After</Badge>
+              </div>
+            </div>
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+        </div>
+        
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-3">
+            <Heading level={3} className="text-neutral-900 group-hover:text-primary-600 transition-colors">
+              {title}
+            </Heading>
+            <Badge variant="warning" size="sm">
+              {duration}
+            </Badge>
+          </div>
+          
+          <Text className="text-neutral-600 mb-4 leading-relaxed">
+            {description}
+          </Text>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <Text size="small" className="text-neutral-500">Service by</Text>
+              <Text size="small" className="font-semibold text-neutral-900">{provider}</Text>
+            </div>
+            <Badge variant="primary" size="sm">
+              {service}
+            </Badge>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const ProcessStep = ({ step, title, description, icon }) => {
+  return (
+    <div className="text-center">
+      <div className="relative mb-8">
+        <div className="w-20 h-20 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto text-2xl font-bold mb-4 shadow-lg">
+          {step}
+        </div>
+        <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
+          <div className="w-12 h-12 bg-white border-4 border-primary-100 rounded-full flex items-center justify-center">
+            <Icon name={icon} className="w-5 h-5 text-primary-600" />
+          </div>
+        </div>
+      </div>
+      
+      <Heading level={3} className="text-neutral-900 mb-4">
+        {title}
+      </Heading>
+      
+      <Text className="text-neutral-600 leading-relaxed">
+        {description}
+      </Text>
     </div>
   );
 };
