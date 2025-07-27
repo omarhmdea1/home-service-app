@@ -156,9 +156,9 @@ const BookingsList = ({ bookings, userRole, onCancelBooking, onUpdateStatus, onV
                 <div className="flex space-x-2">
                   <button
                     onClick={() => onViewDetails(booking)}
-                    className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    className="px-3 py-1.5 text-xs font-medium text-primary-700 bg-white border border-primary-300 rounded-md hover:bg-primary-50 transition-colors"
                   >
-                    Details
+                    View Details
                   </button>
                   
                   {/* Customer actions */}
@@ -258,115 +258,7 @@ const CancelModal = ({ booking, onConfirm, onCancel }) => (
   </AnimatePresence>
 );
 
-const BookingDetailsModal = ({ booking, userRole, onClose }) => (
-  <AnimatePresence>
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black bg-opacity-50"
-        onClick={onClose}
-      />
-      
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="relative bg-white rounded-xl max-w-lg w-full shadow-xl max-h-[90vh] overflow-y-auto"
-      >
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">Booking Details</h3>
-            <button
-              onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b border-gray-200">
-              <span className="text-sm font-medium text-gray-500">Service</span>
-              <span className="text-sm text-gray-900">{booking?.serviceTitle}</span>
-            </div>
-            
-            <div className="flex items-center justify-between py-3 border-b border-gray-200">
-              <span className="text-sm font-medium text-gray-500">Status</span>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                booking?.status === 'pending' ? 'bg-amber-100 text-amber-800' :
-                booking?.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                booking?.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
-                'bg-red-100 text-red-800'
-              }`}>
-                {booking?.status?.charAt(0).toUpperCase() + booking?.status?.slice(1)}
-              </span>
-            </div>
-            
-            <div className="flex items-center justify-between py-3 border-b border-gray-200">
-              <span className="text-sm font-medium text-gray-500">Date</span>
-              <span className="text-sm text-gray-900">
-                {booking?.date && new Date(booking.date).toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </span>
-            </div>
-            
-            {booking?.time && (
-              <div className="flex items-center justify-between py-3 border-b border-gray-200">
-                <span className="text-sm font-medium text-gray-500">Time</span>
-                <span className="text-sm text-gray-900">{booking.time}</span>
-              </div>
-            )}
-            
-            <div className="flex items-center justify-between py-3 border-b border-gray-200">
-              <span className="text-sm font-medium text-gray-500">Price</span>
-              <span className="text-sm font-semibold text-gray-900">${booking?.servicePrice || booking?.price || 0}</span>
-            </div>
-            
-            {booking?.location && (
-              <div className="flex items-center justify-between py-3 border-b border-gray-200">
-                <span className="text-sm font-medium text-gray-500">Location</span>
-                <span className="text-sm text-gray-900">{booking.location}</span>
-              </div>
-            )}
-            
-            {userRole === 'provider' && (booking?.userName || booking?.userEmail) && (
-              <div className="flex items-center justify-between py-3 border-b border-gray-200">
-                <span className="text-sm font-medium text-gray-500">Customer</span>
-                <span className="text-sm text-gray-900">
-                  {booking.userName || booking.userEmail?.split('@')[0]}
-                </span>
-              </div>
-            )}
-            
-            {booking?.notes && (
-              <div className="py-3">
-                <span className="text-sm font-medium text-gray-500 block mb-2">Notes</span>
-                <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">{booking.notes}</p>
-              </div>
-            )}
-          </div>
-          
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <button
-              onClick={onClose}
-              className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  </AnimatePresence>
-);
+
 
 const MyBookings = () => {
   const { currentUser, userRole } = useAuth();
@@ -379,7 +271,6 @@ const MyBookings = () => {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
   
   // Calculate booking counts by status
   const bookingCounts = {
@@ -668,8 +559,7 @@ const MyBookings = () => {
               }}
               onUpdateStatus={handleUpdateStatus}
               onViewDetails={(booking) => {
-                setSelectedBooking(booking);
-                setShowDetailsModal(true);
+                navigate(`/booking/${booking._id || booking.id}`);
               }}
             />
           )}
@@ -688,17 +578,7 @@ const MyBookings = () => {
         />
       )}
 
-      {/* Booking Details Modal */}
-      {showDetailsModal && (
-        <BookingDetailsModal
-          booking={selectedBooking}
-          userRole={userRole}
-          onClose={() => {
-            setShowDetailsModal(false);
-            setSelectedBooking(null);
-          }}
-        />
-      )}
+
     </div>
   );
 };

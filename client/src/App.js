@@ -576,7 +576,7 @@ function AppContent() {
             </PrivateRoute>
           } />
           <Route path="/booking/:id" element={
-            <PrivateRoute allowedRoles={['customer']}>
+            <PrivateRoute allowedRoles={['customer', 'provider']}>
               <BookingDetail />
             </PrivateRoute>
           } />
