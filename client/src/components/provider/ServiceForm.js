@@ -32,23 +32,24 @@ const ServiceForm = ({
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true);
-        const response = await axios.get('/api/categories');
-        if (response.data && response.data.data) {
-          const activeCategories = response.data.data
-            .filter(category => category.isActive)
-            .sort((a, b) => a.order - b.order)
-            .map(category => ({
-              value: category.name,
-              label: category.name,
-              icon: category.icon
-            }));
-          setCategories(activeCategories);
+        // Use the correct server endpoint for categories
+        const response = await axios.get('http://localhost:5001/api/services/categories');
+        
+        // Handle the new API response format
+        const categoriesData = response.data?.categories || response.data || [];
+        
+        if (Array.isArray(categoriesData) && categoriesData.length > 0) {
+          const categoryOptions = categoriesData.map(category => ({
+            value: category,
+            label: category
+          }));
+          setCategories(categoryOptions);
           
           // Set default category if available and form doesn't have one yet
-          if (activeCategories.length > 0 && !formData.category) {
+          if (categoryOptions.length > 0 && !formData.category) {
             setFormData(prev => ({
               ...prev,
-              category: activeCategories[0].value
+              category: categoryOptions[0].value
             }));
           }
         }

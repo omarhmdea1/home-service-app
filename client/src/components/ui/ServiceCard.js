@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, Badge, Text, Heading, Button, Icon } from './index';
 
 /**
- * Enhanced Service Card Component
+ * Enhanced Service Card Component with Role-Based Actions
  * 
  * @param {Object} service - Service data
  * @param {number} index - Card index for animation delay
@@ -12,8 +12,12 @@ import { Card, Badge, Text, Heading, Button, Icon } from './index';
  * @param {boolean} showImage - Whether to show service image
  * @param {Function} onClick - Custom click handler
  * @param {Function} onViewDetails - View details handler
- * @param {Function} onBook - Book service handler
+ * @param {Function} onBook - Book service handler (only for customers)
+ * @param {Function} onEdit - Edit service handler (only for providers)
+ * @param {Function} onContact - Contact provider handler
  * @param {boolean} showActions - Whether to show action buttons
+ * @param {string} userRole - Current user role ('customer', 'provider', or null)
+ * @param {string} currentUserId - Current user ID (for provider ownership check)
  */
 const ServiceCard = ({ 
   service, 
@@ -23,7 +27,11 @@ const ServiceCard = ({
   onClick,
   onViewDetails,
   onBook,
+  onEdit,
+  onContact,
   showActions = true,
+  userRole = null,
+  currentUserId = null,
   className = ''
 }) => {
   const navigate = useNavigate();
@@ -134,8 +142,9 @@ const ServiceCard = ({
           )}
           
           {/* Action Buttons */}
-          {showActions && (onViewDetails || onBook) && (
+          {showActions && (
             <div className="flex gap-2 mt-4 pt-4 border-t border-neutral-200">
+              {/* Always show Details button */}
               {onViewDetails && (
                 <Button
                   variant="outline"
@@ -150,7 +159,9 @@ const ServiceCard = ({
                   Details
                 </Button>
               )}
-              {onBook && (
+
+              {/* Customer Actions */}
+              {userRole === 'customer' && onBook && (
                 <Button
                   variant="primary"
                   size="sm"
@@ -161,7 +172,68 @@ const ServiceCard = ({
                   }}
                 >
                   <Icon name="calendar" size="xs" className="mr-1" />
-                  Book
+                  Book Now
+                </Button>
+              )}
+
+              {/* Provider Actions - Own Service */}
+              {userRole === 'provider' && currentUserId === service.providerId && onEdit && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="flex-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(service);
+                  }}
+                >
+                  <Icon name="edit" size="xs" className="mr-1" />
+                  Edit
+                </Button>
+              )}
+
+              {/* Provider Actions - Other's Service */}
+              {userRole === 'provider' && currentUserId !== service.providerId && onContact && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onContact(service);
+                  }}
+                >
+                  <Icon name="chat" size="xs" className="mr-1" />
+                  Contact
+                </Button>
+              )}
+
+              {/* Provider Restriction Notice */}
+              {userRole === 'provider' && currentUserId !== service.providerId && !onContact && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 cursor-not-allowed opacity-60"
+                  disabled
+                >
+                  <Icon name="info" size="xs" className="mr-1" />
+                  View Only
+                </Button>
+              )}
+
+              {/* Guest User Actions */}
+              {!userRole && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/login');
+                  }}
+                >
+                  <Icon name="user" size="xs" className="mr-1" />
+                  Login to Book
                 </Button>
               )}
             </div>

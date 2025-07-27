@@ -76,8 +76,14 @@ const ProviderServices = () => {
   // Handle service status toggle
   const handleToggleStatus = async (serviceId) => {
     try {
+      console.log('🔄 handleToggleStatus called with serviceId:', serviceId);
       const serviceToToggle = services.find(service => service.id === serviceId);
-      if (!serviceToToggle) return;
+      if (!serviceToToggle) {
+        console.error('❌ Service not found for ID:', serviceId);
+        return;
+      }
+
+      console.log('🔄 Toggling service:', serviceToToggle.title, 'from', serviceToToggle.isActive, 'to', !serviceToToggle.isActive);
 
       await updateService(serviceId, { isActive: !serviceToToggle.isActive });
 
@@ -89,11 +95,14 @@ const ProviderServices = () => {
         )
       );
       
-      setSuccess(`Service ${serviceToToggle.isActive ? 'deactivated' : 'activated'} successfully!`);
+      const newStatus = serviceToToggle.isActive ? 'deactivated' : 'activated';
+      setSuccess(`Service ${newStatus} successfully!`);
+      console.log('✅ Service status updated successfully:', newStatus);
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
+      console.error('❌ Error updating service status:', error);
       setError(`Failed to update service status: ${error.message}`);
     }
   };
@@ -157,7 +166,11 @@ const ProviderServices = () => {
   };
 
   // ✅ NEW: Enhanced ServiceCard component
-  const ServiceCard = ({ service }) => (
+  const ServiceCard = ({ service }) => {
+    // Debug logging
+    console.log('🔧 Rendering ServiceCard for service:', service.title, 'isActive:', service.isActive);
+    
+    return (
     <Card className="transition-all duration-150 hover:shadow-md">
       <CardContent className="p-6">
         <div className="flex flex-col sm:flex-row gap-6">
@@ -235,21 +248,27 @@ const ProviderServices = () => {
             )}
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 pt-4 mt-4 border-t border-neutral-200">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleEditService(service.id)}
+                onClick={() => {
+                  console.log('🔧 Edit button clicked for service:', service.id);
+                  handleEditService(service.id);
+                }}
                 className="flex items-center gap-2"
               >
                 <Icon name="edit" size="xs" />
                 Edit
               </Button>
               <Button
-                variant={service.isActive ? "error" : "success"}
+                variant="primary"
                 size="sm"
-                onClick={() => handleToggleStatus(service.id)}
-                className="flex items-center gap-2"
+                onClick={() => {
+                  console.log('🔄 Toggle button clicked for service:', service.id, 'Current status:', service.isActive);
+                  handleToggleStatus(service.id);
+                }}
+                className="flex items-center gap-2 min-w-[120px]"
               >
                 <Icon name={service.isActive ? "close" : "check"} size="xs" />
                 {service.isActive ? 'Deactivate' : 'Activate'}
@@ -260,6 +279,7 @@ const ProviderServices = () => {
       </CardContent>
     </Card>
   );
+  };
 
   // ✅ NEW: Service Form Section
   const serviceFormSection = showAddForm && (
@@ -372,9 +392,23 @@ const ProviderServices = () => {
             description="Fetching your service catalog"
           />
         ) : services.length === 0 ? (
-          emptyState
+          <div>
+            <div className="bg-red-100 border border-red-500 p-4 mb-4">
+              <strong>DEBUG: No services found</strong>
+              <br />Services array length: {services.length}
+              <br />Current user: {currentUser ? 'Logged in' : 'Not logged in'}
+              <br />User role: {JSON.stringify(userRole)}
+            </div>
+            {emptyState}
+          </div>
         ) : (
           <div>
+            <div className="bg-green-100 border border-green-500 p-4 mb-4">
+              <strong>DEBUG: Services loaded successfully!</strong>
+              <br />Services count: {services.length}
+              <br />First service: {services[0]?.title || 'N/A'}
+              <br />Services data: <pre>{JSON.stringify(services, null, 2)}</pre>
+            </div>
             <div className="flex items-center justify-between mb-6">
               <Heading level={3} className="text-neutral-900">
                 Your Services ({services.length})

@@ -12,7 +12,13 @@ export const getServices = async (filters = {}, limitCount = 50) => {
   try {
     const params = { ...filters, limit: limitCount };
     
-    const services = await get('/services', params);
+    const response = await get('/services', params);
+    
+    // Handle both direct array and object response formats
+    const services = Array.isArray(response) 
+      ? response 
+      : (response.services || response.data || []);
+    
     return services;
   } catch (error) {
     console.error('Error fetching services from API:', error);

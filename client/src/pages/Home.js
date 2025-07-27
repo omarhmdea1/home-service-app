@@ -49,12 +49,45 @@ const CustomerDashboard = () => {
   const [services, setServices] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     fetchDashboardData();
   }, [currentUser]); 
 
-  const fetchDashboardData = async () => {
+  // ✅ Enhanced API call with timeout and better error handling
+  const apiCall = async (url, options = {}, timeout = 10000) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Request timed out. Please check your connection.');
+      }
+      throw error;
+    }
+  };
+
+  // ✅ Enhanced data fetching with retry logic and better error handling
+  const fetchDashboardData = async (isRetry = false) => {
     try {
       if (!currentUser?.uid) {
         console.log('No currentUser available, skipping data fetch');
@@ -62,58 +95,135 @@ const CustomerDashboard = () => {
         return;
       }
 
-      const [servicesRes, bookingsRes] = await Promise.all([
-        fetch('http://localhost:5001/api/services'),
-        fetch(`http://localhost:5001/api/bookings?userId=${currentUser.uid}`, {
-          headers: { 
-            'Content-Type': 'application/json',
-          }
-        })
-      ]);
+      if (!isRetry) {
+        setLoading(true);
+        setError(null);
+      }
 
-      if (servicesRes.ok) {
-        const servicesData = await servicesRes.json();
+      // ✅ Fetch services with better error handling
+      let servicesData = [];
+      try {
+        const servicesResponse = await apiCall('http://localhost:5001/api/services');
+        // Handle multiple response formats: array, { data: [] }, { services: [] }
+        servicesData = Array.isArray(servicesResponse) 
+          ? servicesResponse 
+          : (servicesResponse.data || servicesResponse.services || []);
+        
+        if (!Array.isArray(servicesData)) {
+          console.warn('Services API returned unexpected format:', servicesResponse);
+          servicesData = [];
+        }
+        
         setServices(servicesData.slice(0, 4));
+      } catch (servicesError) {
+        console.error('Error fetching services:', servicesError);
+        setServices([]); // Partial failure - continue with empty services
       }
 
-      if (bookingsRes.ok) {
-        const bookingsData = await bookingsRes.json();
-        const bookingsWithServiceDetails = await Promise.all(
-          bookingsData.map(async (booking) => {
-            try {
-              const serviceRes = await fetch(`http://localhost:5001/api/services/${booking.serviceId}`);
-              let serviceData = {};
-              if (serviceRes.ok) {
-                serviceData = await serviceRes.json();
-              }
-              return {
-                ...booking,
-                serviceName: serviceData.title || 'Unknown Service',
-                providerName: serviceData.providerName || 'Unknown Provider',
-                serviceImage: serviceData.image
-              };
-            } catch (error) {
-              return {
-                ...booking,
-                serviceName: 'Unknown Service',
-                providerName: 'Unknown Provider'
-              };
-            }
-          })
+      // ✅ Fetch bookings with better error handling
+      let bookingsData = [];
+      try {
+        const bookingsResponse = await apiCall(
+          `http://localhost:5001/api/bookings?userId=${currentUser.uid}`
         );
-        setBookings(bookingsWithServiceDetails.slice(0, 3));
+        
+        // Handle multiple response formats
+        bookingsData = Array.isArray(bookingsResponse) 
+          ? bookingsResponse 
+          : (bookingsResponse.data || bookingsResponse.bookings || []);
+
+        if (!Array.isArray(bookingsData)) {
+          console.warn('Bookings API returned unexpected format:', bookingsResponse);
+          bookingsData = [];
+        }
+
+        // ✅ Enhanced booking details fetching with better error handling
+        if (bookingsData.length > 0) {
+          const bookingsWithDetails = await Promise.allSettled(
+            bookingsData.slice(0, 3).map(async (booking) => {
+              try {
+                const serviceData = await apiCall(`http://localhost:5001/api/services/${booking.serviceId}`);
+                return {
+                  ...booking,
+                  serviceName: serviceData?.title || 'Unknown Service',
+                  providerName: serviceData?.providerName || 'Unknown Provider',
+                  serviceImage: serviceData?.image || null
+                };
+              } catch (error) {
+                console.warn(`Failed to fetch service details for booking ${booking._id}:`, error);
+                return {
+                  ...booking,
+                  serviceName: 'Service Details Unavailable',
+                  providerName: 'Provider Details Unavailable'
+                };
+              }
+            })
+          );
+
+          // Extract successful results
+          const successfulBookings = bookingsWithDetails
+            .filter(result => result.status === 'fulfilled')
+            .map(result => result.value);
+          
+          setBookings(successfulBookings);
+        } else {
+          setBookings([]);
+        }
+      } catch (bookingsError) {
+        console.error('Error fetching bookings:', bookingsError);
+        setBookings([]); // Partial failure - continue with empty bookings
       }
+
       setLoading(false);
+      setRetryCount(0); // Reset retry count on success
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      setError(error.message || 'Failed to load dashboard data');
       setLoading(false);
     }
   };
 
+  // ✅ Retry mechanism
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    fetchDashboardData(true);
+  };
+
+  // ✅ Enhanced loading state
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+      <div className="space-y-8">
+        <div className="text-center py-12 bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl text-white">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white mx-auto mb-4"></div>
+          <h1 className="text-4xl font-bold mb-4">Welcome to HomeServices</h1>
+          <p className="text-xl text-primary-100">Loading your personalized dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Enhanced error state
+  if (error && retryCount < 3) {
+    return (
+      <div className="space-y-8">
+        <Alert variant="error" className="mx-auto max-w-2xl">
+          <Icon name="error" size="sm" className="mr-2" />
+          <div className="flex-1">
+            <Text className="font-medium">Failed to Load Dashboard</Text>
+            <Text size="small" className="text-neutral-600 mt-1">
+              {error}
+            </Text>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRetry}
+            className="ml-4"
+          >
+            <Icon name="spinner" size="xs" className="mr-1" />
+            Retry {retryCount > 0 && `(${retryCount}/3)`}
+          </Button>
+        </Alert>
       </div>
     );
   }
@@ -171,11 +281,29 @@ const CustomerDashboard = () => {
               View all →
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {services.map((service, index) => (
-              <ServiceCard key={service._id} service={service} index={index} />
-            ))}
-          </div>
+          {services.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {services.map((service, index) => (
+                <ServiceCard key={service._id} service={service} index={index} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Icon name="services" className="w-8 h-8 text-neutral-400" />
+              </div>
+              <Text className="text-neutral-600 mb-4">
+                No services available at the moment
+              </Text>
+              <Button
+                variant="outline"
+                onClick={() => window.location.reload()}
+                size="sm"
+              >
+                Refresh
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
@@ -192,13 +320,16 @@ const CustomerDashboard = () => {
               ))
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-500">No bookings yet</p>
-                <button 
+                <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Icon name="calendar" className="w-8 h-8 text-neutral-400" />
+                </div>
+                <Text className="text-neutral-600 mb-4">No bookings yet</Text>
+                <Button 
                   onClick={() => navigate('/services')}
-                  className="mt-2 text-primary-600 hover:text-primary-700 font-medium"
+                  size="sm"
                 >
                   Book your first service →
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -213,6 +344,8 @@ const ProviderDashboard = () => {
   const navigate = useNavigate();
   const { currentUser, userProfile } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
   const [stats, setStats] = useState({
     totalBookings: 0,
     pendingRequests: 0,
@@ -225,7 +358,38 @@ const ProviderDashboard = () => {
     fetchProviderData();
   }, [currentUser]); 
 
-  const fetchProviderData = async () => {
+  // ✅ Enhanced API call with timeout and better error handling
+  const apiCall = async (url, options = {}, timeout = 10000) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Request timed out. Please check your connection.');
+      }
+      throw error;
+    }
+  };
+
+  // ✅ Enhanced provider data fetching
+  const fetchProviderData = async (isRetry = false) => {
     try {
       if (!currentUser?.uid) {
         console.log('No currentUser available, skipping provider data fetch');
@@ -233,67 +397,107 @@ const ProviderDashboard = () => {
         return;
       }
 
-      const bookingsRes = await fetch(`http://localhost:5001/api/bookings?providerId=${currentUser.uid}`, {
-        headers: { 
-          'Content-Type': 'application/json',
+      if (!isRetry) {
+        setLoading(true);
+        setError(null);
+      }
+
+      // ✅ Fetch bookings with better error handling
+      let bookingsData = [];
+      try {
+        const bookingsResponse = await apiCall(
+          `http://localhost:5001/api/bookings?providerId=${currentUser.uid}`
+        );
+        
+        bookingsData = Array.isArray(bookingsResponse) 
+          ? bookingsResponse 
+          : (bookingsResponse.data || bookingsResponse.bookings || []);
+
+        if (!Array.isArray(bookingsData)) {
+          console.warn('Provider bookings API returned unexpected format:', bookingsResponse);
+          bookingsData = [];
         }
+      } catch (bookingsError) {
+        console.error('Error fetching provider bookings:', bookingsError);
+        throw new Error('Failed to load booking information');
+      }
+
+      // ✅ Calculate stats with better error handling
+      const totalBookings = bookingsData.length;
+      const pendingRequests = bookingsData.filter(b => b.status === 'pending').length;
+      const completedBookings = bookingsData.filter(b => b.status === 'completed');
+      const totalEarnings = completedBookings.reduce((sum, booking) => {
+        const price = parseFloat(booking.price) || 0;
+        return sum + price;
+      }, 0);
+      
+      // ✅ Fetch services count with better error handling
+      let activeServices = 0;
+      try {
+        const servicesResponse = await apiCall(`http://localhost:5001/api/services?providerId=${currentUser.uid}`);
+        const servicesData = Array.isArray(servicesResponse) 
+          ? servicesResponse 
+          : (servicesResponse.data || servicesResponse.services || []);
+        activeServices = Array.isArray(servicesData) ? servicesData.length : 0;
+      } catch (servicesError) {
+        console.warn('Error fetching provider services count:', servicesError);
+        // Continue with activeServices = 0
+      }
+
+      setStats({
+        totalBookings,
+        pendingRequests,
+        totalEarnings,
+        activeServices
       });
 
-      if (bookingsRes.ok) {
-        const bookingsData = await bookingsRes.json();
-        
-        const totalBookings = bookingsData.length;
-        const pendingRequests = bookingsData.filter(b => b.status === 'pending').length;
-        const completedBookings = bookingsData.filter(b => b.status === 'completed');
-        const totalEarnings = completedBookings.reduce((sum, booking) => sum + (booking.price || 0), 0);
-        
-        const servicesRes = await fetch(`http://localhost:5001/api/services?providerId=${currentUser.uid}`);
-        let activeServices = 0;
-        if (servicesRes.ok) {
-          const servicesData = await servicesRes.json();
-          activeServices = servicesData.length;
-        }
+      // ✅ Process recent bookings with better error handling
+      const sortedBookings = bookingsData
+        .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
+        .slice(0, 3);
 
-        setStats({
-          totalBookings,
-          pendingRequests,
-          totalEarnings,
-          activeServices
-        });
-
-        const sortedBookings = bookingsData
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-          .slice(0, 3);
-
-        const bookingsWithServiceDetails = await Promise.all(
+      if (sortedBookings.length > 0) {
+        const bookingsWithDetails = await Promise.allSettled(
           sortedBookings.map(async (booking) => {
             try {
-              const serviceRes = await fetch(`http://localhost:5001/api/services/${booking.serviceId}`);
-              let serviceData = {};
-              if (serviceRes.ok) {
-                serviceData = await serviceRes.json();
-              }
+              const serviceData = await apiCall(`http://localhost:5001/api/services/${booking.serviceId}`);
               return {
                 ...booking,
-                serviceName: serviceData.title || 'Unknown Service',
-                serviceImage: serviceData.image
+                serviceName: serviceData?.title || 'Unknown Service',
+                serviceImage: serviceData?.image || null
               };
             } catch (error) {
+              console.warn(`Failed to fetch service details for booking ${booking._id}:`, error);
               return {
                 ...booking,
-                serviceName: 'Unknown Service'
+                serviceName: 'Service Details Unavailable'
               };
             }
           })
         );
+
+        const successfulBookings = bookingsWithDetails
+          .filter(result => result.status === 'fulfilled')
+          .map(result => result.value);
         
-        setRecentBookings(bookingsWithServiceDetails);
+        setRecentBookings(successfulBookings);
+      } else {
+        setRecentBookings([]);
       }
+
       setLoading(false);
+      setRetryCount(0);
     } catch (error) {
       console.error('Error fetching provider data:', error);
+      setError(error.message || 'Failed to load provider dashboard');
       setLoading(false);
     }
+  };
+
+  // ✅ Retry mechanism
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    fetchProviderData(true);
   };
 
   // ✅ NEW: Enhanced StatCard component
@@ -417,6 +621,58 @@ const ProviderDashboard = () => {
     </Card>
   );
 
+  // ✅ Enhanced loading state for provider
+  if (loading) {
+    return (
+      <PageLayout background="bg-neutral-50">
+        <PageHeader
+          title="Business Dashboard"
+          subtitle="Loading your business overview..."
+          icon={<Icon name="home" />}
+        />
+        <ContentSection>
+          <LoadingState 
+            title="Loading your business dashboard..."
+            description="Fetching your metrics, bookings, and recent activity"
+          />
+        </ContentSection>
+      </PageLayout>
+    );
+  }
+
+  // ✅ Enhanced error state for provider
+  if (error && retryCount < 3) {
+    return (
+      <PageLayout background="bg-neutral-50">
+        <PageHeader
+          title="Business Dashboard"
+          subtitle="Failed to load dashboard data"
+          icon={<Icon name="home" />}
+        />
+        <ContentSection>
+          <Alert variant="error" className="mx-auto max-w-2xl">
+            <Icon name="error" size="sm" className="mr-2" />
+            <div className="flex-1">
+              <Text className="font-medium">Failed to Load Business Dashboard</Text>
+              <Text size="small" className="text-neutral-600 mt-1">
+                {error}
+              </Text>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRetry}
+              className="ml-4"
+            >
+              <Icon name="spinner" size="xs" className="mr-1" />
+              Retry {retryCount > 0 && `(${retryCount}/3)`}
+            </Button>
+          </Alert>
+        </ContentSection>
+      </PageLayout>
+    );
+  }
+
   return (
     <PageLayout background="bg-neutral-50">
       <PageHeader
@@ -444,138 +700,129 @@ const ProviderDashboard = () => {
       />
 
       <ContentSection>
-        {loading ? (
-          <LoadingState 
-            title="Loading your dashboard..."
-            description="Fetching your business metrics and recent activity"
-          />
-        ) : (
-          <>
-            {/* Verification Alert */}
-            {!userProfile?.isVerified && (
-              <Alert variant="warning" className="mb-8">
-                <Icon name="clock" size="sm" className="mr-2" />
-                <div>
-                  <Text className="font-medium">Account Verification Pending</Text>
-                  <Text size="small" className="text-neutral-600 mt-1">
-                    Complete your profile verification to start receiving bookings and build customer trust.
-                  </Text>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => navigate('/provider/profile')}
-                  className="ml-4"
-                >
-                  Complete Verification
-                </Button>
-              </Alert>
-            )}
-
-            {/* Business Stats */}
-            <StatsLayout className="mb-8">
-              <StatCard
-                title="Total Bookings"
-                value={stats.totalBookings}
-                icon="calendar"
-                trend="+12%"
-                variant="primary"
-              />
-              <StatCard
-                title="Pending Requests"
-                value={stats.pendingRequests}
-                icon="clock"
-                variant="warning"
-                badge={stats.pendingRequests > 0 ? stats.pendingRequests : null}
-              />
-              <StatCard
-                title="Total Earnings"
-                value={`$${stats.totalEarnings.toLocaleString()}`}
-                icon="dollar"
-                trend="+8%"
-                variant="success"
-              />
-              <StatCard
-                title="Active Services"
-                value={stats.activeServices}
-                icon="services"
-                variant="default"
-              />
-            </StatsLayout>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <BusinessActionCard
-                title="Manage Bookings"
-                subtitle="View and manage your appointments"
-                icon="calendar"
-                onClick={() => navigate('/provider/bookings')}
-                variant="primary"
-                badge={stats.pendingRequests > 0 ? stats.pendingRequests : null}
-              />
-              <BusinessActionCard
-                title="My Services"
-                subtitle="Edit your service offerings"
-                icon="services"
-                onClick={() => navigate('/provider/services')}
-                variant="default"
-              />
-              <BusinessActionCard
-                title="Earnings"
-                subtitle="Track your revenue and payouts"
-                icon="dollar"
-                onClick={() => navigate('/provider/earnings')}
-                variant="success"
-              />
+        {/* Verification Alert */}
+        {!userProfile?.isVerified && (
+          <Alert variant="warning" className="mb-8">
+            <Icon name="clock" size="sm" className="mr-2" />
+            <div>
+              <Text className="font-medium">Account Verification Pending</Text>
+              <Text size="small" className="text-neutral-600 mt-1">
+                Complete your profile verification to start receiving bookings and build customer trust.
+              </Text>
             </div>
-
-            {/* Recent Activity */}
-            <Card>
-              <CardHeader className="border-b border-neutral-200">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <Icon name="activity" size="sm" />
-                    Recent Activity
-                  </CardTitle>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate('/provider/bookings')}
-                  >
-                    View All
-                  </Button>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="p-6">
-                {recentBookings.length > 0 ? (
-                  <div className="space-y-0">
-                    {recentBookings.map((booking) => (
-                      <RecentBookingCard key={booking._id} booking={booking} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Icon name="calendar" className="w-8 h-8 text-neutral-400" />
-                    </div>
-                    <Heading level={3} className="text-neutral-900 mb-2">No recent activity</Heading>
-                    <Text className="text-neutral-600 mb-4">
-                      Start by adding your services to attract customers
-                    </Text>
-                    <Button
-                      onClick={() => navigate('/provider/services')}
-                      className="flex items-center gap-2"
-                    >
-                      <Icon name="plus" size="sm" />
-                      Add Your First Service
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/provider/profile')}
+              className="ml-4"
+            >
+              Complete Verification
+            </Button>
+          </Alert>
         )}
+
+        {/* Business Stats */}
+        <StatsLayout className="mb-8">
+          <StatCard
+            title="Total Bookings"
+            value={stats.totalBookings}
+            icon="calendar"
+            trend="+12%"
+            variant="primary"
+          />
+          <StatCard
+            title="Pending Requests"
+            value={stats.pendingRequests}
+            icon="clock"
+            variant="warning"
+            badge={stats.pendingRequests > 0 ? stats.pendingRequests : null}
+          />
+          <StatCard
+            title="Total Earnings"
+            value={`$${stats.totalEarnings.toLocaleString()}`}
+            icon="dollar"
+            trend="+8%"
+            variant="success"
+          />
+          <StatCard
+            title="Active Services"
+            value={stats.activeServices}
+            icon="services"
+            variant="default"
+          />
+        </StatsLayout>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <BusinessActionCard
+            title="Manage Bookings"
+            subtitle="View and manage your appointments"
+            icon="calendar"
+            onClick={() => navigate('/provider/bookings')}
+            variant="primary"
+            badge={stats.pendingRequests > 0 ? stats.pendingRequests : null}
+          />
+          <BusinessActionCard
+            title="My Services"
+            subtitle="Edit your service offerings"
+            icon="services"
+            onClick={() => navigate('/provider/services')}
+            variant="default"
+          />
+          <BusinessActionCard
+            title="Earnings"
+            subtitle="Track your revenue and payouts"
+            icon="dollar"
+            onClick={() => navigate('/provider/earnings')}
+            variant="success"
+          />
+        </div>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader className="border-b border-neutral-200">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Icon name="activity" size="sm" />
+                Recent Activity
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/provider/bookings')}
+              >
+                View All
+              </Button>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="p-6">
+            {recentBookings.length > 0 ? (
+              <div className="space-y-0">
+                {recentBookings.map((booking) => (
+                  <RecentBookingCard key={booking._id} booking={booking} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Icon name="calendar" className="w-8 h-8 text-neutral-400" />
+                </div>
+                <Heading level={3} className="text-neutral-900 mb-2">No recent activity</Heading>
+                <Text className="text-neutral-600 mb-4">
+                  Start by adding your services to attract customers
+                </Text>
+                <Button
+                  onClick={() => navigate('/provider/services')}
+                  className="flex items-center gap-2"
+                >
+                  <Icon name="plus" size="sm" />
+                  Add Your First Service
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </ContentSection>
     </PageLayout>
   );

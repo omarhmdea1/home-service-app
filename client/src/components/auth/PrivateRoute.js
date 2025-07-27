@@ -11,7 +11,7 @@ import { useAuth } from './AuthProvider';
  * @returns {React.ReactNode} The protected component or a redirect
  */
 const PrivateRoute = ({ children, allowedRoles, requireVerification = true }) => {
-  const { currentUser, userRole, loading } = useAuth();
+  const { currentUser, userRole, loading, userProfile } = useAuth();
   const location = useLocation();
   
   // Show loading state while checking authentication
@@ -77,7 +77,6 @@ const PrivateRoute = ({ children, allowedRoles, requireVerification = true }) =>
   if (userRole === 'provider' && allowedRoles && allowedRoles.includes('provider')) {
     // We need to check if the provider is verified in the database
     // This is different from email verification
-    const { userProfile } = useAuth();
     if (userProfile && userProfile.isVerified === false) {
       // Provider is not verified yet, redirect to pending verification page
       return <Navigate to="/provider/pending-verification" />;

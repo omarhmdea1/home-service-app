@@ -515,4 +515,7 @@ export {
   FormSelect,
   FormCheckbox,
   FormSubmitButton,
-} from './Form'; 
+} from './Form';
+
+// Role-based components
+export { default as RoleRestrictionAlert } from './RoleRestrictionAlert'; 

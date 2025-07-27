@@ -38,7 +38,13 @@ export const createBooking = async (bookingData) => {
  */
 export const getUserBookings = async (userId) => {
   try {
-    const bookings = await get('/bookings', { userId });
+    const response = await get('/bookings', { userId });
+    
+    // Handle both direct array and object response formats
+    const bookings = Array.isArray(response) 
+      ? response 
+      : (response.bookings || response.data || []);
+    
     return bookings;
   } catch (error) {
     console.error('Error fetching user bookings:', error);

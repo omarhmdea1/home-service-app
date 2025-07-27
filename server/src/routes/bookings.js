@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Booking = require('../models/Booking');
 const Service = require('../models/Service');
+const { protect, authorize } = require('../middleware/auth');
 
 // GET /api/bookings
 // Get all bookings with optional filtering by userId or providerId
@@ -40,41 +41,90 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/bookings
-// Create a new booking
-router.post('/', async (req, res) => {
+// Create a new booking (customers only)
+router.post('/', protect, async (req, res) => {
   try {
+    // ✅ ROLE RESTRICTION: Get user information to check role
+    const User = require('../models/User');
+    const user = await User.findOne({ firebaseUid: req.user.uid });
+    
+    if (!user) {
+      return res.status(404).json({ 
+        message: 'User not found. Please complete your profile setup.' 
+      });
+    }
+    
+    // ✅ PREVENT PROVIDERS FROM BOOKING
+    if (user.role === 'provider') {
+      return res.status(403).json({ 
+        message: 'Providers cannot book services. Only customers can create bookings. If you need to book a service for personal use, please create a customer account.',
+        error: 'PROVIDER_BOOKING_RESTRICTED',
+        userRole: user.role
+      });
+    }
+    
+    // ✅ ONLY ALLOW CUSTOMERS TO BOOK
+    if (user.role !== 'customer') {
+      return res.status(403).json({ 
+        message: 'Only customers can book services. Please log in with a customer account.',
+        error: 'INSUFFICIENT_PERMISSIONS',
+        userRole: user.role
+      });
+    }
+    
     // Check if the service exists
     const service = await Service.findById(req.body.serviceId);
     if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
+      return res.status(404).json({ 
+        message: 'Service not found. The service may have been removed or is no longer available.' 
+      });
     }
     
-    // Create booking with service price and provider info
+    // ✅ PREVENT SELF-BOOKING: Check if provider is trying to book their own service
+    if (service.providerId === req.user.uid) {
+      return res.status(400).json({ 
+        message: 'You cannot book your own service.',
+        error: 'SELF_BOOKING_NOT_ALLOWED'
+      });
+    }
+    
+    // Create booking with authenticated user info and service details
     const bookingData = {
       ...req.body,
-      price: service.price,
-      providerId: service.providerId,
+      userId: req.user.uid,           // Use authenticated user ID
+      userEmail: user.email,          // Use authenticated user email
+      userName: user.name,            // Use authenticated user name
+      price: service.price,           // Use service price
+      providerId: service.providerId, // Use service provider ID
       status: 'pending',
       paymentStatus: 'pending'
     };
     
     const booking = await Booking.create(bookingData);
     
-    console.log(`Booking created: Service ID ${booking.serviceId}, Date ${booking.date}, Status: pending`);
+    console.log(`✅ BOOKING CREATED: User ${user.name} (${user.role}) booked service ${service.title} for ${booking.date}`);
     
     res.status(201).json({ 
-      message: 'Booking request submitted successfully.',
-      booking
+      message: 'Booking request submitted successfully! The service provider will be notified.',
+      booking,
+      serviceTitle: service.title,
+      providerName: service.providerName
     });
   } catch (error) {
-    console.error('Error creating booking:', error);
+    console.error('❌ Error creating booking:', error);
     
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map(val => val.message);
-      return res.status(400).json({ message: messages.join(', ') });
+      return res.status(400).json({ 
+        message: 'Booking validation failed: ' + messages.join(', '),
+        error: 'VALIDATION_ERROR'
+      });
     }
     
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ 
+      message: 'Failed to create booking. Please try again.',
+      error: 'SERVER_ERROR'
+    });
   }
 });
 

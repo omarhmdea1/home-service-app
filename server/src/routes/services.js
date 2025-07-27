@@ -101,7 +101,11 @@ router.get('/categories', async (req, res) => {
     
     console.log(`✅ Categories fetched in ${queryTime}ms:`, categories);
     
-    res.json(categories.filter(cat => cat).sort()); // Filter out null/empty and sort
+    res.json({
+      success: true,
+      categories: categories.filter(cat => cat).sort(),
+      message: 'Categories fetched successfully'
+    });
   } catch (error) {
     console.error('❌ Error fetching categories:', error);
     res.status(500).json({ 
@@ -109,34 +113,6 @@ router.get('/categories', async (req, res) => {
       error: error.message,
       categories: []
     });
-  }
-});
-
-// GET /api/services/:id
-// Get single service
-router.get('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    // ✅ VALIDATION: Check if ID is valid MongoDB ObjectId
-    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ 
-        message: 'Invalid service ID format',
-        error: `"${id}" is not a valid ObjectId`
-      });
-    }
-    
-    console.log('🔍 Fetching service with ID:', id);
-    const service = await Service.findById(id);
-    
-    if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
-    }
-    
-    res.json(service);
-  } catch (error) {
-    console.error('❌ Error fetching service:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -224,5 +200,33 @@ if (process.env.NODE_ENV === 'development') {
     });
   });
 }
+
+// GET /api/services/:id
+// Get single service (MOVED TO END - must be last route)
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // ✅ VALIDATION: Check if ID is valid MongoDB ObjectId
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ 
+        message: 'Invalid service ID format',
+        error: `"${id}" is not a valid ObjectId`
+      });
+    }
+    
+    console.log('🔍 Fetching service with ID:', id);
+    const service = await Service.findById(id);
+    
+    if (!service) {
+      return res.status(404).json({ message: 'Service not found' });
+    }
+    
+    res.json(service);
+  } catch (error) {
+    console.error('❌ Error fetching service:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 
 module.exports = router;

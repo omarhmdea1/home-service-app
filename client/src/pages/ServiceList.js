@@ -24,7 +24,7 @@ import {
 } from '../components/ui';
 
 const ServiceList = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userRole } = useAuth();
   const location = useLocation();
   const [rawServices, setRawServices] = useState([]);
   const [services, setServices] = useState([]);
@@ -60,9 +60,15 @@ const ServiceList = () => {
         const response = await fetch('http://localhost:5001/api/services/categories');
         
         if (response.ok) {
-          const categories = await response.json();
-          setAllCategories(categories.sort());
-          console.log('✅ Categories loaded:', categories);
+          const categoriesResponse = await response.json();
+          
+          // Handle both direct array and object response formats
+          const categoriesArray = Array.isArray(categoriesResponse) 
+            ? categoriesResponse 
+            : (categoriesResponse.categories || []);
+          
+          setAllCategories(categoriesArray.sort());
+          console.log('✅ Categories loaded:', categoriesArray);
         } else {
           // Fallback: extract from first batch of services
           console.log('⚠️ Categories endpoint not found (status:', response.status, '), will use fallback from services');
@@ -222,8 +228,24 @@ const ServiceList = () => {
            ratingFilter > 0;
   };
 
+  // ✅ Role-aware booking function
   const handleBookNow = (serviceId) => {
+    if (userRole !== 'customer') {
+      alert('Only customers can book services. Please log in as a customer to book services.');
+      return;
+    }
     window.location.href = `/book/${serviceId}`;
+  };
+
+  // ✅ Provider edit service function
+  const handleEditService = (serviceId) => {
+    window.location.href = `/provider/services?edit=${serviceId}`;
+  };
+
+  // ✅ Provider contact function
+  const handleContactProvider = (service) => {
+    // Navigate to chat/contact with the provider
+    alert(`Contact feature coming soon! You can reach out to ${service.providerName || 'the service provider'} for more information.`);
   };
 
   const resetFilters = () => {
@@ -445,19 +467,64 @@ const ServiceList = () => {
               </div>
             </div>
             
-            {/* Action Button */}
-            <Button 
-              variant="primary" 
-              size="lg"
-              className="w-full"
-                             onClick={() => {
-                 setSelectedService(null);
-                 handleBookNow(selectedService._id || selectedService.id);
-               }}
-            >
-              <Icon name="calendar" size="sm" className="mr-2" />
-              Book This Service
-            </Button>
+            {/* Role-Based Action Button */}
+            {userRole === 'customer' && (
+              <Button 
+                variant="primary" 
+                size="lg"
+                className="w-full"
+                onClick={() => {
+                  setSelectedService(null);
+                  handleBookNow(selectedService._id || selectedService.id);
+                }}
+              >
+                <Icon name="calendar" size="sm" className="mr-2" />
+                Book This Service
+              </Button>
+            )}
+
+            {userRole === 'provider' && currentUser?.uid === selectedService?.providerId && (
+              <Button 
+                variant="secondary" 
+                size="lg"
+                className="w-full"
+                onClick={() => {
+                  setSelectedService(null);
+                  handleEditService(selectedService._id || selectedService.id);
+                }}
+              >
+                <Icon name="edit" size="sm" className="mr-2" />
+                Edit This Service
+              </Button>
+            )}
+
+            {userRole === 'provider' && currentUser?.uid !== selectedService?.providerId && (
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="w-full"
+                onClick={() => {
+                  handleContactProvider(selectedService);
+                }}
+              >
+                <Icon name="chat" size="sm" className="mr-2" />
+                Contact Provider
+              </Button>
+            )}
+
+            {!userRole && (
+              <Button 
+                variant="primary" 
+                size="lg"
+                className="w-full"
+                onClick={() => {
+                  window.location.href = '/login';
+                }}
+              >
+                <Icon name="user" size="sm" className="mr-2" />
+                Login to Book
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -501,7 +568,11 @@ const ServiceList = () => {
              service={service} 
              index={index}
              onViewDetails={() => setSelectedService(service)}
-             onBook={() => handleBookNow(service._id || service.id)}
+             onBook={userRole === 'customer' ? () => handleBookNow(service._id || service.id) : null}
+             onEdit={userRole === 'provider' && currentUser?.uid === service.providerId ? () => handleEditService(service._id || service.id) : null}
+             onContact={userRole === 'provider' && currentUser?.uid !== service.providerId ? () => handleContactProvider(service) : null}
+             userRole={userRole}
+             currentUserId={currentUser?.uid}
              className="transform hover:scale-105 transition-transform duration-150"
            />
          )}
