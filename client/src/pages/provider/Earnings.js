@@ -1,7 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../components/auth/AuthProvider';
-import { motion } from 'framer-motion';
 import { getProviderBookings } from '../../services/bookingService';
+
+// ✅ NEW: Import our design system components
+import {
+  PageLayout,
+  PageHeader,
+  ContentSection,
+  StatsLayout,
+} from '../../components/layout';
+
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+  Badge,
+  Icon,
+  Heading,
+  Text,
+  Alert,
+  LoadingState,
+} from '../../components/ui';
 
 const ProviderEarnings = () => {
   const { userProfile } = useAuth();
@@ -20,24 +41,18 @@ const ProviderEarnings = () => {
     const fetchEarningsData = async () => {
       setLoading(true);
       try {
-        // Get provider bookings from API
         if (userProfile && userProfile.uid) {
           const bookings = await getProviderBookings(userProfile.uid);
           
-          // Filter completed bookings
           const completedBookings = bookings.filter(booking => booking.status === 'completed');
-          
-          // Calculate total earnings
           const totalEarnings = completedBookings.reduce((total, booking) => total + (booking.price || 0), 0);
           
-          // Get current date info
           const now = new Date();
           const currentMonth = now.getMonth();
           const currentYear = now.getFullYear();
           const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
           const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
           
-          // Calculate this month's earnings
           const thisMonthEarnings = completedBookings
             .filter(booking => {
               const bookingDate = new Date(booking.date);
@@ -45,7 +60,6 @@ const ProviderEarnings = () => {
             })
             .reduce((total, booking) => total + (booking.price || 0), 0);
           
-          // Calculate last month's earnings
           const lastMonthEarnings = completedBookings
             .filter(booking => {
               const bookingDate = new Date(booking.date);
@@ -53,16 +67,14 @@ const ProviderEarnings = () => {
             })
             .reduce((total, booking) => total + (booking.price || 0), 0);
           
-          // Set earnings data
           setEarnings({
             total: totalEarnings,
             thisMonth: thisMonthEarnings,
             lastMonth: lastMonthEarnings,
             completedBookings: completedBookings.length,
-            pendingPayouts: 0 // This would come from a payment API in a real app
+            pendingPayouts: 0
           });
           
-          // Format transactions from bookings
           const formattedTransactions = completedBookings.map(booking => ({
             id: booking._id,
             date: booking.date,
@@ -70,12 +82,10 @@ const ProviderEarnings = () => {
             service: booking.serviceName,
             amount: booking.price || 0,
             status: 'completed',
-            payoutStatus: 'paid' // In a real app, this would come from payment status
+            payoutStatus: 'paid'
           }));
           
-          // Sort by date (newest first)
           formattedTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-          
           setTransactions(formattedTransactions);
         }
         setLoading(false);
@@ -88,15 +98,7 @@ const ProviderEarnings = () => {
     fetchEarningsData();
   }, [userProfile]);
 
-  // Filter transactions based on active tab
-  const filteredTransactions = transactions.filter(transaction => {
-    if (activeTab === 'all') return true;
-    if (activeTab === 'paid') return transaction.payoutStatus === 'paid';
-    if (activeTab === 'pending') return transaction.payoutStatus === 'pending';
-    return true;
-  });
-
-  // Format currency
+  // Helper functions
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -104,218 +106,271 @@ const ProviderEarnings = () => {
     }).format(amount);
   };
 
-  // Format date
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+  const calculateGrowth = () => {
+    if (earnings.lastMonth === 0) return earnings.thisMonth > 0 ? '+100%' : '0%';
+    const growth = ((earnings.thisMonth - earnings.lastMonth) / earnings.lastMonth) * 100;
+    return `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`;
+  };
+
+  const filteredTransactions = transactions.filter(transaction => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'paid') return transaction.payoutStatus === 'paid';
+    if (activeTab === 'pending') return transaction.payoutStatus === 'pending';
+    return true;
+  });
+
+  // ✅ NEW: Enhanced StatCard component
+  const StatCard = ({ title, value, subtitle, trend, icon, variant = 'default' }) => (
+    <Card className="relative overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <Text size="small" className="text-neutral-600 font-medium mb-2">
+              {title}
+            </Text>
+            <Heading level={2} className="text-neutral-900 mb-1">
+              {value}
+            </Heading>
+            {subtitle && (
+              <Text size="small" className="text-neutral-500">
+                {subtitle}
+              </Text>
+            )}
+            {trend && (
+              <div className="flex items-center mt-2">
+                <Icon 
+                  name={trend.includes('+') ? 'trendingUp' : 'trendingDown'} 
+                  size="xs" 
+                  className={`mr-1 ${trend.includes('+') ? 'text-success-600' : 'text-error-600'}`} 
+                />
+                <Text 
+                  size="small" 
+                  className={`font-medium ${trend.includes('+') ? 'text-success-600' : 'text-error-600'}`}
+                >
+                  {trend}
+                </Text>
+                <Text size="small" className="text-neutral-500 ml-1">
+                  vs last month
+                </Text>
+              </div>
+            )}
+          </div>
+          <div className={`p-3 rounded-lg ${variant === 'primary' ? 'bg-primary-100' : 'bg-neutral-100'}`}>
+            <Icon 
+              name={icon} 
+              size="lg" 
+              className={variant === 'primary' ? 'text-primary-600' : 'text-neutral-600'} 
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // ✅ NEW: Enhanced TransactionRow component
+  const TransactionRow = ({ transaction }) => (
+    <Card className="mb-3">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+              <Icon name="dollar" size="sm" className="text-primary-600" />
+            </div>
+            <div>
+              <Heading level={4} className="text-neutral-900">
+                {transaction.customerName}
+              </Heading>
+              <Text size="small" className="text-neutral-600">
+                {transaction.service}
+              </Text>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-6">
+            <div className="text-right">
+              <Text size="small" className="text-neutral-600">
+                {formatDate(transaction.date)}
+              </Text>
+            </div>
+            <div className="text-right">
+              <Heading level={4} className="text-neutral-900">
+                {formatCurrency(transaction.amount)}
+              </Heading>
+            </div>
+            <Badge 
+              variant={transaction.payoutStatus === 'paid' ? 'success' : 'warning'}
+              size="sm"
+            >
+              {transaction.payoutStatus === 'paid' ? 'Paid' : 'Pending'}
+            </Badge>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // ✅ NEW: Enhanced Tab component
+  const Tab = ({ label, isActive, onClick, count }) => (
+    <button
+      onClick={onClick}
+      className={`px-6 py-3 border-b-2 text-sm font-medium transition-colors duration-150 ${
+        isActive
+          ? 'border-primary-500 text-primary-600'
+          : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
+      }`}
+    >
+      {label}
+      {count !== undefined && (
+        <Badge 
+          variant={isActive ? 'primary' : 'neutral'} 
+          size="sm" 
+          className="ml-2"
+        >
+          {count}
+        </Badge>
+      )}
+    </button>
+  );
+
+  // ✅ NEW: Enhanced Empty State
+  const emptyState = (
+    <div className="text-center py-12">
+      <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <Icon name="dollar" className="w-8 h-8 text-neutral-400" />
       </div>
-    );
-  }
+      <Heading level={3} className="text-neutral-900 mb-2">No transactions found</Heading>
+      <Text className="text-neutral-600">
+        {activeTab === 'all' 
+          ? "You haven't completed any bookings yet."
+          : `No ${activeTab} transactions found.`
+        }
+      </Text>
+    </div>
+  );
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-12">
-      {/* Header */}
-      <div className="bg-primary-600 text-white">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-bold">Earnings Dashboard</h1>
-          <p className="mt-1 text-primary-100">Track your earnings and payouts</p>
-        </div>
-      </div>
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <motion.div 
-            className="bg-white rounded-lg shadow-sm p-6 border border-gray-100"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-          >
-            <h3 className="text-sm font-medium text-gray-500">Total Earnings</h3>
-            <p className="mt-2 text-3xl font-bold text-gray-900">{formatCurrency(earnings.total)}</p>
-            <p className="mt-1 text-sm text-gray-500">{earnings.completedBookings} completed bookings</p>
-          </motion.div>
-          
-          <motion.div 
-            className="bg-white rounded-lg shadow-sm p-6 border border-gray-100"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-          >
-            <h3 className="text-sm font-medium text-gray-500">This Month</h3>
-            <p className="mt-2 text-3xl font-bold text-gray-900">{formatCurrency(earnings.thisMonth)}</p>
-            <p className="mt-1 text-sm text-green-600">
-              <span className="font-medium">↑ 12%</span>
-              <span className="ml-1">vs last month</span>
-            </p>
-          </motion.div>
-          
-          <motion.div 
-            className="bg-white rounded-lg shadow-sm p-6 border border-gray-100"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.3 }}
-          >
-            <h3 className="text-sm font-medium text-gray-500">Last Month</h3>
-            <p className="mt-2 text-3xl font-bold text-gray-900">{formatCurrency(earnings.lastMonth)}</p>
-            <p className="mt-1 text-sm text-gray-500">April 2025</p>
-          </motion.div>
-          
-          <motion.div 
-            className="bg-white rounded-lg shadow-sm p-6 border border-gray-100"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.4 }}
-          >
-            <h3 className="text-sm font-medium text-gray-500">Pending Payouts</h3>
-            <p className="mt-2 text-3xl font-bold text-gray-900">{formatCurrency(earnings.pendingPayouts)}</p>
-            <p className="mt-1 text-sm text-gray-500">Will be processed soon</p>
-          </motion.div>
-        </div>
-        
-        {/* Transaction History */}
-        <motion.div 
-          className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.5 }}
-        >
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-lg font-medium text-gray-900">Transaction History</h2>
-          </div>
-          
-          {/* Tabs */}
-          <div className="border-b border-gray-100">
-            <nav className="flex -mb-px">
-              <button
-                onClick={() => setActiveTab('all')}
-                className={`px-6 py-3 border-b-2 text-sm font-medium ${
-                  activeTab === 'all'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                All Transactions
-              </button>
-              <button
-                onClick={() => setActiveTab('paid')}
-                className={`px-6 py-3 border-b-2 text-sm font-medium ${
-                  activeTab === 'paid'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Paid
-              </button>
-              <button
-                onClick={() => setActiveTab('pending')}
-                className={`px-6 py-3 border-b-2 text-sm font-medium ${
-                  activeTab === 'pending'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Pending
-              </button>
-            </nav>
-          </div>
-          
-          {/* Transaction Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Service
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+    <PageLayout background="bg-neutral-50">
+      <PageHeader
+        title="Earnings Dashboard"
+        subtitle="Track your financial performance"
+        description="Monitor your earnings, view transaction history, and track payout status"
+        icon={<Icon name="trending" />}
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/provider/dashboard' },
+          { label: 'Earnings' }
+        ]}
+        actions={[
+          {
+            label: 'Export Report',
+            variant: 'outline',
+            onClick: () => console.log('Export report'),
+            icon: <Icon name="download" size="sm" />
+          }
+        ]}
+      />
+
+      <ContentSection>
+        {loading ? (
+          <LoadingState 
+            title="Loading earnings data..."
+            description="Calculating your financial metrics"
+          />
+        ) : (
+          <>
+            {/* Stats Section */}
+            <StatsLayout className="mb-8">
+              <StatCard
+                title="Total Earnings"
+                value={formatCurrency(earnings.total)}
+                subtitle={`${earnings.completedBookings} completed bookings`}
+                icon="dollar"
+                variant="primary"
+              />
+              <StatCard
+                title="This Month"
+                value={formatCurrency(earnings.thisMonth)}
+                trend={calculateGrowth()}
+                icon="trending"
+              />
+              <StatCard
+                title="Last Month"
+                value={formatCurrency(earnings.lastMonth)}
+                subtitle="Previous period"
+                icon="calendar"
+              />
+              <StatCard
+                title="Pending Payouts"
+                value={formatCurrency(earnings.pendingPayouts)}
+                subtitle="Will be processed soon"
+                icon="clock"
+              />
+            </StatsLayout>
+
+            {/* Transaction History */}
+            <Card>
+              <CardHeader className="border-b border-neutral-200">
+                <CardTitle>Transaction History</CardTitle>
+              </CardHeader>
+              
+              {/* Tabs */}
+              <div className="border-b border-neutral-200">
+                <nav className="flex -mb-px">
+                  <Tab
+                    label="All Transactions"
+                    isActive={activeTab === 'all'}
+                    onClick={() => setActiveTab('all')}
+                    count={transactions.length}
+                  />
+                  <Tab
+                    label="Paid"
+                    isActive={activeTab === 'paid'}
+                    onClick={() => setActiveTab('paid')}
+                    count={transactions.filter(t => t.payoutStatus === 'paid').length}
+                  />
+                  <Tab
+                    label="Pending"
+                    isActive={activeTab === 'pending'}
+                    onClick={() => setActiveTab('pending')}
+                    count={transactions.filter(t => t.payoutStatus === 'pending').length}
+                  />
+                </nav>
+              </div>
+
+              <CardContent className="p-6">
                 {filteredTransactions.length > 0 ? (
-                  filteredTransactions.map((transaction) => (
-                    <tr key={transaction.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(transaction.date)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{transaction.customerName}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{transaction.service}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {formatCurrency(transaction.amount)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          transaction.payoutStatus === 'paid' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {transaction.payoutStatus === 'paid' ? 'Paid' : 'Pending'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
+                  <div className="space-y-0">
+                    {filteredTransactions.map((transaction) => (
+                      <TransactionRow
+                        key={transaction.id}
+                        transaction={transaction}
+                      />
+                    ))}
+                  </div>
                 ) : (
-                  <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center text-sm text-gray-500">
-                      No transactions found for the selected filter.
-                    </td>
-                  </tr>
+                  emptyState
                 )}
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
-        
-        {/* Export Options */}
-        <div className="mt-8 flex justify-end">
-          <button
-            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-          >
-            <svg className="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Export Report
-          </button>
-        </div>
-        
-        {/* Future Stripe Integration Notice */}
-        <div className="mt-8 bg-blue-50 border-l-4 border-blue-400 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-blue-700">
-                <strong>Coming Soon:</strong> Direct payouts via Stripe. We're working on integrating Stripe for faster and more secure payments directly to your bank account.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+              </CardContent>
+            </Card>
+
+            {/* Integration Notice */}
+            <Alert variant="info" className="mt-8">
+              <Icon name="info" size="sm" className="mr-2" />
+              <div>
+                <Text className="font-medium">Coming Soon: Direct Payouts</Text>
+                <Text size="small" className="text-neutral-600 mt-1">
+                  We're integrating Stripe for faster and more secure payments directly to your bank account.
+                </Text>
+              </div>
+            </Alert>
+          </>
+        )}
+      </ContentSection>
+    </PageLayout>
   );
 };
 

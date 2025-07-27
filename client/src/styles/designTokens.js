@@ -323,6 +323,10 @@ export const designTokens = {
       outline: 'bg-transparent hover:bg-primary-50 text-primary-600 font-semibold px-4 py-2 rounded-lg border-2 border-primary-300 hover:border-primary-400 transition-all duration-200 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
       ghost: 'bg-transparent hover:bg-neutral-100 text-neutral-700 font-medium px-4 py-2 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
       gradient: 'bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition-all duration-200',
+      success: 'bg-success-600 hover:bg-success-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-success-500 focus:ring-offset-2',
+      warning: 'bg-warning-500 hover:bg-warning-600 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-warning-500 focus:ring-offset-2',
+      error: 'bg-error-600 hover:bg-error-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-error-500 focus:ring-offset-2',
+      neutral: 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-medium px-4 py-2 rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2',
     },
     
     // Input patterns (Enhanced focus states)

@@ -1,11 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '../components/auth/AuthProvider';
 import ChatBox from '../components/messaging/ChatBox';
 import { getConversations } from '../services/messageService';
 import { getServiceById } from '../services/serviceService';
 import StatusBadge from '../components/common/StatusBadge';
 import socketService from '../services/socketService';
+
+// ✅ NEW: Import our design system components
+import {
+  PageLayout,
+  PageHeader,
+  ContentSection,
+} from '../components/layout';
+
+import {
+  Card,
+  CardContent,
+  Button,
+  Badge,
+  Icon,
+  Heading,
+  Text,
+  Input,
+  Alert,
+  LoadingState,
+} from '../components/ui';
 
 const Chat = () => {
   const [conversations, setConversations] = useState([]);
@@ -32,7 +52,6 @@ const Chat = () => {
         const response = await getConversations();
         
         if (response && Array.isArray(response)) {
-          // Enhance conversations with service details
           const conversationsWithDetails = await Promise.all(
             response.map(async (conversation) => {
               try {
@@ -59,53 +78,37 @@ const Chat = () => {
                         id: conversation.booking.providerId
                       }
                 };
-              } catch (err) {
-                console.error('Error fetching service details:', err);
+              } catch (error) {
+                console.error('Error fetching service details:', error);
                 return {
                   ...conversation,
                   serviceTitle: 'Unknown Service',
                   serviceImage: defaultServiceImage,
                   serviceCategory: 'Service',
-                  otherParty: userRole === 'provider' 
-                    ? {
-                        name: conversation.booking.userName || 'Customer',
-                        email: conversation.booking.userEmail || '',
-                        id: conversation.booking.userId
-                      }
-                    : {
-                        name: 'Service Provider',
-                        email: '',
-                        id: conversation.booking.providerId
-                      }
+                  otherParty: { name: 'Unknown', email: '', id: '' }
                 };
               }
             })
           );
           
           setConversations(conversationsWithDetails);
-        } else {
-          setConversations([]);
         }
+        setLoading(false);
       } catch (err) {
         console.error('Error fetching conversations:', err);
-        setError('Failed to load conversations. Please try again.');
-      } finally {
+        setError('Failed to load conversations. Please try again later.');
         setLoading(false);
       }
     };
-
-    if (currentUser?.uid) {
-      fetchConversations();
-    }
+    
+    fetchConversations();
   }, [currentUser, userRole]);
 
   // Set up real-time updates for conversations
   useEffect(() => {
     if (currentUser) {
-      // Connect to Socket.io
       socketService.connect();
 
-      // Listen for new messages to update conversation list
       const handleNewMessage = (message) => {
         setConversations(prevConversations => {
           return prevConversations.map(conv => {
@@ -151,229 +154,246 @@ const Chat = () => {
     }
   }, [currentUser]);
 
-  // Emit event to refresh unread count when Chat page is viewed
   useEffect(() => {
-    // Refresh notification badge when user visits chat page
     window.dispatchEvent(new CustomEvent('messagesViewed', { 
       detail: { chatPageViewed: true } 
     }));
   }, []);
 
-  // Filter conversations based on search term
-  const filteredConversations = conversations.filter(conversation => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      conversation.serviceTitle?.toLowerCase().includes(searchLower) ||
-      conversation.otherParty?.name?.toLowerCase().includes(searchLower) ||
-      conversation.lastMessage?.content?.toLowerCase().includes(searchLower)
-    );
-  });
+  // Helper functions
+  const truncateMessage = (message, maxLength = 40) => {
+    if (!message) return '';
+    return message.length > maxLength ? message.substring(0, maxLength) + '...' : message;
+  };
 
-  // Format relative time
-  const formatRelativeTime = (dateString) => {
+  const formatRelativeTime = (timestamp) => {
     const now = new Date();
-    const messageDate = new Date(dateString);
-    const diffInMinutes = Math.floor((now - messageDate) / (1000 * 60));
+    const messageTime = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - messageTime) / 1000);
     
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays}d ago`;
-    
-    return messageDate.toLocaleDateString();
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    return `${Math.floor(diffInSeconds / 86400)}d ago`;
   };
 
-  // Truncate message content
-  const truncateMessage = (content, maxLength = 60) => {
-    if (!content) return '';
-    return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
-  };
+  // Filter conversations based on search
+  const filteredConversations = conversations.filter(conversation =>
+    conversation.otherParty?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conversation.serviceTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conversation.lastMessage?.content?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Messages</h1>
-        
-        {error && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg"
-          >
-            <p className="text-red-700 text-sm">{error}</p>
-          </motion.div>
-        )}
-
-        {loading ? (
-          <div className="flex justify-center items-center h-96">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading conversations...</p>
+  // ✅ NEW: Enhanced ConversationCard component
+  const ConversationCard = ({ conversation, isSelected, onClick }) => (
+    <Card 
+      className={`cursor-pointer transition-all duration-150 hover:shadow-sm ${
+        isSelected ? 'ring-2 ring-primary-500 bg-primary-50' : 'hover:bg-neutral-50'
+      }`}
+      onClick={onClick}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-start space-x-3">
+          {/* Service Image with Online Indicator */}
+          <div className="relative flex-shrink-0">
+            <div className="h-12 w-12 rounded-xl overflow-hidden bg-gradient-to-br from-primary-100 to-primary-200">
+              <img 
+                src={conversation.serviceImage || defaultServiceImage} 
+                alt={conversation.serviceTitle || 'Service'}
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  e.target.src = defaultServiceImage;
+                }}
+              />
             </div>
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-success-400 border-2 border-white rounded-full"></div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
-            {/* Enhanced Conversations List */}
-            <div className="lg:col-span-1 bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
-              {/* Header with search */}
-              <div className="px-4 py-4 bg-gradient-to-r from-primary-50 to-primary-100 border-b border-primary-200">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
-                  <span className="text-sm text-gray-600">
-                    {filteredConversations.length} {filteredConversations.length === 1 ? 'chat' : 'chats'}
-                  </span>
-                </div>
-                
-                {/* Search Bar */}
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search conversations..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-              </div>
-              
-              {/* Conversations List */}
-              <div className="flex-1 overflow-y-auto">
-                {filteredConversations.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-sm font-medium text-gray-900 mb-1">No conversations</h3>
-                    <p className="text-sm text-gray-500">
-                      {conversations.length === 0 
-                        ? "Book a service to start a conversation"
-                        : "No conversations match your search"
-                      }
-                    </p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-100">
-                    <AnimatePresence>
-                      {filteredConversations.map((conversation, index) => (
-                        <motion.div
-                          key={conversation.bookingId}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -20 }}
-                          transition={{ delay: index * 0.05 }}
-                        >
-                          <button
-                            className={`w-full text-left px-4 py-4 hover:bg-gray-50 focus:outline-none focus:bg-primary-50 transition-colors duration-200 ${
-                              selectedConversation?.bookingId === conversation.bookingId 
-                                ? 'bg-primary-50 border-r-2 border-primary-500' 
-                                : ''
-                            }`}
-                            onClick={() => setSelectedConversation(conversation)}
-                          >
-                            <div className="flex items-start space-x-3">
-                              {/* Service Image */}
-                              <div className="relative flex-shrink-0">
-                                <div className="h-12 w-12 rounded-xl overflow-hidden bg-gradient-to-br from-primary-100 to-primary-200">
-                                  <img 
-                                    src={conversation.serviceImage || defaultServiceImage} 
-                                    alt={conversation.serviceTitle || 'Service'}
-                                    className="h-full w-full object-cover"
-                                  />
-                                </div>
-                                {/* Online indicator */}
-                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full"></div>
-                              </div>
-                              
-                              {/* Conversation Info */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between mb-1">
-                                  <h3 className="text-sm font-semibold text-gray-900 truncate">
-                                    {conversation.otherParty?.name}
-                                  </h3>
-                                  <div className="flex items-center space-x-2">
-                                    {conversation.lastMessage && (
-                                      <span className="text-xs text-gray-500">
-                                        {formatRelativeTime(conversation.lastMessage.createdAt)}
-                                      </span>
-                                    )}
-                                    {conversation.unreadCount > 0 && (
-                                      <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
-                                        {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                
-                                <p className="text-xs text-gray-600 mb-2 truncate">
-                                  {conversation.serviceTitle}
-                                </p>
-                                
-                                {conversation.lastMessage ? (
-                                  <div className="flex items-center">
-                                    {conversation.lastMessage.isFromCurrentUser && (
-                                      <svg className="w-3 h-3 text-gray-400 mr-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                      </svg>
-                                    )}
-                                    <p className={`text-sm truncate ${
-                                      conversation.unreadCount > 0 && !conversation.lastMessage.isFromCurrentUser
-                                        ? 'font-semibold text-gray-900'
-                                        : 'text-gray-600'
-                                    }`}>
-                                      {truncateMessage(conversation.lastMessage.content)}
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <p className="text-sm text-gray-500 italic">No messages yet</p>
-                                )}
-                                
-                                {/* Status Badge */}
-                                <div className="mt-2">
-                                  <StatusBadge status={conversation.booking.status} />
-                                </div>
-                              </div>
-                            </div>
-                          </button>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
+          
+          {/* Conversation Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <Heading level={4} className="text-neutral-900 truncate">
+                {conversation.otherParty?.name}
+              </Heading>
+              <div className="flex items-center space-x-2">
+                {conversation.lastMessage && (
+                  <Text size="tiny" className="text-neutral-500">
+                    {formatRelativeTime(conversation.lastMessage.createdAt)}
+                  </Text>
+                )}
+                {conversation.unreadCount > 0 && (
+                  <Badge variant="error" size="sm">
+                    {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
+                  </Badge>
                 )}
               </div>
             </div>
             
-            {/* Enhanced Chat Area */}
-            <div className="lg:col-span-2">
-              <motion.div
-                layout
-                className="h-full"
-              >
-                <ChatBox 
-                  booking={selectedConversation?.booking} 
-                  onClose={() => setSelectedConversation(null)}
-                  isStandalone={true}
+            <Text size="small" className="text-neutral-600 mb-2 truncate">
+              <Icon name="services" size="xs" className="inline mr-1" />
+              {conversation.serviceTitle}
+            </Text>
+            
+            {conversation.lastMessage ? (
+              <div className="flex items-center mb-2">
+                {conversation.lastMessage.isFromCurrentUser && (
+                  <Icon name="arrowRight" size="xs" className="text-neutral-400 mr-1 flex-shrink-0" />
+                )}
+                <Text 
+                  size="small" 
+                  className={`truncate ${
+                    conversation.unreadCount > 0 && !conversation.lastMessage.isFromCurrentUser
+                      ? 'font-semibold text-neutral-900'
+                      : 'text-neutral-600'
+                  }`}
+                >
+                  {truncateMessage(conversation.lastMessage.content)}
+                </Text>
+              </div>
+            ) : (
+              <Text size="small" className="text-neutral-500 italic mb-2">
+                No messages yet
+              </Text>
+            )}
+            
+            <StatusBadge status={conversation.booking.status} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // ✅ NEW: Enhanced conversations panel
+  const conversationsPanel = (
+    <div className="h-full flex flex-col">
+      {/* Header with search */}
+      <div className="p-6 border-b border-neutral-200">
+        <div className="flex items-center justify-between mb-4">
+          <Heading level={3} className="text-neutral-900">Conversations</Heading>
+          <Badge variant="neutral" size="sm">
+            {filteredConversations.length} {filteredConversations.length === 1 ? 'chat' : 'chats'}
+          </Badge>
+        </div>
+        
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Icon name="services" size="sm" className="text-neutral-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search conversations..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-150 placeholder-neutral-500"
+          />
+        </div>
+      </div>
+      
+      {/* Conversations List */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {filteredConversations.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Icon name="chat" className="w-8 h-8 text-neutral-400" />
+            </div>
+            <Heading level={4} className="text-neutral-900 mb-2">No conversations</Heading>
+            <Text className="text-neutral-500">
+              {conversations.length === 0 
+                ? "Book a service to start a conversation"
+                : "No conversations match your search"
+              }
+            </Text>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <AnimatePresence>
+              {filteredConversations.map((conversation, index) => (
+                <ConversationCard
+                  key={conversation.bookingId}
+                  conversation={conversation}
+                  isSelected={selectedConversation?.bookingId === conversation.bookingId}
+                  onClick={() => setSelectedConversation(conversation)}
                 />
-              </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // ✅ NEW: Enhanced chat area
+  const chatArea = selectedConversation ? (
+    <ChatBox 
+      booking={selectedConversation.booking} 
+      onClose={() => setSelectedConversation(null)}
+      isStandalone={true}
+    />
+  ) : (
+    <Card className="h-full flex items-center justify-center">
+      <CardContent className="text-center py-12">
+        <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Icon name="chat" className="w-10 h-10 text-primary-600" />
+        </div>
+        <Heading level={3} className="text-neutral-900 mb-2">Select a conversation</Heading>
+        <Text className="text-neutral-600 max-w-sm">
+          Choose a conversation from the list to start messaging with customers or service providers.
+        </Text>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <PageLayout background="bg-neutral-50">
+      <PageHeader
+        title="Messages"
+        subtitle="Communicate with customers and service providers"
+        description="Manage your conversations and stay connected"
+        icon={<Icon name="chat" />}
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Messages' }
+        ]}
+        actions={[
+          { 
+            label: 'Mark All Read',
+            variant: 'outline',
+            onClick: () => console.log('Mark all as read')
+          }
+        ]}
+      />
+
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="error" className="mb-6">
+          <Icon name="error" size="sm" className="mr-2" />
+          {error}
+        </Alert>
+      )}
+
+      <ContentSection>
+        {loading ? (
+          <LoadingState 
+            title="Loading conversations..."
+            description="Fetching your latest messages"
+          />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-280px)]">
+            {/* Conversations Panel */}
+            <div className="lg:col-span-1">
+              <Card className="h-full">
+                {conversationsPanel}
+              </Card>
+            </div>
+            
+            {/* Chat Area */}
+            <div className="lg:col-span-2">
+              {chatArea}
             </div>
           </div>
         )}
-      </motion.div>
-    </div>
+      </ContentSection>
+    </PageLayout>
   );
 };
 

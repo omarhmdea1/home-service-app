@@ -23,16 +23,6 @@ export const Button = ({
   iconPosition = 'left',
   ...props 
 }) => {
-  const variants = {
-    primary: designTokens.components.button.primary,
-    secondary: designTokens.components.button.secondary,
-    outline: designTokens.components.button.outline,
-    ghost: designTokens.components.button.ghost,
-    success: 'bg-success-600 hover:bg-success-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-success-500 focus:ring-offset-2',
-    warning: 'bg-warning-500 hover:bg-warning-600 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-warning-500 focus:ring-offset-2',
-    error: 'bg-error-600 hover:bg-error-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-error-500 focus:ring-offset-2',
-  };
-
   const sizes = {
     xs: 'px-2 py-1 text-xs',
     sm: 'px-3 py-1.5 text-sm',
@@ -41,7 +31,24 @@ export const Button = ({
     xl: 'px-8 py-4 text-xl',
   };
 
-  const baseClasses = variants[variant].replace('px-4 py-2', sizes[size]);
+  // ✅ FIX: Get variant from designTokens with fallback
+  const getVariantClasses = (variant) => {
+    const variantClass = designTokens.components.button[variant];
+    if (!variantClass) {
+      console.warn(`Button variant "${variant}" not found, using primary`);
+      return designTokens.components.button.primary;
+    }
+    return variantClass;
+  };
+
+  // ✅ FIX: Safely replace sizing classes with proper error handling
+  const baseClasses = (() => {
+    const variantClasses = getVariantClasses(variant);
+    const sizeClasses = sizes[size] || sizes.md;
+    
+    // Replace the default px-4 py-2 with the appropriate size
+    return variantClasses.replace('px-4 py-2', sizeClasses);
+  })();
 
   return (
     <motion.button
