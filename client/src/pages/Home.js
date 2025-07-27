@@ -43,13 +43,17 @@ const CustomerDashboard = () => {
   const { currentUser, userProfile } = useAuth(); 
   const [services, setServices] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [popularServices, setPopularServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [lastFetch, setLastFetch] = useState(0);
+  const [weather, setWeather] = useState(null);
 
   // ✅ Memoize currentUser.uid to prevent unnecessary re-fetches
   const currentUserId = currentUser?.uid;
+  const userName = userProfile?.name || currentUser?.displayName || 'there';
+  const firstName = userName.split(' ')[0];
 
   useEffect(() => {
     // Only fetch if we have a valid user ID and data is stale (5 minutes)
@@ -94,58 +98,40 @@ const CustomerDashboard = () => {
     }
   };
 
-  // ✅ Enhanced data fetching with retry logic and better error handling
+  // ✅ Enhanced data fetching with retry logic
   const fetchDashboardData = async (isRetry = false) => {
     try {
       if (!currentUserId) {
-        console.log('No currentUser available, skipping data fetch');
+        console.error('No current user ID available');
+        setError('User not authenticated');
         setLoading(false);
         return;
       }
 
-      if (!isRetry) {
-        setLoading(true);
-        setError(null);
+      setLoading(true);
+      setError(null);
+
+      // Fetch featured services and user's recent bookings in parallel
+      const [servicesResponse, bookingsResponse] = await Promise.allSettled([
+        apiCall('http://localhost:5001/api/services?limit=6&featured=true'),
+        apiCall(`http://localhost:5001/api/bookings/user/${currentUserId}?limit=3`)
+      ]);
+
+      // Handle services
+      if (servicesResponse.status === 'fulfilled') {
+        const servicesData = servicesResponse.value?.services || servicesResponse.value || [];
+        setServices(servicesData.slice(0, 6));
+        setPopularServices(servicesData.slice(0, 8));
+      } else {
+        console.error('Services fetch failed:', servicesResponse.reason);
+        setServices([]);
+        setPopularServices([]);
       }
 
-      // ✅ Fetch services with better error handling
-      let servicesData = [];
-      try {
-        const servicesResponse = await apiCall('http://localhost:5001/api/services');
-        // Handle multiple response formats: array, { data: [] }, { services: [] }
-        servicesData = Array.isArray(servicesResponse) 
-          ? servicesResponse 
-          : (servicesResponse.data || servicesResponse.services || []);
+      // Handle bookings with service details
+      if (bookingsResponse.status === 'fulfilled') {
+        const bookingsData = bookingsResponse.value?.bookings || bookingsResponse.value || [];
         
-        if (!Array.isArray(servicesData)) {
-          console.warn('Services API returned unexpected format:', servicesResponse);
-          servicesData = [];
-        }
-        
-        setServices(servicesData.slice(0, 4));
-      } catch (servicesError) {
-        console.error('Error fetching services:', servicesError);
-        setServices([]); // Partial failure - continue with empty services
-      }
-
-      // ✅ Fetch bookings with better error handling
-      let bookingsData = [];
-      try {
-        const bookingsResponse = await apiCall(
-          `http://localhost:5001/api/bookings?userId=${currentUserId}`
-        );
-        
-        // Handle multiple response formats
-        bookingsData = Array.isArray(bookingsResponse) 
-          ? bookingsResponse 
-          : (bookingsResponse.data || bookingsResponse.bookings || []);
-
-        if (!Array.isArray(bookingsData)) {
-          console.warn('Bookings API returned unexpected format:', bookingsResponse);
-          bookingsData = [];
-        }
-
-        // ✅ Enhanced booking details fetching with better error handling
         if (bookingsData.length > 0) {
           const bookingsWithDetails = await Promise.allSettled(
             bookingsData.slice(0, 3).map(async (booking) => {
@@ -155,7 +141,8 @@ const CustomerDashboard = () => {
                   ...booking,
                   serviceName: serviceData?.title || 'Unknown Service',
                   providerName: serviceData?.providerName || 'Unknown Provider',
-                  serviceImage: serviceData?.image || null
+                  serviceImage: serviceData?.image || null,
+                  category: serviceData?.category || 'General'
                 };
               } catch (error) {
                 console.warn(`Failed to fetch service details for booking ${booking._id}:`, error);
@@ -168,7 +155,6 @@ const CustomerDashboard = () => {
             })
           );
 
-          // Extract successful results
           const successfulBookings = bookingsWithDetails
             .filter(result => result.status === 'fulfilled')
             .map(result => result.value);
@@ -177,14 +163,14 @@ const CustomerDashboard = () => {
         } else {
           setBookings([]);
         }
-      } catch (bookingsError) {
-        console.error('Error fetching bookings:', bookingsError);
-        setBookings([]); // Partial failure - continue with empty bookings
+      } else {
+        console.error('Bookings fetch failed:', bookingsResponse.reason);
+        setBookings([]);
       }
 
       setLoading(false);
-      setRetryCount(0); // Reset retry count on success
-      setLastFetch(Date.now()); // Update last fetch timestamp
+      setRetryCount(0);
+      setLastFetch(Date.now());
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       setError(error.message || 'Failed to load dashboard data');
@@ -198,13 +184,21 @@ const CustomerDashboard = () => {
     fetchDashboardData(true);
   };
 
+  // ✅ Get time-based greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   // ✅ Enhanced loading state
   if (loading) {
     return (
-      <PageLayout background="bg-neutral-50">
+      <PageLayout background="bg-gradient-to-br from-neutral-50 to-primary-50">
         <LoadingState 
           title="Loading your dashboard..."
-          description="Gathering your personalized home service experience"
+          description="Preparing your personalized home service experience"
         />
       </PageLayout>
     );
@@ -213,7 +207,7 @@ const CustomerDashboard = () => {
   // ✅ Enhanced error state
   if (error && retryCount < 3) {
     return (
-      <PageLayout background="bg-neutral-50">
+      <PageLayout background="bg-gradient-to-br from-neutral-50 to-primary-50">
         <div className="max-w-2xl mx-auto">
           <Alert variant="error">
             <Icon name="error" size="sm" className="mr-2" />
@@ -239,200 +233,312 @@ const CustomerDashboard = () => {
   }
 
   return (
-    <PageLayout background="bg-neutral-50">
-      <PageHeader
-        title={`Welcome back, ${userProfile?.name || currentUser?.displayName || 'Customer'}!`}
-        subtitle="Your trusted home service marketplace"
-        description="Find and book reliable professionals for all your home maintenance needs"
-        icon={<Icon name="home" />}
-        breadcrumbs={[
-          { label: 'Home' }
-        ]}
-        actions={[
-          {
-            label: 'Browse Services',
-            variant: 'primary',
-            onClick: () => navigate('/services'),
-            icon: <Icon name="services" size="sm" />
-          },
-          {
-            label: 'Book Service',
-            variant: 'outline',
-            onClick: () => navigate('/book-service'),
-            icon: <Icon name="plus" size="sm" />
-          }
-        ]}
-      />
-
-      <ContentSection>
-        {/* Hero Section */}
-        <Card className="relative overflow-hidden mb-8 bg-gradient-to-r from-primary-600 to-primary-700 border-0">
-          <CardContent className="p-8 text-white relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-              <div>
-                <Heading level={1} className="text-white mb-4">
-                  Your Home, Our Experts
-                </Heading>
-                <Text className="text-primary-100 text-lg mb-6 leading-relaxed">
-                  Connect with verified professionals for cleaning, repairs, maintenance, and more. 
-                  Quality service guaranteed.
-                </Text>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button
-                    onClick={() => navigate('/services')}
-                    className="bg-white text-primary-600 hover:bg-primary-50 border-0"
-                  >
-                    <Icon name="services" size="sm" className="mr-2" />
-                    Explore Services
-                  </Button>
-                  <Button
-                    onClick={() => navigate('/book-service')}
-                    variant="outline"
-                    className="border-white text-white hover:bg-white hover:text-primary-600"
-                  >
-                    <Icon name="calendar" size="sm" className="mr-2" />
-                    Book Now
-                  </Button>
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-primary-50">
+      {/* Enhanced Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-r from-primary-600 via-primary-700 to-primary-800 text-white">
+        {/* Background Elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full transform translate-x-48 -translate-y-48 animate-pulse"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full transform -translate-x-32 translate-y-32 animate-pulse delay-300"></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <Badge variant="primary" className="bg-white/20 text-white border-white/30 mb-4">
+                ✨ Welcome Back!
+              </Badge>
+              
+              <Heading level={1} className="text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
+                {getGreeting()}, {firstName}!
+              </Heading>
+              
+              <Text className="text-xl text-primary-100 mb-8 leading-relaxed">
+                Your home deserves the best care. Let's find the perfect service for your next project.
+              </Text>
+              
+              {/* Quick Stats */}
+              <div className="grid grid-cols-2 gap-6 mb-8">
+                <div className="text-center lg:text-left">
+                  <div className="text-2xl font-bold text-white mb-1">{bookings.length}</div>
+                  <div className="text-primary-200 text-sm">Active Bookings</div>
+                </div>
+                <div className="text-center lg:text-left">
+                  <div className="text-2xl font-bold text-white mb-1">{services.length}+</div>
+                  <div className="text-primary-200 text-sm">Services Available</div>
                 </div>
               </div>
               
-              <div className="text-center lg:text-right">
-                <div className="inline-flex items-center justify-center w-32 h-32 bg-white/10 rounded-full">
-                  <Icon name="home" className="w-16 h-16 text-white" />
-                </div>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button 
+                  onClick={() => navigate('/services')}
+                  className="bg-white text-primary-600 hover:bg-primary-50 border-0 text-lg px-8 py-4 shadow-lg transform hover:scale-105 transition-all duration-300"
+                >
+                  <Icon name="services" size="sm" className="mr-2" />
+                  Explore Services
+                </Button>
+                
+                {bookings.length > 0 && (
+                  <Button 
+                    onClick={() => navigate('/my-bookings')}
+                    variant="outline"
+                    className="border-2 border-white text-white hover:bg-white hover:text-primary-600 text-lg px-8 py-4 transform hover:scale-105 transition-all duration-300"
+                  >
+                    <Icon name="calendar" size="sm" className="mr-2" />
+                    My Bookings
+                  </Button>
+                )}
               </div>
             </div>
-          </CardContent>
-          
-          {/* Background Pattern */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full transform translate-x-32 -translate-y-32"></div>
-          <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full transform -translate-x-20 translate-y-20"></div>
-        </Card>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <CustomerActionCard
-            title="Emergency Service"
-            subtitle="24/7 urgent repairs"
-            icon="emergency"
-            onClick={() => navigate('/book-service?category=emergency')}
-            variant="error"
-            badge="24/7"
-          />
-          <CustomerActionCard
-            title="Browse Services"
-            subtitle="Explore all categories"
-            icon="services"
-            onClick={() => navigate('/services')}
-            variant="primary"
-          />
-          <CustomerActionCard
-            title="My Bookings"
-            subtitle="Track appointments"
-            icon="calendar"
-            onClick={() => navigate('/my-bookings')}
-            variant="default"
-            badge={bookings.length > 0 ? bookings.length : null}
-          />
+            <div className="relative">
+              {/* Service Preview Cards */}
+              <div className="grid grid-cols-2 gap-4">
+                <Card className="bg-white p-4 shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-500">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                      <Icon name="home" className="w-5 h-5 text-primary-600" />
+                    </div>
+                    <div>
+                      <Text size="small" className="font-semibold text-neutral-900">House Cleaning</Text>
+                      <Text size="tiny" className="text-neutral-600">Available Now</Text>
+                    </div>
+                  </div>
+                </Card>
+                
+                <Card className="bg-white p-4 shadow-2xl transform -rotate-2 hover:rotate-0 transition-transform duration-500">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-success-100 rounded-full flex items-center justify-center">
+                      <Icon name="services" className="w-5 h-5 text-success-600" />
+                    </div>
+                    <div>
+                      <Text size="small" className="font-semibold text-neutral-900">Quick Repairs</Text>
+                      <Text size="tiny" className="text-neutral-600">Same Day</Text>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </div>
         </div>
+      </section>
+
+      {/* Main Dashboard Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Smart Quick Actions */}
+        <section className="mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <CustomerActionCard
+              title="Emergency Service"
+              subtitle="24/7 urgent repairs"
+              icon="emergency"
+              onClick={() => navigate('/services?category=emergency')}
+              variant="error"
+              badge="24/7"
+            />
+            <CustomerActionCard
+              title="Popular Services"
+              subtitle="Most booked this week"
+              icon="star"
+              onClick={() => navigate('/services?popular=true')}
+              variant="warning"
+              badge="Hot"
+            />
+            <CustomerActionCard
+              title="Book Again"
+              subtitle={bookings.length > 0 ? "Repeat a service" : "Start your journey"}
+              icon={bookings.length > 0 ? "repeat" : "plus"}
+              onClick={() => bookings.length > 0 ? navigate('/my-bookings') : navigate('/services')}
+              variant="primary"
+            />
+            <CustomerActionCard
+              title="Get Support"
+              subtitle="Chat with our team"
+              icon="chat"
+              onClick={() => navigate('/messages')}
+              variant="secondary"
+            />
+          </div>
+        </section>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Featured Services */}
-          <Card>
-            <CardHeader className="border-b border-neutral-200">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Icon name="star" size="sm" />
-                  Featured Services
-                </CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/services')}
-                >
-                  View All
-                </Button>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="p-6">
-              {services.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4">
-                  {services.map((service, index) => (
-                    <CustomerServiceCard key={service._id} service={service} index={index} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icon name="services" className="w-8 h-8 text-neutral-400" />
-                  </div>
-                  <Heading level={3} className="text-neutral-900 mb-2">No services available</Heading>
-                  <Text className="text-neutral-600 mb-4">
-                    Check back later for new service offerings
-                  </Text>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Featured Services - Takes 2 columns */}
+          <div className="lg:col-span-2">
+            <Card className="h-full">
+              <CardHeader className="border-b border-neutral-200 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon name="star" size="sm" className="text-warning-500" />
+                    Recommended for You
+                  </CardTitle>
                   <Button
                     variant="outline"
-                    onClick={() => window.location.reload()}
                     size="sm"
-                  >
-                    <Icon name="spinner" size="xs" className="mr-1" />
-                    Refresh
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Recent Bookings */}
-          <Card>
-            <CardHeader className="border-b border-neutral-200">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Icon name="calendar" size="sm" />
-                  Recent Bookings
-                </CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/my-bookings')}
-                >
-                  View All
-                </Button>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="p-6">
-              {bookings.length > 0 ? (
-                <div className="space-y-4">
-                  {bookings.map((booking, index) => (
-                    <CustomerBookingCard key={booking._id} booking={booking} index={index} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icon name="calendar" className="w-8 h-8 text-neutral-400" />
-                  </div>
-                  <Heading level={3} className="text-neutral-900 mb-2">No bookings yet</Heading>
-                  <Text className="text-neutral-600 mb-4">
-                    Ready to book your first service? We're here to help!
-                  </Text>
-                  <Button 
                     onClick={() => navigate('/services')}
-                    className="flex items-center gap-2"
                   >
-                    <Icon name="plus" size="sm" />
-                    Book Your First Service
+                    View All
                   </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardHeader>
+              
+              <CardContent className="p-6">
+                {services.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {services.slice(0, 4).map((service, index) => (
+                      <CustomerServiceCard key={service._id} service={service} index={index} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Icon name="services" className="w-10 h-10 text-primary-600" />
+                    </div>
+                    <Heading level={3} className="text-neutral-900 mb-2">Discover Amazing Services</Heading>
+                    <Text className="text-neutral-600 mb-6">
+                      Browse our marketplace of trusted professionals
+                    </Text>
+                    <Button
+                      onClick={() => navigate('/services')}
+                      className="transform hover:scale-105 transition-all duration-300"
+                    >
+                      <Icon name="services" size="sm" className="mr-2" />
+                      Explore Services
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar Content */}
+          <div className="space-y-6">
+            {/* Recent Activity */}
+            <Card>
+              <CardHeader className="border-b border-neutral-200 pb-4">
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="calendar" size="sm" className="text-primary-600" />
+                  Recent Activity
+                </CardTitle>
+              </CardHeader>
+              
+              <CardContent className="p-6">
+                {bookings.length > 0 ? (
+                  <div className="space-y-4">
+                    {bookings.map((booking, index) => (
+                      <CustomerBookingCard key={booking._id} booking={booking} index={index} compact />
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/my-bookings')}
+                      className="w-full mt-4"
+                    >
+                      View All Bookings
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Icon name="calendar" className="w-8 h-8 text-primary-600" />
+                    </div>
+                    <Heading level={4} className="text-neutral-900 mb-2">Ready to Start?</Heading>
+                    <Text className="text-neutral-600 mb-4 text-sm">
+                      Book your first service and join thousands of satisfied customers
+                    </Text>
+                    <Button 
+                      onClick={() => navigate('/services')}
+                      size="sm"
+                      className="w-full"
+                    >
+                      <Icon name="plus" size="xs" className="mr-1" />
+                      Book First Service
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Tips & Insights */}
+            <Card className="bg-gradient-to-br from-success-50 to-primary-50 border-success-200">
+              <CardHeader className="border-b border-success-200 pb-4">
+                <CardTitle className="flex items-center gap-2 text-success-700">
+                  <Icon name="check" size="sm" />
+                  Pro Tips
+                </CardTitle>
+              </CardHeader>
+              
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-success-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Icon name="check" size="xs" className="text-success-600" />
+                    </div>
+                    <Text size="small" className="text-success-700">
+                      Book services during weekdays for better availability and rates
+                    </Text>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Icon name="star" size="xs" className="text-primary-600" />
+                    </div>
+                    <Text size="small" className="text-primary-700">
+                      Check provider reviews and ratings before booking
+                    </Text>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-warning-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Icon name="clock" size="xs" className="text-warning-600" />
+                    </div>
+                    <Text size="small" className="text-warning-700">
+                      Schedule regular maintenance to prevent costly repairs
+                    </Text>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </ContentSection>
-    </PageLayout>
+
+        {/* Service Categories */}
+        <section className="mt-12">
+          <div className="text-center mb-8">
+            <Heading level={2} className="text-2xl font-bold text-neutral-900 mb-2">
+              Popular Service Categories
+            </Heading>
+            <Text className="text-neutral-600">
+              Find the right professional for any home project
+            </Text>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {[
+              { name: 'Cleaning', icon: 'home', color: 'primary' },
+              { name: 'Plumbing', icon: 'services', color: 'success' },
+              { name: 'Electrical', icon: 'emergency', color: 'warning' },
+              { name: 'Gardening', icon: 'star', color: 'success' },
+              { name: 'Moving', icon: 'calendar', color: 'primary' },
+              { name: 'Repairs', icon: 'tools', color: 'error' }
+            ].map((category, index) => (
+              <Card 
+                key={category.name}
+                className={`cursor-pointer transform hover:scale-105 transition-all duration-300 hover:shadow-lg bg-gradient-to-br from-${category.color}-50 to-${category.color}-100 border-${category.color}-200`}
+                onClick={() => navigate(`/services?category=${category.name.toLowerCase()}`)}
+              >
+                <CardContent className="p-6 text-center">
+                  <div className={`w-12 h-12 bg-${category.color}-100 rounded-full flex items-center justify-center mx-auto mb-3`}>
+                    <Icon name={category.icon} className={`w-6 h-6 text-${category.color}-600`} />
+                  </div>
+                  <Text className={`font-medium text-${category.color}-700`}>
+                    {category.name}
+                  </Text>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      </div>
+    </div>
   );
 };
 
@@ -1394,49 +1500,63 @@ const WelcomeScreen = () => {
   );
 };
 
-// Reusable Components for Customer Dashboard
+// ✅ NEW: Enhanced Customer Dashboard Components
 const CustomerActionCard = ({ title, subtitle, icon, onClick, variant = 'default', badge = null }) => {
   const variants = {
-    error: 'bg-gradient-to-r from-error-50 to-error-100 border-error-200 hover:from-error-100 hover:to-error-200',
-    primary: 'bg-gradient-to-r from-primary-50 to-primary-100 border-primary-200 hover:from-primary-100 hover:to-primary-200',
-    success: 'bg-gradient-to-r from-success-50 to-success-100 border-success-200 hover:from-success-100 hover:to-success-200',
-    default: 'bg-white border-neutral-200 hover:border-neutral-300 hover:shadow-md'
+    error: 'bg-gradient-to-br from-error-50 to-error-100 border-error-200 hover:from-error-100 hover:to-error-200 hover:border-error-300',
+    primary: 'bg-gradient-to-br from-primary-50 to-primary-100 border-primary-200 hover:from-primary-100 hover:to-primary-200 hover:border-primary-300',
+    success: 'bg-gradient-to-br from-success-50 to-success-100 border-success-200 hover:from-success-100 hover:to-success-200 hover:border-success-300',
+    warning: 'bg-gradient-to-br from-warning-50 to-warning-100 border-warning-200 hover:from-warning-100 hover:to-warning-200 hover:border-warning-300',
+    secondary: 'bg-gradient-to-br from-neutral-50 to-neutral-100 border-neutral-200 hover:from-neutral-100 hover:to-neutral-200 hover:border-neutral-300',
+    default: 'bg-gradient-to-br from-white to-neutral-50 border-neutral-200 hover:border-neutral-300 hover:shadow-lg'
   };
 
   const iconColors = {
     error: 'text-error-600',
     primary: 'text-primary-600',
     success: 'text-success-600',
+    warning: 'text-warning-600',
+    secondary: 'text-neutral-600',
     default: 'text-neutral-600'
+  };
+
+  const iconBgColors = {
+    error: 'bg-error-100',
+    primary: 'bg-primary-100',
+    success: 'bg-success-100',
+    warning: 'bg-warning-100',
+    secondary: 'bg-neutral-100',
+    default: 'bg-neutral-100'
   };
 
   return (
     <Card
       onClick={onClick}
-      className={`cursor-pointer transition-all duration-300 border-2 hover:scale-105 relative overflow-hidden group ${variants[variant]}`}
+      className={`cursor-pointer transition-all duration-300 border-2 hover:scale-105 hover:shadow-xl relative overflow-hidden group ${variants[variant]}`}
     >
       <CardContent className="p-6 relative z-10">
         <div className="flex items-start justify-between mb-4">
-          <div className={`p-3 rounded-xl bg-white/50 ${iconColors[variant]} group-hover:scale-110 transition-transform duration-300`}>
+          <div className={`p-3 rounded-xl ${iconBgColors[variant]} ${iconColors[variant]} group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
             <Icon name={icon} size="lg" />
           </div>
           {badge && (
-            <Badge variant={variant === 'default' ? 'neutral' : variant} size="sm">
+            <Badge variant={variant === 'default' ? 'neutral' : variant} size="sm" className="shadow-sm">
               {badge}
             </Badge>
           )}
         </div>
         
-        <Heading level={3} className="text-neutral-900 mb-2">
+        <Heading level={3} className="text-neutral-900 mb-2 group-hover:text-neutral-800 transition-colors">
           {title}
         </Heading>
-        <Text className="text-neutral-600">
+        <Text className="text-neutral-600 group-hover:text-neutral-700 transition-colors">
           {subtitle}
         </Text>
       </CardContent>
       
-      {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-20 h-20 bg-white/20 rounded-full transform translate-x-10 -translate-y-10 group-hover:scale-110 transition-transform duration-300"></div>
+      {/* Enhanced background decoration */}
+      <div className="absolute top-0 right-0 w-24 h-24 bg-white/30 rounded-full transform translate-x-12 -translate-y-12 group-hover:scale-125 transition-transform duration-500"></div>
+      <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/20 rounded-full transform -translate-x-8 translate-y-8 group-hover:scale-110 transition-transform duration-300"></div>
     </Card>
   );
 };
@@ -1446,42 +1566,65 @@ const CustomerServiceCard = ({ service, index }) => {
   
   return (
     <Card
-      className="cursor-pointer hover:shadow-md transition-all duration-200 group border border-neutral-200"
+      className="cursor-pointer hover:shadow-lg transition-all duration-300 group border border-neutral-200 hover:border-primary-200 overflow-hidden bg-white"
       onClick={() => navigate(`/services/${service._id}`)}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start gap-4">
-          <div className="flex-shrink-0">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-              <Icon name="services" className="w-6 h-6 text-primary-600" />
+      <CardContent className="p-0">
+        {/* Service Image */}
+        <div className="relative h-32 bg-gradient-to-br from-primary-100 to-primary-200 overflow-hidden">
+          {service.image ? (
+            <img 
+              src={service.image} 
+              alt={service.title}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Icon name="services" className="w-12 h-12 text-primary-600 opacity-50" />
             </div>
+          )}
+          
+          {/* Service Category Badge */}
+          <div className="absolute top-3 left-3">
+            <Badge variant="primary" className="bg-white/90 text-primary-700 border-0 shadow-sm">
+              {service.category || 'Service'}
+            </Badge>
           </div>
           
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between mb-2">
-              <Heading level={4} className="text-neutral-900 line-clamp-1 group-hover:text-primary-600 transition-colors">
-                {service.title}
-              </Heading>
-              <div className="flex items-center gap-1 text-neutral-500">
-                <Icon name="star" size="xs" />
-                <Text size="small">4.8</Text>
-              </div>
-            </div>
-            
-            <Text size="small" className="text-neutral-600 mb-3 line-clamp-2">
+          {/* Rating Badge */}
+          <div className="absolute top-3 right-3 flex items-center space-x-1 bg-white/90 px-2 py-1 rounded-full shadow-sm">
+            <Icon name="star" size="xs" className="text-warning-500" />
+            <Text size="tiny" className="font-medium text-neutral-700">
+              {service.rating || '4.8'}
+            </Text>
+          </div>
+        </div>
+        
+        {/* Service Content */}
+        <div className="p-4">
+          <div className="mb-3">
+            <Heading level={4} className="text-neutral-900 line-clamp-1 group-hover:text-primary-600 transition-colors mb-1">
+              {service.title}
+            </Heading>
+            <Text size="small" className="text-neutral-600 line-clamp-2 leading-relaxed">
               {service.description}
             </Text>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Text className="text-lg font-bold text-neutral-900">
+                ${service.price}
+              </Text>
+              <Text size="small" className="text-neutral-500">
+                {service.priceUnit || 'per service'}
+              </Text>
+            </div>
             
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Text className="text-lg font-bold text-neutral-900">
-                  ${service.price}
-                </Text>
-                <Badge variant="neutral" size="sm">
-                  {service.category}
-                </Badge>
-              </div>
-              
+            <div className="flex items-center space-x-2">
+              <Text size="small" className="text-neutral-500">
+                View Details
+              </Text>
               <Icon name="arrowRight" size="sm" className="text-neutral-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all duration-200" />
             </div>
           </div>
@@ -1491,56 +1634,116 @@ const CustomerServiceCard = ({ service, index }) => {
   );
 };
 
-const CustomerBookingCard = ({ booking, index }) => {
+const CustomerBookingCard = ({ booking, index, compact = false }) => {
   const navigate = useNavigate();
   
   const statusConfig = {
-    pending: { variant: 'warning', icon: 'clock' },
-    confirmed: { variant: 'primary', icon: 'check' },
-    completed: { variant: 'success', icon: 'check' },
-    cancelled: { variant: 'error', icon: 'close' }
+    pending: { variant: 'warning', icon: 'clock', text: 'Pending', color: 'text-warning-700' },
+    confirmed: { variant: 'primary', icon: 'check', text: 'Confirmed', color: 'text-primary-700' },
+    'in-progress': { variant: 'primary', icon: 'clock', text: 'In Progress', color: 'text-primary-700' },
+    completed: { variant: 'success', icon: 'check', text: 'Completed', color: 'text-success-700' },
+    cancelled: { variant: 'error', icon: 'close', text: 'Cancelled', color: 'text-error-700' }
   };
 
   const config = statusConfig[booking.status] || statusConfig.pending;
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  if (compact) {
+    return (
+      <Card 
+        className="cursor-pointer hover:shadow-md transition-all duration-200 group border border-neutral-200 hover:border-primary-200"
+        onClick={() => navigate(`/booking/${booking._id}`)}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center flex-shrink-0">
+              <Icon name="calendar" className="w-5 h-5 text-primary-600" />
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1">
+                <Text className="font-medium text-neutral-900 truncate">
+                  {booking.serviceName}
+                </Text>
+                <Badge variant={config.variant} size="sm">
+                  {config.text}
+                </Badge>
+              </div>
+              
+              <div className="flex items-center space-x-4 text-sm text-neutral-600">
+                <span>{formatDate(booking.scheduledDate || booking.createdAt)}</span>
+                <span>•</span>
+                <span className="truncate">{booking.providerName}</span>
+              </div>
+            </div>
+            
+            <Icon name="arrowRight" size="sm" className="text-neutral-400 group-hover:text-primary-600 transition-colors flex-shrink-0" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card 
-      className="cursor-pointer hover:shadow-sm transition-all duration-200 group border border-neutral-200"
+      className="cursor-pointer hover:shadow-lg transition-all duration-300 group border border-neutral-200 hover:border-primary-200 overflow-hidden"
       onClick={() => navigate(`/booking/${booking._id}`)}
     >
-      <CardContent className="p-4">
-        <div className="flex items-center gap-4">
-          <div className="flex-shrink-0">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-neutral-100 to-neutral-200 flex items-center justify-center">
-              <Icon name="calendar" className="w-5 h-5 text-neutral-600" />
+      <CardContent className="p-0">
+        {/* Booking Header */}
+        <div className="bg-gradient-to-r from-neutral-50 to-primary-50 p-4 border-b border-neutral-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
+                <Icon name="calendar" className="w-5 h-5 text-primary-600" />
+              </div>
+              <div>
+                <Text className="font-medium text-neutral-900">
+                  {booking.serviceName}
+                </Text>
+                <Text size="small" className="text-neutral-600">
+                  with {booking.providerName}
+                </Text>
+              </div>
+            </div>
+            
+            <Badge variant={config.variant} className="shadow-sm">
+              <Icon name={config.icon} size="xs" className="mr-1" />
+              {config.text}
+            </Badge>
+          </div>
+        </div>
+        
+        {/* Booking Details */}
+        <div className="p-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <Text size="small" className="text-neutral-500 mb-1">Date</Text>
+              <Text className="font-medium text-neutral-900">
+                {formatDate(booking.scheduledDate || booking.createdAt)}
+              </Text>
+            </div>
+            <div>
+              <Text size="small" className="text-neutral-500 mb-1">Category</Text>
+              <Text className="font-medium text-neutral-900">
+                {booking.category || 'General'}
+              </Text>
             </div>
           </div>
           
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between mb-1">
-              <Heading level={4} className="text-neutral-900 line-clamp-1 group-hover:text-primary-600 transition-colors">
-                {booking.serviceName}
-              </Heading>
-              <Badge variant={config.variant} size="sm" className="flex items-center gap-1">
-                <Icon name={config.icon} size="xs" />
-                {booking.status}
-              </Badge>
-            </div>
-            
-            <Text size="small" className="text-neutral-600 mb-2">
-              Provider: {booking.providerName}
+          <div className="mt-4 flex items-center justify-between">
+            <Text className="text-lg font-bold text-neutral-900">
+              ${booking.totalPrice || booking.price || 'TBD'}
             </Text>
-            
-            <div className="flex items-center justify-between">
-              <Text size="small" className="text-neutral-500">
-                {new Date(booking.date).toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric'
-                })}
-              </Text>
-              
-              <Icon name="arrowRight" size="sm" className="text-neutral-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all duration-200" />
+            <div className="flex items-center space-x-2 text-primary-600">
+              <Text size="small" className="font-medium">View Details</Text>
+              <Icon name="arrowRight" size="sm" className="group-hover:translate-x-1 transition-transform duration-200" />
             </div>
           </div>
         </div>
