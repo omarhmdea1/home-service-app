@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../components/auth/AuthProvider';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { getServiceById } from '../services/serviceService';
 import { createBooking } from '../services/bookingService';
+import { formatPrice, formatCurrency } from '../utils/formatters';
 
 const BookService = () => {
   console.log('BookService component rendering');
@@ -274,7 +275,7 @@ const BookService = () => {
                   <div>
                     <span className="text-sm text-gray-500">Price</span>
                     <div className="font-bold text-xl text-primary-600">
-                      ${service.price}<span className="text-sm font-normal text-gray-500">/{service.priceUnit}</span>
+                      {formatCurrency(service.price)}/{service.priceUnit}
                     </div>
                   </div>
                 </div>
@@ -353,15 +354,15 @@ const BookService = () => {
                     <div className="bg-gray-50 rounded-lg p-4">
                       <div className="flex justify-between mb-2">
                         <span>Service Rate</span>
-                        <span>₪{service.price}/{service.priceUnit}</span>
+                        <span>{formatCurrency(service.price)}/{service.priceUnit}</span>
                       </div>
                       <div className="flex justify-between mb-2">
                         <span>Booking Fee</span>
-                        <span>₪20.00</span>
+                        <span>{formatCurrency(20)}</span>
                       </div>
                       <div className="border-t border-gray-200 my-2 pt-2 flex justify-between font-bold">
                         <span>Total Due Now</span>
-                        <span>₪{service.price + 20}</span>
+                        <span>{formatCurrency(service.price + 20)}</span>
                       </div>
                       <p className="text-xs text-gray-500 mt-2">
                         * Final charges may vary based on the actual duration and any additional services requested.

@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../components/auth/AuthProvider';
-import { getServices, createService, updateService } from '../../services/serviceService';
+import { getServices, createService, updateService, deleteService } from '../../services/serviceService';
 import ServiceForm from '../../components/provider/ServiceForm';
+import { formatPrice, formatCurrency } from '../../utils/formatters';
 
 // ✅ NEW: Import our design system components
 import {
@@ -228,8 +231,8 @@ const ProviderServices = () => {
                 <Text size="small">{service.category}</Text>
               </div>
               <div className="flex items-center gap-1">
-                <Icon name="dollar" size="xs" />
-                <Text size="small">${service.price.toFixed(2)}</Text>
+                <Icon name="money" size="xs" />
+                <Text size="small">{formatCurrency(service.price)}</Text>
               </div>
               <div className="flex items-center gap-1">
                 <Icon name="clock" size="xs" />

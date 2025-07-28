@@ -26,6 +26,8 @@ import {
   FormSubmitButton,
   Alert,
 } from '../../ui';
+import { motion } from 'framer-motion';
+import { formatPrice, formatCurrency } from '../../../utils/formatters';
 
 /**
  * Layout System Showcase
@@ -69,7 +71,7 @@ const LayoutShowcase = () => {
       <StatCard title="Total Services" value="24" icon="🏠" />
       <StatCard title="Active Bookings" value="8" icon="📅" />
       <StatCard title="Completed" value="156" icon="✅" />
-      <StatCard title="Revenue" value="$12,450" icon="💰" />
+      <StatCard title="Revenue" value={formatCurrency(12450)} icon="💰" />
     </StatsLayout>
   );
 
@@ -190,9 +192,9 @@ const LayoutShowcase = () => {
                     </select>
                     <select className="px-3 py-2 border border-neutral-300 rounded-lg">
                       <option>All Prices</option>
-                      <option>Under $50</option>
-                      <option>$50 - $100</option>
-                      <option>Over $100</option>
+                      <option>Under 100</option>
+                      <option>100 - 200</option>
+                      <option>Over 200</option>
                     </select>
                     <Button variant="primary">Apply Filters</Button>
                   </div>
@@ -251,7 +253,7 @@ const LayoutShowcase = () => {
                       </div>
                       <div>
                         <Text className="font-medium mb-2">Price</Text>
-                        <Text className="text-neutral-600">$120</Text>
+                        <Text className="text-neutral-600">{formatPrice(120)}</Text>
                       </div>
                       <div>
                         <Text className="font-medium mb-2">Category</Text>

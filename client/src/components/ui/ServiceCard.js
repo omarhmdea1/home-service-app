@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { formatPrice, formatCurrency } from '../../utils/formatters';
 import { Card, Badge, Text, Heading, Button, Icon } from './index';
 
 /**
@@ -122,7 +123,7 @@ const ServiceCard = ({
           
           <div className="flex items-center justify-between mb-3">
             <span className="text-xl font-bold text-primary-600">
-              ${service.price}
+              {formatPrice(service.price)}
             </span>
             
             {service.rating && (

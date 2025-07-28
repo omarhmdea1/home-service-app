@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../../components/auth/AuthProvider';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../components/auth/AuthProvider';
 import { getProviderBookings } from '../../services/bookingService';
+import { getServices } from '../../services/serviceService';
+import { getCurrentUserProfile } from '../../services/userService';
+import { formatPrice, formatCurrency } from '../../utils/formatters';
 
 // ✅ NEW: Import our design system components
 import {
@@ -111,7 +114,7 @@ const ProviderDashboard = () => {
       <StatCard
         icon={<Icon name="money" />}
         title="Total Earnings"
-        value={`$${stats.totalEarnings.toLocaleString()}`}
+        value={formatCurrency(stats.totalEarnings)}
         subtitle={`From ${stats.completedBookings} completed bookings`}
         trend="positive"
       />
@@ -357,7 +360,7 @@ const BookingCard = ({ booking }) => (
           {booking.status}
         </Badge>
         <Text className="font-semibold text-neutral-900">
-          ${booking.price}
+          {formatCurrency(booking.price)}
         </Text>
       </div>
     </div>

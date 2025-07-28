@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { formatPrice, formatCurrency } from '../utils/formatters';
 
 const ProviderProfile = () => {
   const { providerId } = useParams();
@@ -368,7 +369,7 @@ const ProviderProfile = () => {
                         ))}
                         <span className="ml-1 text-sm text-gray-500">({service.reviewCount})</span>
                       </div>
-                      <span className="text-lg font-bold text-primary-600">₪{service.price} {service.priceUnit}</span>
+                      <span className="text-lg font-bold text-primary-600">{formatPrice(service.price, service.priceUnit)}</span>
                     </div>
                     <div className="mt-5">
                       <Link

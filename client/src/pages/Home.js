@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../components/auth/AuthProvider';
+import { getServices } from '../services/serviceService';
+import { getUserBookings } from '../services/bookingService';
+import { formatPrice, formatCurrency } from '../utils/formatters';
 
 // ✅ NEW: Import our design system components
 import {
@@ -956,8 +960,8 @@ const ProviderDashboard = () => {
           />
           <StatCard
             title="Total Earnings"
-            value={`$${stats.totalEarnings.toLocaleString()}`}
-            icon="dollar"
+            value={formatCurrency(stats.totalEarnings)}
+            icon="money"
             trend="+8%"
             variant="success"
           />
@@ -1135,7 +1139,7 @@ const WelcomeScreen = () => {
                     className="w-full h-32 object-cover rounded-lg mb-3" 
                   />
                   <Text size="small" className="font-semibold text-neutral-900">House Cleaning</Text>
-                  <Text size="tiny" className="text-neutral-600">Starting at $80</Text>
+                  <Text size="tiny" className="text-neutral-600">Starting at ₪80</Text>
                 </Card>
                 
                 <Card className="bg-white p-4 shadow-2xl transform -rotate-3 hover:rotate-0 transition-transform duration-500">
@@ -1145,7 +1149,7 @@ const WelcomeScreen = () => {
                     className="w-full h-32 object-cover rounded-lg mb-3" 
                   />
                   <Text size="small" className="font-semibold text-neutral-900">Plumbing Repair</Text>
-                  <Text size="tiny" className="text-neutral-600">Starting at $120</Text>
+                  <Text size="tiny" className="text-neutral-600">Starting at ₪120</Text>
                 </Card>
               </div>
               
@@ -1241,11 +1245,11 @@ const WelcomeScreen = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
             <ServiceShowcaseCard
-              image="https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
-              icon="home"
+              image="https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
+              icon="cleaning"
               title="House Cleaning"
               description="Professional deep cleaning and regular maintenance"
-              price="Starting at $80"
+              price="Starting at ₪80"
               rating="4.9"
               reviews="1.2k"
             />
@@ -1254,7 +1258,7 @@ const WelcomeScreen = () => {
               icon="services"
               title="Plumbing"
               description="Expert plumbing repairs and installations"
-              price="Starting at $120"
+              price="Starting at ₪120"
               rating="4.8"
               reviews="890"
             />
@@ -1263,7 +1267,7 @@ const WelcomeScreen = () => {
               icon="emergency"
               title="Electrical"
               description="Safe and reliable electrical services"
-              price="Starting at $150"
+              price="Starting at ₪150"
               rating="4.9"
               reviews="756"
             />
@@ -1272,7 +1276,7 @@ const WelcomeScreen = () => {
               icon="home"
               title="HVAC"
               description="Heating, cooling, and ventilation services"
-              price="Starting at $200"
+              price="Starting at ₪200"
               rating="4.7"
               reviews="634"
             />
@@ -1614,10 +1618,10 @@ const CustomerServiceCard = ({ service, index }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Text className="text-lg font-bold text-neutral-900">
-                ${service.price}
+                {formatPrice(service.price, service.priceUnit)}
               </Text>
               <Text size="small" className="text-neutral-500">
-                {service.priceUnit || 'per service'}
+                {/* priceUnit already included in formatPrice */}
               </Text>
             </div>
             
@@ -1739,7 +1743,7 @@ const CustomerBookingCard = ({ booking, index, compact = false }) => {
           
           <div className="mt-4 flex items-center justify-between">
             <Text className="text-lg font-bold text-neutral-900">
-              ${booking.totalPrice || booking.price || 'TBD'}
+              {formatCurrency(booking.totalPrice || booking.price)}
             </Text>
             <div className="flex items-center space-x-2 text-primary-600">
               <Text size="small" className="font-medium">View Details</Text>
@@ -1803,7 +1807,7 @@ const ServiceCard = ({ service, index }) => {
       <h3 className="font-medium text-gray-900 text-sm mb-1">{service.title}</h3>
       <p className="text-xs text-gray-600 mb-2 line-clamp-2">{service.description}</p>
       <div className="flex items-center justify-between">
-        <span className="text-sm font-bold text-gray-900">${service.price}</span>
+        <span className="text-sm font-bold text-gray-900">{formatCurrency(service.price)}</span>
         <span className="text-xs text-gray-500">{service.category}</span>
       </div>
     </div>

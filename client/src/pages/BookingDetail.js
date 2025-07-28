@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../components/auth/AuthProvider';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getBookingById, updateBookingStatus } from '../services/bookingService';
+import { useAuth } from '../components/auth/AuthProvider';
+import { getBookingById, updateBookingStatus, deleteBooking } from '../services/bookingService';
 import { getServiceById } from '../services/serviceService';
 import { submitReview } from '../services/reviewService';
 import ChatBox from '../components/messaging/ChatBox';
+import { formatPrice, formatCurrency } from '../utils/formatters';
 
 const BookingDetail = () => {
   const { id } = useParams();
@@ -588,7 +589,7 @@ const BookingDetail = () => {
                     </svg>
                   }
                   label="Price"
-                  value={`$${booking.price?.toFixed(2) || 'TBD'}`}
+                  value={`${formatCurrency(booking.price)}`}
                   color="bg-emerald-100 text-emerald-600"
                 />
               </div>

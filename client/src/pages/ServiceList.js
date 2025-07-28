@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getServices } from '../services/serviceService';
+import { formatPrice, formatCurrency } from '../utils/formatters';
 import { useAuth } from '../components/auth/AuthProvider';
 
 // ✅ NEW: Import our design system components
@@ -458,7 +461,7 @@ const ServiceList = () => {
                 <div>
                   <Text size="small" className="text-neutral-500 mb-1">Service Price</Text>
                   <Text className="font-bold text-neutral-900">
-                    ₪{selectedService.price} {selectedService.priceUnit}
+                    {formatPrice(selectedService.price, selectedService.priceUnit)}
                   </Text>
                 </div>
                 <div>

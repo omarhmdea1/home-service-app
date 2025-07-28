@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getServiceById } from '../services/serviceService';
+import { formatPrice, formatCurrency } from '../utils/formatters';
 
 const defaultPlaceholderImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
@@ -86,11 +87,6 @@ const ServiceDetail = () => {
       return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
     }
     return name.charAt(0).toUpperCase();
-  };
-  
-  // Format price with unit
-  const formatPrice = (price, unit) => {
-    return `₪${price}${unit ? ` ${unit}` : ''}`;
   };
   
   // Render star ratings
