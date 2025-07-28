@@ -83,7 +83,7 @@ const Navigation = () => {
                 </svg>
               </div>
               <span className="ml-3 text-xl font-bold text-gray-900 group-hover:text-primary-600 transition-colors duration-200">
-                HomeServices
+                Hausly
               </span>
             </Link>
           </div>

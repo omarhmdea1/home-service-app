@@ -1,0 +1,16 @@
+{
+  "name": "Hausly - Home Services",
+  "short_name": "Hausly",
+  "description": "Your trusted partner for all home service needs. Quality, reliability, and peace of mind guaranteed.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "theme_color": "#0284c7",
+  "background_color": "#f8f9fa",
+  "display": "standalone",
+  "start_url": "/"
+} 

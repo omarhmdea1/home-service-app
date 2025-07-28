@@ -332,7 +332,7 @@ const About = () => {
 							</p>
 							<p className="text-gray-600 text-sm">
 								With over 15 years in the home service industry across Israel,
-								Avi founded HomeServices to connect Israelis with trusted
+								Avi founded Hausly to connect Israelis with trusted
 								professionals throughout the country.
 							</p>
 						</div>

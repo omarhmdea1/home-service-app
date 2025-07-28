@@ -329,31 +329,31 @@ const CustomerDashboard = () => {
         <section className="mb-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <CustomerActionCard
-              title="Emergency Service"
-              subtitle="24/7 urgent repairs"
+              title="Instant Help"
+              subtitle="Urgent solutions available"
               icon="emergency"
               onClick={() => navigate('/services?category=emergency')}
               variant="error"
-              badge="24/7"
+              badge="Fast"
             />
             <CustomerActionCard
-              title="Popular Services"
-              subtitle="Most booked this week"
+              title="Trending Now"
+              subtitle="What others are booking"
               icon="star"
               onClick={() => navigate('/services?popular=true')}
               variant="warning"
-              badge="Hot"
+              badge="Popular"
             />
             <CustomerActionCard
-              title="Book Again"
-              subtitle={bookings.length > 0 ? "Repeat a service" : "Start your journey"}
+              title="Quick Book"
+              subtitle={bookings.length > 0 ? "Book your favorites" : "Find your service"}
               icon={bookings.length > 0 ? "repeat" : "plus"}
               onClick={() => bookings.length > 0 ? navigate('/my-bookings') : navigate('/services')}
               variant="primary"
             />
             <CustomerActionCard
-              title="Get Support"
-              subtitle="Chat with our team"
+              title="Need Help?"
+              subtitle="Expert advice & support"
               icon="chat"
               onClick={() => navigate('/messages')}
               variant="secondary"
@@ -1194,7 +1194,7 @@ const WelcomeScreen = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <Heading level={2} className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-4">
-              Why Choose HomeServices?
+              Why Choose Hausly?
             </Heading>
             <Text className="text-xl text-neutral-600 max-w-3xl mx-auto">
               We make home maintenance simple, reliable, and stress-free with our comprehensive platform
@@ -1301,7 +1301,7 @@ const WelcomeScreen = () => {
               What Our Customers Say
             </Heading>
             <Text className="text-xl text-neutral-600">
-              Real experiences from real homeowners who trust HomeServices
+              Real experiences from real homeowners who trust Hausly
             </Text>
           </div>
           
@@ -1319,7 +1319,7 @@ const WelcomeScreen = () => {
               name="Mike Chen"
               location="Austin, TX"
               rating={5}
-              text="Had a plumbing emergency at 11 PM. Found a certified plumber through HomeServices who came within an hour. Saved my weekend!"
+              text="Had a plumbing emergency at 11 PM. Found a certified plumber through Hausly who came within an hour. Saved my weekend!"
               service="Emergency Plumbing"
             />
             <TestimonialCard
@@ -1424,7 +1424,7 @@ const WelcomeScreen = () => {
             Ready to Transform Your Home?
           </Heading>
           <Text className="text-xl text-primary-100 mb-8">
-            Join thousands of satisfied customers who trust HomeServices for all their home maintenance needs.
+            Join thousands of satisfied customers who trust Hausly for all their home maintenance needs.
           </Text>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -1452,7 +1452,7 @@ const WelcomeScreen = () => {
             <div>
               <div className="flex items-center mb-4">
                 <Icon name="home" className="w-8 h-8 text-primary-400 mr-2" />
-                <span className="text-xl font-bold">HomeServices</span>
+                <span className="text-xl font-bold">Hausly</span>
               </div>
               <Text className="text-neutral-400 mb-4">
                 Your trusted partner for all home service needs. Quality, reliability, and peace of mind guaranteed.
@@ -1491,7 +1491,7 @@ const WelcomeScreen = () => {
           
           <div className="border-t border-neutral-800 mt-12 pt-8 text-center">
             <Text className="text-neutral-400">
-              © 2024 HomeServices. All rights reserved.
+              © 2024 Hausly. All rights reserved.
             </Text>
           </div>
         </div>

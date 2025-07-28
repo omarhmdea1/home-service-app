@@ -6,6 +6,54 @@ import { getAuthToken, getIdToken } from '../utils/authToken';
 const API_BASE_URL = 'http://localhost:5001/api';
 
 /**
+ * Get a fresh authentication token, automatically refreshing if needed
+ * @returns {Promise<string>} - Fresh authentication token
+ */
+async function getFreshToken() {
+  try {
+    // Always get a fresh token to avoid expiration issues
+    return await getIdToken();
+  } catch (error) {
+    console.error('Error getting fresh token:', error);
+    throw new Error('Authentication failed. Please log in again.');
+  }
+}
+
+/**
+ * Make an authenticated request with automatic token refresh
+ * @param {string} url - Request URL
+ * @param {Object} options - Fetch options
+ * @param {boolean} isRetry - Whether this is a retry attempt
+ * @returns {Promise<Response>} - Fetch response
+ */
+async function makeAuthenticatedRequest(url, options = {}, isRetry = false) {
+  try {
+    // Get fresh token for authenticated requests
+    const token = await getFreshToken();
+    
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    // If token expired and this isn't a retry, try once more with fresh token
+    if ((response.status === 401 || response.status === 403) && !isRetry) {
+      console.log('Token expired, retrying with fresh token...');
+      return makeAuthenticatedRequest(url, options, true);
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Error making authenticated request:', error);
+    throw error;
+  }
+}
+
+/**
  * Safely parse JSON response, handling non-JSON responses
  * @param {Response} response - Fetch API response
  * @returns {Promise<any>} - Parsed JSON data
@@ -48,14 +96,8 @@ export const get = async (endpoint, params = {}) => {
       }
     });
     
-    const token = getAuthToken();
-    
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` })
-      }
+    const response = await makeAuthenticatedRequest(url.toString(), {
+      method: 'GET'
     });
     
     if (!response.ok) {
@@ -77,14 +119,8 @@ export const get = async (endpoint, params = {}) => {
  */
 export const post = async (endpoint, data = {}) => {
   try {
-    const token = getAuthToken();
-    
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await makeAuthenticatedRequest(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` })
-      },
       body: JSON.stringify(data)
     });
     
@@ -107,14 +143,8 @@ export const post = async (endpoint, data = {}) => {
  */
 export const put = async (endpoint, data = {}) => {
   try {
-    const token = getAuthToken();
-    
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await makeAuthenticatedRequest(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` })
-      },
       body: JSON.stringify(data)
     });
     
@@ -136,14 +166,8 @@ export const put = async (endpoint, data = {}) => {
  */
 export const del = async (endpoint) => {
   try {
-    const token = getAuthToken();
-    
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` })
-      }
+    const response = await makeAuthenticatedRequest(`${API_BASE_URL}${endpoint}`, {
+      method: 'DELETE'
     });
     
     if (!response.ok) {

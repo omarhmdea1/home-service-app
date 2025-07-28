@@ -3,7 +3,6 @@
  */
 import { getAuth } from 'firebase/auth';
 import { get, post, put } from './apiService';
-import { getIdToken } from '../utils/authToken';
 
 /**
  * Get current user profile from MongoDB
@@ -17,7 +16,6 @@ export const getCurrentUserProfile = async () => {
     throw new Error('User not authenticated');
   }
   
-  await getIdToken();
   return get(`/users/${user.uid}`);
 };
 
@@ -43,8 +41,6 @@ export const updateUserProfile = async (userData) => {
   if (!user) {
     throw new Error('User not authenticated');
   }
-  
-  await getIdToken();
   
   const updatedProfile = await put(`/users/${user.uid}`, userData);
   return updatedProfile;
