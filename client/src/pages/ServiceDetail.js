@@ -33,6 +33,14 @@ const ServiceDetail = () => {
           reviewCount: serviceData.reviewCount || 0,
           image: serviceData.image || defaultPlaceholderImage,
           provider: serviceData.providerName || 'Service Provider',
+          providerId: serviceData.providerId || serviceData.provider?._id || serviceData.provider?.id,
+          providerProfile: serviceData.provider || {
+            name: serviceData.providerName || 'Service Provider',
+            rating: serviceData.rating || 4.5,
+            reviewCount: serviceData.reviewCount || 0,
+            description: 'A trusted provider on Hausly with a proven track record of quality service and customer satisfaction.',
+            verificationStatus: 'Verified'
+          },
           features: serviceData.features || [
             'Professional service',
             'Quality guarantee',
@@ -56,6 +64,28 @@ const ServiceDetail = () => {
     console.log('Navigating to booking page for service:', id);
     // Use direct navigation with window.location to bypass any potential React Router issues
     window.location.href = `/book/${id}`;
+  };
+
+  const handleViewProviderProfile = () => {
+    if (service.providerId) {
+      // Navigate to the public provider profile page
+      navigate(`/providers/${service.providerId}`);
+    } else {
+      // Fallback: try to extract provider ID from service data or use a generic identifier
+      console.warn('Provider ID not available, trying to extract from service data');
+      const fallbackId = service.id ? `service-provider-${service.id}` : 'provider123';
+      navigate(`/providers/${fallbackId}`);
+    }
+  };
+
+  // Generate provider initials for avatar
+  const getProviderInitials = (name) => {
+    if (!name) return 'GL';
+    const words = name.split(' ');
+    if (words.length >= 2) {
+      return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+    }
+    return name.charAt(0).toUpperCase();
   };
   
   // Format price with unit
@@ -235,27 +265,66 @@ const ServiceDetail = () => {
                 
                 <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-8 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
                   <h3 className="text-xl font-semibold text-gray-900 mb-5">About the Provider</h3>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-5">  {/* Increased spacing */}
-                    <div className="h-20 w-20 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-2xl border-2 border-primary-200 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105">
-                      {service.provider.charAt(0)}{service.provider.split(' ')[1]?.charAt(0) || ''}
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-6 mb-5">  {/* Changed items-center to items-start */}
+                    <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center text-primary-700 font-bold text-xl border-2 border-primary-300 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105 flex-shrink-0">
+                      {getProviderInitials(service.providerProfile?.name || service.provider)}
                     </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900 text-lg mb-2">{service.provider}</h4>
-                      <div className="flex items-center">
-                        {renderRating(service.rating)}
-                        <span className="ml-2 text-sm text-gray-600">{service.rating} ({service.reviewCount} reviews)</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-bold text-gray-900 text-lg">{service.providerProfile?.name || service.provider}</h4>
+                        {service.providerProfile?.verificationStatus === 'Verified' && (
+                          <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            Verified
+                          </div>
+                        )}
                       </div>
-                      <button className="mt-3 text-primary-600 text-sm font-medium hover:text-primary-700 flex items-center bg-white px-3 py-1.5 rounded-md border border-primary-100 hover:border-primary-300 transition-colors shadow-sm">
+                      <div className="flex items-center mb-3">
+                        {renderRating(service.providerProfile?.rating || service.rating)}
+                        <span className="ml-2 text-sm font-medium text-gray-700">{service.providerProfile?.rating || service.rating} ({service.providerProfile?.reviewCount || service.reviewCount} reviews)</span>
+                      </div>
+                      <motion.button 
+                        onClick={handleViewProviderProfile} 
+                        className="inline-flex items-center text-primary-600 text-sm font-medium hover:text-primary-700 bg-white px-4 py-2 rounded-lg border border-primary-200 hover:border-primary-300 hover:bg-primary-50 transition-all duration-300 shadow-sm hover:shadow-md group"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
                         View full profile
-                        <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
-                      </button>
+                      </motion.button>
                     </div>
                   </div>
-                  <p className="text-gray-700 text-base leading-relaxed">
-                    A trusted provider on our platform with a proven track record of quality service and customer satisfaction. All our providers undergo thorough background checks and training verification.
-                  </p>
+                  <div className="border-t border-gray-200 pt-4">
+                    <p className="text-gray-700 text-base leading-relaxed">
+                      {service.providerProfile?.description || 'A trusted provider on Hausly with a proven track record of quality service and customer satisfaction. All our providers undergo thorough background checks and training verification.'}
+                    </p>
+                    
+                    {/* Additional provider highlights */}
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 border border-primary-200">
+                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Professional Service
+                      </span>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Background Verified
+                      </span>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Quality Guarantee
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
