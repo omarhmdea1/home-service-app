@@ -147,14 +147,14 @@ const ProviderDashboard = () => {
          onClick={() => window.location.href = '/provider/services'}
        />
        
-       <ActionCard
-         icon={<Icon name="calendar" />}
-         title="Booking Requests"
-         subtitle={`${stats.pendingBookings} pending requests`}
-         variant="secondary"
-         badge={stats.pendingBookings > 0 ? { text: stats.pendingBookings, variant: 'warning' } : null}
-         onClick={() => window.location.href = '/provider/bookings'}
-       />
+             <ActionCard
+        icon={<Icon name="calendar" />}
+        title="Booking Requests"
+        subtitle={`${stats.pendingBookings} pending requests`}
+        variant="secondary"
+        badge={stats.pendingBookings > 0 ? { text: stats.pendingBookings, variant: 'warning' } : null}
+        onClick={() => window.location.href = '/my-bookings'}
+      />
        
        <ActionCard
          icon={<Icon name="chat" />}
@@ -179,7 +179,7 @@ const ProviderDashboard = () => {
       <CardContent>
         <div className="flex items-center justify-between mb-6">
           <Heading level={3}>Recent Bookings</Heading>
-                     <Button variant="outline" size="sm" onClick={() => window.location.href = '/provider/bookings'}>
+                     <Button variant="outline" size="sm" onClick={() => window.location.href = '/my-bookings'}>
              View All
            </Button>
         </div>
@@ -232,7 +232,7 @@ const ProviderDashboard = () => {
         <Button 
           variant="warning" 
           size="sm"
-          onClick={() => window.location.href = '/provider/bookings?status=pending'}
+          onClick={() => window.location.href = '/my-bookings'}
         >
           <Icon name="calendar" size="xs" className="mr-1" />
           Review Requests
