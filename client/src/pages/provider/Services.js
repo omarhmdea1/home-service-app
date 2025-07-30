@@ -407,22 +407,10 @@ const ProviderServices = () => {
           />
         ) : services.length === 0 ? (
           <div>
-            <div className="bg-red-100 border border-red-500 p-4 mb-4">
-              <strong>DEBUG: No services found</strong>
-              <br />Services array length: {services.length}
-              <br />Current user: {currentUser ? 'Logged in' : 'Not logged in'}
-              <br />User role: {JSON.stringify(userProfile?.role)}
-            </div>
             {emptyState}
           </div>
         ) : (
           <div>
-            <div className="bg-green-100 border border-green-500 p-4 mb-4">
-              <strong>DEBUG: Services loaded successfully!</strong>
-              <br />Services count: {services.length}
-              <br />First service: {services[0]?.title || 'N/A'}
-              <br />Services data: <pre>{JSON.stringify(services, null, 2)}</pre>
-            </div>
             <div className="flex items-center justify-between mb-6">
               <Heading level={3} className="text-neutral-900">
                 Your Services ({services.length})
