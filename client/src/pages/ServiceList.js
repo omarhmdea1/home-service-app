@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getServices } from '../services/serviceService';
+import { getPublic } from '../services/apiService';
 import { formatPrice, formatCurrency } from '../utils/formatters';
 import { useAuth } from '../components/auth/AuthProvider';
 
@@ -106,30 +107,20 @@ const ServiceList = () => {
     const fetchAllCategories = async () => {
       try {
         console.log('🏷️ Fetching all categories...');
-        const response = await fetch('http://localhost:5001/api/services/categories');
         
-        if (response.ok) {
-          const categoriesResponse = await response.json();
-          
-          // Handle both direct array and object response formats
-          const categoriesArray = Array.isArray(categoriesResponse) 
-            ? categoriesResponse 
-            : (categoriesResponse.categories || []);
-          
-          setAllCategories(categoriesArray.sort());
-          console.log('✅ Categories loaded:', categoriesArray);
-        } else {
-          // Fallback: extract from first batch of services
-          console.log('⚠️ Categories endpoint not found (status:', response.status, '), will use fallback from services');
-          
-          // ✅ TEMP FIX: If server hasn't been restarted, get categories from main API
-          if (response.status === 400) {
-            console.log('🔧 Detected server restart needed, using fallback extraction');
-          }
-        }
+        // Use the proper API service instead of hardcoded localhost
+        const response = await getPublic('/services/categories');
+        
+        // Handle both direct array and object response formats
+        const categoriesArray = Array.isArray(response) 
+          ? response 
+          : (response.categories || []);
+        
+        setAllCategories(categoriesArray.sort());
+        console.log('✅ Categories loaded:', categoriesArray);
       } catch (error) {
         console.error('❌ Error fetching categories:', error);
-        console.log('🔧 Server may need restart - will extract categories from services data');
+        console.log('🔧 Will extract categories from services data as fallback');
       }
     };
 
@@ -171,13 +162,8 @@ const ServiceList = () => {
         console.log('🔄 Fetching services...', params.toString());
         const startTime = Date.now();
         
-        const response = await fetch(`http://localhost:5001/api/services?${params.toString()}`);
-        
-        if (!response.ok) {
-          throw new Error(`API responded with status: ${response.status}`);
-        }
-        
-        const data = await response.json();
+        // Use the proper API service instead of hardcoded localhost
+        const data = await getPublic('/services', Object.fromEntries(params));
         const fetchTime = Date.now() - startTime;
         
         // ✅ Handle new API response structure
