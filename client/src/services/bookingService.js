@@ -24,6 +24,12 @@ export const createBooking = async (bookingData) => {
     };
     
     const response = await post('/bookings', bookingWithUserInfo);
+    
+    // Trigger custom event for new booking (for provider notification)
+    window.dispatchEvent(new CustomEvent('newBookingReceived', {
+      detail: { booking: response.booking }
+    }));
+    
     return response.booking;
   } catch (error) {
     console.error('Error creating booking:', error);
@@ -102,6 +108,16 @@ export const updateBookingStatus = async (bookingId, status) => {
     }
     
     const response = await put(`/bookings/${bookingId}/status`, { status });
+    
+    // Trigger custom event for booking status update
+    window.dispatchEvent(new CustomEvent('bookingStatusUpdated', {
+      detail: { 
+        bookingId, 
+        status, 
+        booking: response.booking 
+      }
+    }));
+    
     return response.booking;
   } catch (error) {
     console.error('Error updating booking status:', error);

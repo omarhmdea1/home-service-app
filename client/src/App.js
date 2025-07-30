@@ -20,6 +20,7 @@ import Chat from './pages/Chat';
 import RoleSelection from './components/auth/RoleSelection';
 import { useAuth } from './components/auth/AuthProvider';
 import MessageNotificationBadge from './components/messaging/MessageNotificationBadge';
+import BookingRequestNotificationBadge from './components/messaging/BookingRequestNotificationBadge';
 import socketService from './services/socketService';
 
 // Import the new provider profile page
@@ -129,6 +130,7 @@ const Navigation = () => {
                     </svg>
                   } 
                   label="Manage Bookings" 
+                  badge={<BookingRequestNotificationBadge />}
                 />
               )}
               <NavLink 
