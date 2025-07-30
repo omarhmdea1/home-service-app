@@ -43,7 +43,7 @@ const ServiceCard = ({
     } else if (onViewDetails) {
       onViewDetails(service);
     } else {
-      navigate(`/service/${service._id || service.id}`);
+      navigate(`/services/${service._id || service.id}`);
     }
   };
 

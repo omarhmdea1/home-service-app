@@ -9,6 +9,7 @@ import { useAuth } from '../components/auth/AuthProvider';
 import {
   ListPageTemplate,
   ContentSection,
+  PageHeader,
 } from '../components/layout';
 
 import {
@@ -54,6 +55,51 @@ const ServiceList = () => {
   
   // Modal states
   const [selectedService, setSelectedService] = useState(null);
+  const [showServiceModal, setShowServiceModal] = useState(false);
+
+  // Breadcrumb navigation
+  const getBreadcrumbs = () => {
+    const breadcrumbs = [
+      { label: 'Home', href: '/' },
+      { label: 'Services', href: '/services' }
+    ];
+
+    if (selectedService && showServiceModal) {
+      breadcrumbs.push({ label: selectedService.title });
+    }
+
+    return breadcrumbs;
+  };
+
+  // Enhanced modal handlers
+  const handleViewServiceDetails = (service) => {
+    setSelectedService(service);
+    setShowServiceModal(true);
+  };
+
+  const handleViewFullPage = (service) => {
+    // Debug: Log the service data to see what ID we're working with
+    console.log('🔍 Navigating to service detail page:', {
+      service: service,
+      serviceId: service._id || service.id,
+      fullService: service
+    });
+    
+    // Navigate to full page view
+    const serviceId = service._id || service.id;
+    if (!serviceId) {
+      console.error('❌ No service ID found!', service);
+      alert('Error: Service ID not found. Please try again.');
+      return;
+    }
+    
+    window.location.href = `/services/${serviceId}`;
+  };
+
+  const handleCloseModal = () => {
+    setShowServiceModal(false);
+    setTimeout(() => setSelectedService(null), 300); // Delay to allow animation
+  };
 
   // ✅ FIXED: Fetch all categories separately to prevent dropdown disappearing
   useEffect(() => {
@@ -413,143 +459,222 @@ const ServiceList = () => {
     </div>
   );
 
-  // ✅ NEW: Service detail modal with enhanced design
-  const serviceModal = selectedService && (
-    <div 
-      className="fixed inset-0 bg-neutral-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-      onClick={() => setSelectedService(null)} // Close on backdrop click
-    >
-      <Card 
-        className="max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking on modal content
+  // ✅ NEW: Enhanced Service detail modal with view options
+  const serviceModal = selectedService && showServiceModal && (
+    <AnimatePresence>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-neutral-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        onClick={handleCloseModal}
       >
-        <CardContent>
-          <div className="flex items-center justify-between mb-6">
-            <Heading level={3}>Service Details</Heading>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setSelectedService(null)}
-            >
-              <Icon name="close" />
-            </Button>
-          </div>
-          
-          <div className="space-y-6">
-            {/* Service Image */}
-            <div className="relative">
-              <img 
-                src={selectedService.image || getDefaultImage(selectedService.category)} 
-                alt={selectedService.title} 
-                className="w-full h-64 object-cover rounded-lg"
-              />
-              <Badge 
-                variant="primary" 
-                className="absolute top-4 right-4 bg-white/90 text-primary-800"
-              >
-                <Icon name={getServiceIcon(selectedService.category)} size="xs" className="mr-1" />
-                {selectedService.category}
-              </Badge>
-            </div>
-            
-            {/* Service Info */}
-            <div>
-              <Heading level={2} className="mb-2">{selectedService.title}</Heading>
-              <Text className="text-neutral-600 mb-4">{selectedService.description}</Text>
-              
-              <div className="grid grid-cols-2 gap-4 p-4 bg-neutral-50 rounded-lg">
-                <div>
-                  <Text size="small" className="text-neutral-500 mb-1">Service Price</Text>
-                  <Text className="font-bold text-neutral-900">
-                    {formatPrice(selectedService.price, selectedService.priceUnit)}
-                  </Text>
-                </div>
-                <div>
-                  <Text size="small" className="text-neutral-500 mb-1">Provider</Text>
-                  <Text className="font-medium text-neutral-900">{selectedService.provider}</Text>
-                </div>
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.95, opacity: 0, y: 20 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className="max-w-4xl w-full max-h-[90vh] overflow-hidden bg-white rounded-xl shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Modal Header */}
+          <div className="flex items-center justify-between p-6 border-b border-neutral-200 bg-gradient-to-r from-primary-50 to-primary-100">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-primary-100 rounded-lg">
+                <Icon name={getServiceIcon(selectedService.category)} className="w-6 h-6 text-primary-600" />
               </div>
-              
-              <div className="flex items-center mt-4">
-                <Text size="small" className="text-neutral-500 mr-3">Rating:</Text>
-                <div className="flex items-center space-x-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Icon 
-                      key={i}
-                      name={i < Math.floor(selectedService.rating) ? "starFilled" : "star"}
-                      size="sm"
-                      className={i < Math.floor(selectedService.rating) ? "text-warning-400" : "text-neutral-300"}
-                    />
-                  ))}
-                  <Text size="small" className="text-neutral-600 ml-2">
-                    {selectedService.rating.toFixed(1)} ({selectedService.reviewCount} reviews)
-                  </Text>
-                </div>
+              <div>
+                <Heading level={3} className="text-neutral-900">Service Details</Heading>
+                <Text size="small" className="text-neutral-600">Quick preview • Click "View Full Page" for complete details</Text>
               </div>
             </div>
-            
-            {/* Role-Based Action Button */}
-            {userRole === 'customer' && (
-              <Button 
-                variant="primary" 
-                size="lg"
-                className="w-full"
-                onClick={() => {
-                  setSelectedService(null);
-                  handleBookNow(selectedService._id || selectedService.id);
-                }}
-              >
-                <Icon name="calendar" size="sm" className="mr-2" />
-                Book This Service
-              </Button>
-            )}
-
-            {userRole === 'provider' && currentUser?.uid === selectedService?.providerId && (
-              <Button 
-                variant="secondary" 
-                size="lg"
-                className="w-full"
-                onClick={() => {
-                  setSelectedService(null);
-                  handleEditService(selectedService._id || selectedService.id);
-                }}
-              >
-                <Icon name="edit" size="sm" className="mr-2" />
-                Edit This Service
-              </Button>
-            )}
-
-            {userRole === 'provider' && currentUser?.uid !== selectedService?.providerId && (
+            <div className="flex items-center space-x-2">
               <Button 
                 variant="outline" 
-                size="lg"
-                className="w-full"
-                onClick={() => {
-                  handleContactProvider(selectedService);
-                }}
+                size="sm"
+                onClick={() => handleViewFullPage(selectedService)}
+                className="hidden sm:flex"
               >
-                <Icon name="chat" size="sm" className="mr-2" />
-                Contact Provider
+                <Icon name="external" size="sm" className="mr-2" />
+                View Full Page
               </Button>
-            )}
-
-            {!userRole && (
               <Button 
-                variant="primary" 
-                size="lg"
-                className="w-full"
-                onClick={() => {
-                  window.location.href = '/login';
-                }}
+                variant="ghost" 
+                size="sm"
+                onClick={handleCloseModal}
+                className="text-neutral-500 hover:text-neutral-700"
               >
-                <Icon name="user" size="sm" className="mr-2" />
-                Login to Book
+                <Icon name="close" />
               </Button>
-            )}
+            </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          
+          {/* Modal Content */}
+          <div className="overflow-y-auto max-h-[calc(90vh-100px)]">
+            <div className="p-6 space-y-6">
+              {/* Service Image and Basic Info */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="relative">
+                    <img 
+                      src={selectedService.image || getDefaultImage(selectedService.category)} 
+                      alt={selectedService.title} 
+                      className="w-full h-64 object-cover rounded-lg shadow-md"
+                    />
+                    <Badge 
+                      variant="primary" 
+                      className="absolute top-4 right-4 bg-white/95 text-primary-800 shadow-lg"
+                    >
+                      <Icon name={getServiceIcon(selectedService.category)} size="xs" className="mr-1" />
+                      {selectedService.category}
+                    </Badge>
+                  </div>
+                  
+                  {/* Mobile View Full Page Button */}
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleViewFullPage(selectedService)}
+                    className="w-full sm:hidden"
+                  >
+                    <Icon name="external" size="sm" className="mr-2" />
+                    View Full Page
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Heading level={2} className="mb-2 text-neutral-900">{selectedService.title}</Heading>
+                    <Text className="text-neutral-600 leading-relaxed">{selectedService.description}</Text>
+                  </div>
+                  
+                  {/* Key Details Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+                    <div>
+                      <Text size="small" className="text-neutral-500 mb-1">Service Price</Text>
+                      <Text className="font-bold text-lg text-primary-600">
+                        {formatPrice(selectedService.price, selectedService.priceUnit)}
+                      </Text>
+                    </div>
+                    <div>
+                      <Text size="small" className="text-neutral-500 mb-1">Provider</Text>
+                      <Text className="font-medium text-neutral-900">{selectedService.provider}</Text>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Text size="small" className="text-neutral-500 mb-2">Rating</Text>
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Icon 
+                              key={i}
+                              name={i < Math.floor(selectedService.rating) ? "starFilled" : "star"}
+                              size="sm"
+                              className={i < Math.floor(selectedService.rating) ? "text-yellow-400" : "text-neutral-300"}
+                            />
+                          ))}
+                        </div>
+                        <Text size="small" className="text-neutral-600">
+                          {selectedService.rating.toFixed(1)} ({selectedService.reviewCount} reviews)
+                        </Text>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Service Features/Highlights */}
+              {selectedService.features && selectedService.features.length > 0 && (
+                <div>
+                  <Heading level={4} className="mb-3 text-neutral-900">Service Includes</Heading>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {selectedService.features.slice(0, 6).map((feature, index) => (
+                      <div key={index} className="flex items-center space-x-2 p-2 bg-green-50 rounded-lg border border-green-200">
+                        <Icon name="check" size="sm" className="text-green-600 flex-shrink-0" />
+                        <Text size="small" className="text-green-800">{feature}</Text>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Modal Footer with Actions */}
+            <div className="border-t border-neutral-200 p-6 bg-neutral-50">
+              <div className="flex flex-col sm:flex-row gap-3">
+                {/* Role-Based Action Button */}
+                {userRole === 'customer' && (
+                  <Button 
+                    variant="primary" 
+                    size="lg"
+                    className="flex-1"
+                    onClick={() => {
+                      handleCloseModal();
+                      handleBookNow(selectedService._id || selectedService.id);
+                    }}
+                  >
+                    <Icon name="calendar" size="sm" className="mr-2" />
+                    Book This Service
+                  </Button>
+                )}
+
+                {userRole === 'provider' && currentUser?.uid === selectedService?.providerId && (
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    className="flex-1"
+                    onClick={() => {
+                      handleCloseModal();
+                      handleEditService(selectedService._id || selectedService.id);
+                    }}
+                  >
+                    <Icon name="edit" size="sm" className="mr-2" />
+                    Edit Service
+                  </Button>
+                )}
+
+                {userRole === 'provider' && currentUser?.uid !== selectedService?.providerId && (
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    className="flex-1"
+                    onClick={() => {
+                      handleContactProvider(selectedService);
+                    }}
+                  >
+                    <Icon name="chat" size="sm" className="mr-2" />
+                    Contact Provider
+                  </Button>
+                )}
+
+                {!userRole && (
+                  <Button 
+                    variant="primary" 
+                    size="lg"
+                    className="flex-1"
+                    onClick={() => {
+                      window.location.href = '/login';
+                    }}
+                  >
+                    <Icon name="user" size="sm" className="mr-2" />
+                    Login to Book
+                  </Button>
+                )}
+                
+                <Button 
+                  variant="ghost" 
+                  size="lg"
+                  onClick={() => handleViewFullPage(selectedService)}
+                  className="sm:w-auto"
+                >
+                  <Icon name="external" size="sm" className="mr-2" />
+                  View Full Details
+                </Button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 
   // Helper function for default images
@@ -601,10 +726,7 @@ const ServiceList = () => {
          subtitle="Find and book trusted professionals for all your home service needs"
          description="Browse our comprehensive catalog of verified service providers"
          icon={<Icon name="services" />}
-        breadcrumbs={[
-          { label: 'Home', href: '/' },
-          { label: 'Services' }
-        ]}
+        breadcrumbs={getBreadcrumbs()}
         primaryAction={userRole === 'provider' ? {
           label: 'Add Your Service',
           onClick: () => window.location.href = '/provider/services',
@@ -624,7 +746,7 @@ const ServiceList = () => {
              key={service._id} 
              service={service} 
              index={index}
-             onViewDetails={() => setSelectedService(service)}
+             onViewDetails={() => handleViewServiceDetails(service)}
              onBook={userRole === 'customer' ? () => handleBookNow(service._id || service.id) : null}
              onEdit={userRole === 'provider' && currentUser?.uid === service.providerId ? () => handleEditService(service._id || service.id) : null}
              onContact={userRole === 'provider' && currentUser?.uid !== service.providerId ? () => handleContactProvider(service) : null}

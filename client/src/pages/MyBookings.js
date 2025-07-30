@@ -310,7 +310,7 @@ const EnhancedBookingCard = ({ booking, userRole, onCancelBooking, onUpdateStatu
           {/* Book Again for completed services */}
           {userRole === 'customer' && booking.status === 'completed' && (
             <Link
-              to={`/service/${booking.serviceId}`}
+              to={`/services/${booking.serviceId}`}
               className="flex items-center px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
             >
               <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">

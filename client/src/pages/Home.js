@@ -118,7 +118,7 @@ const CustomerDashboard = () => {
       // Fetch featured services and user's recent bookings in parallel
       const [servicesResponse, bookingsResponse] = await Promise.allSettled([
         apiCall('http://localhost:5001/api/services?limit=6&featured=true'),
-        apiCall(`http://localhost:5001/api/bookings/user/${currentUserId}?limit=3`)
+        apiCall(`http://localhost:5001/api/bookings?userId=${currentUserId}&limit=3`)
       ]);
 
       // Handle services
@@ -921,27 +921,6 @@ const ProviderDashboard = () => {
       />
 
       <ContentSection>
-        {/* Verification Alert */}
-        {!userProfile?.isVerified && (
-          <Alert variant="warning" className="mb-8">
-            <Icon name="clock" size="sm" className="mr-2" />
-            <div>
-              <Text className="font-medium">Account Verification Pending</Text>
-              <Text size="small" className="text-neutral-600 mt-1">
-                Complete your profile verification to start receiving bookings and build customer trust.
-              </Text>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => navigate('/provider/profile')}
-              className="ml-4"
-            >
-              Complete Verification
-            </Button>
-          </Alert>
-        )}
-
         {/* Business Stats */}
         <StatsLayout className="mb-8">
           <StatCard

@@ -18,9 +18,15 @@ const ServiceDetail = () => {
       setLoading(true);
       setError(null);
       
+      // Debug: Log the service ID we're trying to fetch
+      console.log('🔍 ServiceDetail: Fetching service with ID:', id);
+      
       try {
         // Fetch service details from API
         const serviceData = await getServiceById(id);
+        
+        // Debug: Log the API response
+        console.log('✅ ServiceDetail: API response:', serviceData);
         
         // Format data if needed
         const formattedService = {
@@ -49,10 +55,17 @@ const ServiceDetail = () => {
           ]
         };
         
+        console.log('✅ ServiceDetail: Formatted service:', formattedService);
         setService(formattedService);
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching service details:', error);
+        console.error('❌ ServiceDetail: Error fetching service details:', error);
+        console.error('❌ ServiceDetail: Error details:', {
+          serviceId: id,
+          errorMessage: error.message,
+          errorStatus: error.status,
+          fullError: error
+        });
         setError('Failed to load service details. Please try again.');
         setLoading(false);
       }
@@ -140,15 +153,29 @@ const ServiceDetail = () => {
             <svg className="mx-auto h-24 w-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <h2 className="mt-4 text-2xl font-bold text-gray-900">Service Not Found</h2>
-            <p className="mt-2 text-gray-600">We couldn't find the service you're looking for.</p>
-            <div className="mt-6">
+            <h2 className="mt-4 text-2xl font-bold text-gray-900">
+              {error.includes('404') || error.includes('not found') || error.includes('Not Found') 
+                ? 'Service Not Found' 
+                : 'Error Loading Service'}
+            </h2>
+            <p className="mt-2 text-gray-600">
+              {error.includes('404') || error.includes('not found') || error.includes('Not Found')
+                ? "We couldn't find the service you're looking for."
+                : error}
+            </p>
+            <div className="mt-6 space-x-4">
               <Link 
                 to="/services" 
                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700"
               >
                 Browse All Services
               </Link>
+              <button
+                onClick={() => window.location.reload()}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Try Again
+              </button>
             </div>
           </div>
         </div>

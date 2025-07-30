@@ -599,9 +599,12 @@ function AppContent() {
           {/* Public provider profile page */}
           <Route path="/providers/:providerId" element={<ProviderPublicProfile />} />
           
+          {/* Redirect for pending verification without provider prefix */}
+          <Route path="/pending-verification" element={<Navigate to="/provider/pending-verification" replace />} />
+          
           {/* Provider routes */}
           <Route path="/provider/pending-verification" element={
-            <PrivateRoute allowedRoles={['provider']} requireVerification={true}>
+            <PrivateRoute allowedRoles={['provider']} requireVerification={false}>
               <Suspense fallback={<LoadingFallback />}>
                 <PendingVerification />
               </Suspense>
@@ -609,14 +612,30 @@ function AppContent() {
           } />
           
           <Route path="/provider/*" element={
-            <PrivateRoute allowedRoles={['provider']} requireVerification={true}>
+            <PrivateRoute allowedRoles={['provider']} requireVerification={false}>
               <Suspense fallback={<LoadingFallback />}>
                 <Routes>
                   <Route path="dashboard" element={<ProviderDashboard />} />
-                  <Route path="bookings" element={<ProviderBookings />} />
-                  <Route path="bookings/:id" element={<BookingDetail />} />
-                  <Route path="services" element={<ProviderServices />} />
-                  <Route path="earnings" element={<ProviderEarnings />} />
+                  <Route path="bookings" element={
+                    <PrivateRoute allowedRoles={['provider']} requireVerification={true}>
+                      <ProviderBookings />
+                    </PrivateRoute>
+                  } />
+                  <Route path="bookings/:id" element={
+                    <PrivateRoute allowedRoles={['provider']} requireVerification={true}>
+                      <BookingDetail />
+                    </PrivateRoute>
+                  } />
+                  <Route path="services" element={
+                    <PrivateRoute allowedRoles={['provider']} requireVerification={true}>
+                      <ProviderServices />
+                    </PrivateRoute>
+                  } />
+                  <Route path="earnings" element={
+                    <PrivateRoute allowedRoles={['provider']} requireVerification={true}>
+                      <ProviderEarnings />
+                    </PrivateRoute>
+                  } />
                   <Route path="profile" element={<ProviderProfile />} />
                   <Route path="*" element={<Navigate to="/provider/dashboard" replace />} />
                 </Routes>

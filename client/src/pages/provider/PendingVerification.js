@@ -4,7 +4,16 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const PendingVerification = () => {
-  const { userProfile } = useAuth();
+  const { userProfile, loading } = useAuth();
+  
+  // Show loading state while userProfile is being fetched
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -47,10 +56,10 @@ const PendingVerification = () => {
             <div className="ml-3">
               <p className="text-sm text-blue-700">
                 <strong>Account Information:</strong><br />
-                Name: {userProfile?.name}<br />
-                Email: {userProfile?.email}<br />
-                Service Area: {userProfile?.serviceArea}<br />
-                Registration Date: {userProfile?.createdAt?.toDate().toLocaleDateString()}
+                Name: {userProfile?.name || 'Not provided'}<br />
+                Email: {userProfile?.email || 'Not provided'}<br />
+                Service Area: {userProfile?.serviceArea || 'Not specified'}<br />
+                Registration Date: {userProfile?.createdAt?.toDate?.()?.toLocaleDateString() || 'Recently'}
               </p>
             </div>
           </div>

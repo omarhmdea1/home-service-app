@@ -1,24 +1,15 @@
-import { get, post, put, del } from './apiService';
+import { get, post, put, del, getPublic } from './apiService';
 import { getAuth } from 'firebase/auth';
-
 
 /**
  * Get all services with optional filtering
- * @param {Object} filters - Optional filters (category, etc)
- * @param {number} limitCount - Optional limit on number of results
+ * @param {Object} params - Filter parameters (category, search, etc.)
  * @returns {Promise<Array>} - Array of services
  */
-export const getServices = async (filters = {}, limitCount = 50) => {
+export const getServices = async (params = {}) => {
   try {
-    const params = { ...filters, limit: limitCount };
-    
-    const response = await get('/services', params);
-    
-    // Handle both direct array and object response formats
-    const services = Array.isArray(response) 
-      ? response 
-      : (response.services || response.data || []);
-    
+    // Use public request since services list should be publicly accessible
+    const services = await getPublic('/services', params);
     return services;
   } catch (error) {
     console.error('Error fetching services from API:', error);
@@ -33,7 +24,8 @@ export const getServices = async (filters = {}, limitCount = 50) => {
  */
 export const getServiceById = async (serviceId) => {
   try {
-    const service = await get(`/services/${serviceId}`);
+    // Use public request since service details should be publicly accessible
+    const service = await getPublic(`/services/${serviceId}`);
     return service;
   } catch (error) {
     console.error('Error fetching service from API:', error);

@@ -180,3 +180,74 @@ export const del = async (endpoint) => {
     throw error;
   }
 };
+
+// ✅ PUBLIC REQUEST FUNCTIONS (no authentication required)
+
+/**
+ * Make a public GET request (no authentication required)
+ * @param {string} endpoint - API endpoint
+ * @param {Object} params - Query parameters
+ * @returns {Promise<Object>} - Response data
+ */
+export const getPublic = async (endpoint, params = {}) => {
+  try {
+    const url = new URL(`${API_BASE_URL}${endpoint}`);
+    
+    Object.keys(params).forEach(key => {
+      if (params[key] !== undefined && params[key] !== null) {
+        url.searchParams.append(key, params[key]);
+      }
+    });
+    
+    console.log('🌐 Making public GET request to:', url.toString());
+    
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Public API request failed: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+    
+    return await safeJsonParse(response);
+  } catch (error) {
+    console.error(`Error in public GET request to ${endpoint}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Make a public POST request (no authentication required)
+ * @param {string} endpoint - API endpoint
+ * @param {Object} data - Request body data
+ * @returns {Promise<Object>} - Response data
+ */
+export const postPublic = async (endpoint, data = {}) => {
+  try {
+    const url = `${API_BASE_URL}${endpoint}`;
+    
+    console.log('🌐 Making public POST request to:', url);
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data)
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Public API request failed: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+    
+    return await safeJsonParse(response);
+  } catch (error) {
+    console.error(`Error in public POST request to ${endpoint}:`, error);
+    throw error;
+  }
+};

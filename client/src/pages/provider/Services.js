@@ -36,13 +36,13 @@ const ProviderServices = () => {
   const [editingService, setEditingService] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
 
   const defaultPlaceholderImage = 'https://via.placeholder.com/600x400?text=Service+Image';
 
   // ✅ Memoize currentUser.uid to prevent unnecessary re-fetches
   const currentUserId = currentUser?.uid;
-  
+
   // Fetch provider services
   useEffect(() => {
     const fetchProviderServices = async () => {
@@ -334,7 +334,9 @@ const ProviderServices = () => {
           This will help customers discover and book your services.
         </Text>
         <Button
-          onClick={() => setShowAddForm(true)}
+          onClick={() => {
+            setShowAddForm(true);
+          }}
           className="flex items-center gap-2"
         >
           <Icon name="plus" size="sm" />
@@ -366,8 +368,11 @@ const ProviderServices = () => {
             onClick: () => {
               if (showAddForm) {
                 resetForm();
+                setShowAddForm(false);
+                return;
               }
-              setShowAddForm(!showAddForm);
+              
+              setShowAddForm(true);
             },
             icon: <Icon name={showAddForm ? 'close' : 'plus'} size="sm" />
           }
@@ -406,7 +411,7 @@ const ProviderServices = () => {
               <strong>DEBUG: No services found</strong>
               <br />Services array length: {services.length}
               <br />Current user: {currentUser ? 'Logged in' : 'Not logged in'}
-              <br />User role: {JSON.stringify(userRole)}
+              <br />User role: {JSON.stringify(userProfile?.role)}
             </div>
             {emptyState}
           </div>

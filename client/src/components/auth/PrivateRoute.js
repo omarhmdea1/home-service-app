@@ -74,12 +74,21 @@ const PrivateRoute = ({ children, allowedRoles, requireVerification = true }) =>
   }
   
   // For provider routes, check if provider is verified
-  if (userRole === 'provider' && allowedRoles && allowedRoles.includes('provider')) {
-    // We need to check if the provider is verified in the database
-    // This is different from email verification
+  if (userRole === 'provider' && allowedRoles && allowedRoles.includes('provider') && requireVerification) {
+    // Only redirect to pending verification if this route specifically requires verification
+    // Allow access to dashboard, profile, and pending verification pages without verification
     if (userProfile && userProfile.isVerified === false) {
-      // Provider is not verified yet, redirect to pending verification page
-      return <Navigate to="/provider/pending-verification" />;
+      // Don't redirect if already on allowed pages for unverified providers
+      const allowedUnverifiedPaths = [
+        '/provider/dashboard',
+        '/provider/profile', 
+        '/provider/pending-verification'
+      ];
+      
+      if (!allowedUnverifiedPaths.includes(location.pathname)) {
+        // Provider is not verified and trying to access a restricted page
+        return <Navigate to="/provider/pending-verification" />;
+      }
     }
   }
   
