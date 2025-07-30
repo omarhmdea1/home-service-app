@@ -91,7 +91,15 @@ async function handleErrorResponse(response) {
  */
 export const get = async (endpoint, params = {}) => {
   try {
-    const url = new URL(`${API_BASE_URL}${endpoint}`);
+    // Handle both relative and absolute URLs
+    let url;
+    if (API_BASE_URL.startsWith('http')) {
+      // Absolute URL (development)
+      url = new URL(`${API_BASE_URL}${endpoint}`);
+    } else {
+      // Relative URL (production) - construct full URL
+      url = new URL(`${window.location.origin}${API_BASE_URL}${endpoint}`);
+    }
     
     Object.keys(params).forEach(key => {
       if (params[key] !== undefined && params[key] !== null) {
@@ -194,7 +202,15 @@ export const del = async (endpoint) => {
  */
 export const getPublic = async (endpoint, params = {}) => {
   try {
-    const url = new URL(`${API_BASE_URL}${endpoint}`);
+    // Handle both relative and absolute URLs
+    let url;
+    if (API_BASE_URL.startsWith('http')) {
+      // Absolute URL (development)
+      url = new URL(`${API_BASE_URL}${endpoint}`);
+    } else {
+      // Relative URL (production) - construct full URL
+      url = new URL(`${window.location.origin}${API_BASE_URL}${endpoint}`);
+    }
     
     Object.keys(params).forEach(key => {
       if (params[key] !== undefined && params[key] !== null) {
