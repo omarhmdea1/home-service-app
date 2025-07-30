@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const http = require('http');
+const path = require('path');
 const { Server } = require('socket.io');
 const connectDB = require('./config/db');
 
@@ -32,6 +33,12 @@ app.use(cors());
 // Increase payload size limit to 50MB for handling base64 encoded images
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Serve static files from React build in production
+if (process.env.NODE_ENV === 'production') {
+  // Set static folder
+  app.use(express.static(path.join(__dirname, '../../client/build')));
+}
 
 // Make io available to routes via middleware
 app.use((req, res, next) => {
@@ -78,6 +85,13 @@ app.get('/api/test-db', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Serve React app for any non-API routes in production
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../client/build', 'index.html'));
+  });
+}
 
 const PORT = process.env.PORT || 5001;
 

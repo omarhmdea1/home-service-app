@@ -18,7 +18,7 @@
   },
   "scripts": {
     "start": "WEBPACK_LOGGING_VERBOSE=true react-scripts start",
-    "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
+    "build": "CI=false DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "build:css": "npx tailwindcss -i ./src/input.css -o ./src/index.css --watch",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

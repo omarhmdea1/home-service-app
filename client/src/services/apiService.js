@@ -3,7 +3,10 @@
  */
 import { getAuthToken, getIdToken } from '../utils/authToken';
 
-const API_BASE_URL = 'http://localhost:5001/api';
+// Use relative URLs in production, localhost in development
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? '/api' 
+  : 'http://localhost:5001/api';
 
 /**
  * Get a fresh authentication token, automatically refreshing if needed

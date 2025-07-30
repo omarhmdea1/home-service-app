@@ -1,0 +1,40 @@
+{
+  "name": "hausly-home-services",
+  "version": "1.0.0",
+  "description": "Hausly - Your trusted partner for all home service needs",
+  "main": "server/src/index.js",
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "start": "node server/src/index.js",
+    "server": "cd server && npm start",
+    "client": "cd client && npm start",
+    "heroku-postbuild": "npm install --prefix client && npm run build --prefix client",
+    "build": "cd client && npm run build",
+    "test": "cd client && npm test",
+    "install-server": "cd server && npm install",
+    "install-client": "cd client && npm install",
+    "install-all": "npm run install-server && npm run install-client"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/hausly-home-services.git"
+  },
+  "keywords": [
+    "home-services",
+    "react",
+    "nodejs",
+    "express",
+    "mongodb",
+    "socket.io",
+    "heroku"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+} 
