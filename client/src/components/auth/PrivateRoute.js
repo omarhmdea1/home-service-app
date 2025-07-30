@@ -35,7 +35,11 @@ const PrivateRoute = ({ children, allowedRoles, requireVerification = true }) =>
   
   // Check email verification if required
   // Skip verification for customers, only require it for providers
-  if (requireVerification && !currentUser.emailVerified && userRole === 'provider') {
+  // Skip verification for test accounts
+  const testEmails = ['cohen@hausly.com', 'tal.cohen@email.com'];
+  const isTestAccount = testEmails.includes(currentUser.email);
+  
+  if (requireVerification && !currentUser.emailVerified && userRole === 'provider' && !isTestAccount) {
     // Redirect to a verification page or show verification UI
     return <Navigate to="/verify-email" state={{ from: location.pathname }} />;
   }
@@ -87,7 +91,7 @@ const PrivateRoute = ({ children, allowedRoles, requireVerification = true }) =>
       
       if (!allowedUnverifiedPaths.includes(location.pathname)) {
         // Provider is not verified and trying to access a restricted page
-        return <Navigate to="/provider/pending-verification" />;
+      return <Navigate to="/provider/pending-verification" />;
       }
     }
   }
