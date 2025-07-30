@@ -24,13 +24,13 @@ const Login = () => {
     if (currentUser && userRole) {
       console.log('User authenticated with role:', userRole);
       
-      // Check if email is verified
-      if (!currentUser.emailVerified) {
-        console.log('Email not verified, showing alert');
+      // Check if email is verified - only for providers, not customers
+      if (!currentUser.emailVerified && userRole === 'provider') {
+        console.log('Provider email not verified, showing alert');
         setVerificationAlert(true);
-        // Don't redirect yet, show verification alert
+        // Don't redirect yet, show verification alert for providers
       } else {
-        console.log('Email verified, redirecting based on role');
+        console.log('Email verified or customer (no verification needed), redirecting based on role');
         // Redirect based on user role
         if (userRole === 'provider') {
           console.log('Redirecting to provider dashboard');
@@ -201,8 +201,8 @@ const Login = () => {
         
         {/* Success Alert removed for immediate redirect */}
         
-        {/* Email Verification Alert */}
-        {verificationAlert && (
+        {/* Email Verification Alert - Only for Providers */}
+        {verificationAlert && userRole === 'provider' && (
           <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -211,7 +211,7 @@ const Login = () => {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm text-yellow-700">Please verify your email address to access all features.</p>
+                <p className="text-sm text-yellow-700">As a service provider, please verify your email address to access all features.</p>
                 <button 
                   onClick={handleResendVerification}
                   className="mt-2 text-xs font-medium text-yellow-700 underline hover:text-yellow-600"
