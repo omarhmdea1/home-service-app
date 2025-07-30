@@ -63,7 +63,7 @@ const CustomerDashboard = () => {
     // Only fetch if we have a valid user ID and data is stale (5 minutes)
     const isStale = Date.now() - lastFetch > 300000; // 5 minutes
     if (currentUserId && (isStale || services.length === 0)) {
-      fetchDashboardData();
+    fetchDashboardData();
     } else if (currentUserId && !isStale) {
       console.log('💾 Using cached dashboard data');
       setLoading(false);
@@ -81,8 +81,8 @@ const CustomerDashboard = () => {
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
+          headers: { 
+            'Content-Type': 'application/json',
           ...options.headers,
         },
       });
@@ -117,8 +117,8 @@ const CustomerDashboard = () => {
 
       // Fetch featured services and user's recent bookings in parallel
       const [servicesResponse, bookingsResponse] = await Promise.allSettled([
-        apiCall('http://localhost:5001/api/services?limit=6&featured=true'),
-        apiCall(`http://localhost:5001/api/bookings?userId=${currentUserId}&limit=3`)
+        apiCall('/api/services?limit=6&featured=true'),
+        apiCall(`/api/bookings?userId=${currentUserId}&limit=3`)
       ]);
 
       // Handle services
@@ -139,26 +139,26 @@ const CustomerDashboard = () => {
         if (bookingsData.length > 0) {
           const bookingsWithDetails = await Promise.allSettled(
             bookingsData.slice(0, 3).map(async (booking) => {
-              try {
-                const serviceData = await apiCall(`http://localhost:5001/api/services/${booking.serviceId}`);
+            try {
+                const serviceData = await apiCall(`/api/services/${booking.serviceId}`);
                 return {
                   ...booking,
                   serviceName: serviceData?.title || 'Unknown Service',
                   providerName: serviceData?.providerName || 'Unknown Provider',
                   serviceImage: serviceData?.image || null,
                   category: serviceData?.category || 'General'
-                };
-              } catch (error) {
+              };
+            } catch (error) {
                 console.warn(`Failed to fetch service details for booking ${booking._id}:`, error);
-                return {
-                  ...booking,
+              return {
+                ...booking,
                   serviceName: 'Service Details Unavailable',
                   providerName: 'Provider Details Unavailable'
-                };
-              }
-            })
-          );
-
+              };
+            }
+          })
+        );
+        
           const successfulBookings = bookingsWithDetails
             .filter(result => result.status === 'fulfilled')
             .map(result => result.value);
@@ -198,7 +198,7 @@ const CustomerDashboard = () => {
 
   // ✅ Enhanced loading state
   if (loading) {
-    return (
+  return (
       <PageLayout background="bg-gradient-to-br from-neutral-50 to-primary-50">
         <LoadingState 
           title="Loading your dashboard..."
@@ -266,12 +266,12 @@ const CustomerDashboard = () => {
                 <div className="text-center lg:text-left">
                   <div className="text-2xl font-bold text-white mb-1">{bookings.length}</div>
                   <div className="text-primary-200 text-sm">Active Bookings</div>
-                </div>
+            </div>
                 <div className="text-center lg:text-left">
                   <div className="text-2xl font-bold text-white mb-1">{services.length}+</div>
                   <div className="text-primary-200 text-sm">Services Available</div>
-                </div>
-              </div>
+            </div>
+          </div>
               
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button 
@@ -292,8 +292,8 @@ const CustomerDashboard = () => {
                     My Bookings
                   </Button>
                 )}
-              </div>
-            </div>
+        </div>
+      </div>
 
             <div className="relative">
               {/* Service Preview Cards */}
@@ -302,23 +302,23 @@ const CustomerDashboard = () => {
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
                       <Icon name="home" className="w-5 h-5 text-primary-600" />
-                    </div>
+            </div>
                     <div>
                       <Text size="small" className="font-semibold text-neutral-900">House Cleaning</Text>
                       <Text size="tiny" className="text-neutral-600">Available Now</Text>
-                    </div>
-                  </div>
+          </div>
+          </div>
                 </Card>
                 
                 <Card className="bg-white p-4 shadow-2xl transform -rotate-2 hover:rotate-0 transition-transform duration-500">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-success-100 rounded-full flex items-center justify-center">
                       <Icon name="services" className="w-5 h-5 text-success-600" />
-                    </div>
+        </div>
                     <div>
                       <Text size="small" className="font-semibold text-neutral-900">Quick Repairs</Text>
                       <Text size="tiny" className="text-neutral-600">Same Day</Text>
-                    </div>
+      </div>
                   </div>
                 </Card>
               </div>
@@ -336,10 +336,10 @@ const CustomerDashboard = () => {
               title="Instant Help"
               subtitle="Urgent solutions available"
               icon="emergency"
-              onClick={() => navigate('/services?category=emergency')}
+          onClick={() => navigate('/services?category=emergency')}
               variant="error"
               badge="Fast"
-            />
+        />
             <CustomerActionCard
               title="Trending Now"
               subtitle="What others are booking"
@@ -353,16 +353,16 @@ const CustomerDashboard = () => {
               subtitle={bookings.length > 0 ? "Book your favorites" : "Find your service"}
               icon={bookings.length > 0 ? "repeat" : "plus"}
               onClick={() => bookings.length > 0 ? navigate('/my-bookings') : navigate('/services')}
-              variant="primary"
-            />
+          variant="primary"
+        />
             <CustomerActionCard
               title="Need Help?"
               subtitle="Expert advice & support"
               icon="chat"
               onClick={() => navigate('/messages')}
-              variant="secondary"
-            />
-          </div>
+          variant="secondary"
+        />
+      </div>
         </section>
 
         {/* Main Content Grid */}
@@ -383,7 +383,7 @@ const CustomerDashboard = () => {
                   >
                     View All
                   </Button>
-                </div>
+              </div>
               </CardHeader>
               
               <CardContent className="p-6">
@@ -392,12 +392,12 @@ const CustomerDashboard = () => {
                     {services.slice(0, 4).map((service, index) => (
                       <CustomerServiceCard key={service._id} service={service} index={index} />
                     ))}
-                  </div>
+            </div>
                 ) : (
                   <div className="text-center py-12">
                     <div className="w-20 h-20 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Icon name="services" className="w-10 h-10 text-primary-600" />
-                    </div>
+          </div>
                     <Heading level={3} className="text-neutral-900 mb-2">Discover Amazing Services</Heading>
                     <Text className="text-neutral-600 mb-6">
                       Browse our marketplace of trusted professionals
@@ -429,9 +429,9 @@ const CustomerDashboard = () => {
               <CardContent className="p-6">
                 {bookings.length > 0 ? (
                   <div className="space-y-4">
-                    {bookings.map((booking, index) => (
+            {bookings.map((booking, index) => (
                       <CustomerBookingCard key={booking._id} booking={booking} index={index} compact />
-                    ))}
+            ))}
                     <Button
                       variant="outline"
                       size="sm"
@@ -440,7 +440,7 @@ const CustomerDashboard = () => {
                     >
                       View All Bookings
                     </Button>
-                  </div>
+          </div>
                 ) : (
                   <div className="text-center py-6">
                     <div className="w-16 h-16 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -458,8 +458,8 @@ const CustomerDashboard = () => {
                       <Icon name="plus" size="xs" className="mr-1" />
                       Book First Service
                     </Button>
-                  </div>
-                )}
+        </div>
+      )}
               </CardContent>
             </Card>
 
@@ -477,28 +477,28 @@ const CustomerDashboard = () => {
                   <div className="flex items-start space-x-3">
                     <div className="w-6 h-6 bg-success-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Icon name="check" size="xs" className="text-success-600" />
-                    </div>
+            </div>
                     <Text size="small" className="text-success-700">
                       Book services during weekdays for better availability and rates
                     </Text>
-                  </div>
+          </div>
                   <div className="flex items-start space-x-3">
                     <div className="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Icon name="star" size="xs" className="text-primary-600" />
-                    </div>
+        </div>
                     <Text size="small" className="text-primary-700">
                       Check provider reviews and ratings before booking
                     </Text>
-                  </div>
+              </div>
                   <div className="flex items-start space-x-3">
                     <div className="w-6 h-6 bg-warning-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Icon name="clock" size="xs" className="text-warning-600" />
-                    </div>
+          </div>
                     <Text size="small" className="text-warning-700">
                       Schedule regular maintenance to prevent costly repairs
                     </Text>
-                  </div>
-                </div>
+          </div>
+            </div>
               </CardContent>
             </Card>
           </div>
@@ -569,7 +569,7 @@ const ProviderDashboard = () => {
     // Only fetch if we have a valid user ID and data is stale (5 minutes)
     const isStale = Date.now() - lastFetch > 300000; // 5 minutes
     if (currentUserId && (isStale || stats.totalBookings === 0)) {
-      fetchProviderData();
+    fetchProviderData();
     } else if (currentUserId && !isStale) {
       console.log('💾 Using cached provider dashboard data');
       setLoading(false);
@@ -587,7 +587,7 @@ const ProviderDashboard = () => {
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
-        headers: {
+        headers: { 
           'Content-Type': 'application/json',
           ...options.headers,
         },
@@ -626,7 +626,7 @@ const ProviderDashboard = () => {
       let bookingsData = [];
       try {
         const bookingsResponse = await apiCall(
-          `http://localhost:5001/api/bookings?providerId=${currentUserId}`
+          `/api/bookings?providerId=${currentUserId}`
         );
         
         bookingsData = Array.isArray(bookingsResponse) 
@@ -643,18 +643,18 @@ const ProviderDashboard = () => {
       }
 
       // ✅ Calculate stats with better error handling
-      const totalBookings = bookingsData.length;
-      const pendingRequests = bookingsData.filter(b => b.status === 'pending').length;
-      const completedBookings = bookingsData.filter(b => b.status === 'completed');
+        const totalBookings = bookingsData.length;
+        const pendingRequests = bookingsData.filter(b => b.status === 'pending').length;
+        const completedBookings = bookingsData.filter(b => b.status === 'completed');
       const totalEarnings = completedBookings.reduce((sum, booking) => {
         const price = parseFloat(booking.price) || 0;
         return sum + price;
       }, 0);
-      
+        
       // ✅ Fetch services count with better error handling
-      let activeServices = 0;
+        let activeServices = 0;
       try {
-        const servicesResponse = await apiCall(`http://localhost:5001/api/services?providerId=${currentUserId}`);
+        const servicesResponse = await apiCall(`/api/services?providerId=${currentUserId}`);
         const servicesData = Array.isArray(servicesResponse) 
           ? servicesResponse 
           : (servicesResponse.data || servicesResponse.services || []);
@@ -662,26 +662,26 @@ const ProviderDashboard = () => {
       } catch (servicesError) {
         console.warn('Error fetching provider services count:', servicesError);
         // Continue with activeServices = 0
-      }
+        }
 
-      setStats({
-        totalBookings,
-        pendingRequests,
-        totalEarnings,
-        activeServices
-      });
+        setStats({
+          totalBookings,
+          pendingRequests,
+          totalEarnings,
+          activeServices
+        });
 
       // ✅ Process recent bookings with better error handling
-      const sortedBookings = bookingsData
+        const sortedBookings = bookingsData
         .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
-        .slice(0, 3);
+          .slice(0, 3);
 
       if (sortedBookings.length > 0) {
         const bookingsWithDetails = await Promise.allSettled(
           sortedBookings.map(async (booking) => {
             try {
-              const serviceData = await apiCall(`http://localhost:5001/api/services/${booking.serviceId}`);
-              return {
+              const serviceData = await apiCall(`/api/services/${booking.serviceId}`);
+                return {
                 ...booking,
                 serviceName: serviceData?.title || 'Unknown Service',
                 serviceImage: serviceData?.image || null
@@ -802,7 +802,7 @@ const ProviderDashboard = () => {
   const RecentBookingCard = ({ booking }) => (
     <Card className="mb-3">
       <CardContent className="p-4">
-        <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
               <Icon name="calendar" size="sm" className="text-primary-600" />
@@ -815,7 +815,7 @@ const ProviderDashboard = () => {
                 {booking.serviceName}
               </Text>
             </div>
-          </div>
+            </div>
           
           <div className="flex items-center space-x-4">
             <div className="text-right">
@@ -825,7 +825,7 @@ const ProviderDashboard = () => {
               <Text size="small" className="text-neutral-500">
                 {booking.time}
               </Text>
-            </div>
+          </div>
             <Badge 
               variant={
                 booking.status === 'completed' ? 'success' : 
@@ -836,8 +836,8 @@ const ProviderDashboard = () => {
             >
               {booking.status}
             </Badge>
-          </div>
         </div>
+      </div>
       </CardContent>
     </Card>
   );
@@ -924,29 +924,29 @@ const ProviderDashboard = () => {
         {/* Business Stats */}
         <StatsLayout className="mb-8">
           <StatCard
-            title="Total Bookings"
-            value={stats.totalBookings}
+          title="Total Bookings"
+          value={stats.totalBookings}
             icon="calendar"
-            trend="+12%"
+          trend="+12%"
             variant="primary"
-          />
+        />
           <StatCard
-            title="Pending Requests"
-            value={stats.pendingRequests}
+          title="Pending Requests"
+          value={stats.pendingRequests}
             icon="clock"
             variant="warning"
             badge={stats.pendingRequests > 0 ? stats.pendingRequests : null}
-          />
+        />
           <StatCard
-            title="Total Earnings"
+          title="Total Earnings"
             value={formatCurrency(stats.totalEarnings)}
             icon="money"
-            trend="+8%"
+          trend="+8%"
             variant="success"
-          />
+        />
           <StatCard
-            title="Active Services"
-            value={stats.activeServices}
+          title="Active Services"
+          value={stats.activeServices}
             icon="services"
             variant="default"
           />
@@ -955,30 +955,30 @@ const ProviderDashboard = () => {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <BusinessActionCard
-            title="Manage Bookings"
-            subtitle="View and manage your appointments"
+          title="Manage Bookings"
+          subtitle="View and manage your appointments"
             icon="calendar"
-            onClick={() => navigate('/provider/bookings')}
+          onClick={() => navigate('/provider/bookings')}
             variant="primary"
-            badge={stats.pendingRequests > 0 ? stats.pendingRequests : null}
-          />
+          badge={stats.pendingRequests > 0 ? stats.pendingRequests : null}
+        />
           <BusinessActionCard
-            title="My Services"
-            subtitle="Edit your service offerings"
+          title="My Services"
+          subtitle="Edit your service offerings"
             icon="services"
-            onClick={() => navigate('/provider/services')}
+          onClick={() => navigate('/provider/services')}
             variant="default"
-          />
+        />
           <BusinessActionCard
-            title="Earnings"
-            subtitle="Track your revenue and payouts"
+          title="Earnings"
+          subtitle="Track your revenue and payouts"
             icon="dollar"
-            onClick={() => navigate('/provider/earnings')}
+          onClick={() => navigate('/provider/earnings')}
             variant="success"
-          />
-        </div>
+        />
+      </div>
 
-        {/* Recent Activity */}
+      {/* Recent Activity */}
         <Card>
           <CardHeader className="border-b border-neutral-200">
             <div className="flex items-center justify-between">
@@ -1001,13 +1001,13 @@ const ProviderDashboard = () => {
               <div className="space-y-0">
                 {recentBookings.map((booking) => (
                   <RecentBookingCard key={booking._id} booking={booking} />
-                ))}
-              </div>
+          ))}
+        </div>
             ) : (
               <div className="text-center py-8">
                 <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Icon name="calendar" className="w-8 h-8 text-neutral-400" />
-                </div>
+      </div>
                 <Heading level={3} className="text-neutral-900 mb-2">No recent activity</Heading>
                 <Text className="text-neutral-600 mb-4">
                   Start by adding your services to attract customers
@@ -1019,7 +1019,7 @@ const ProviderDashboard = () => {
                   <Icon name="plus" size="sm" />
                   Add Your First Service
                 </Button>
-              </div>
+    </div>
             )}
           </CardContent>
         </Card>
@@ -1070,7 +1070,7 @@ const WelcomeScreen = () => {
                 Connect with verified, trusted professionals for cleaning, repairs, maintenance, and more. 
                 <span className="font-semibold text-white">Quality service guaranteed, every time.</span>
               </Text>
-              
+          
               <div className="flex flex-col sm:flex-row gap-4 mb-12">
                 <Button 
                   onClick={() => navigate('/services')}
@@ -1082,7 +1082,7 @@ const WelcomeScreen = () => {
                 </Button>
                 
                 <Button 
-                  onClick={() => navigate('/signup')}
+              onClick={() => navigate('/signup')}
                   variant="outline"
                   className="border-2 border-white text-white hover:bg-white hover:text-primary-600 text-lg px-8 py-6 transform hover:scale-105 transition-all duration-300"
                 >
@@ -1167,7 +1167,7 @@ const WelcomeScreen = () => {
                   Start Booking Now
                 </Button>
               </Card>
-            </div>
+          </div>
           </div>
         </div>
       </section>
@@ -1286,7 +1286,7 @@ const WelcomeScreen = () => {
             <Text className="text-xl text-neutral-600">
               Real experiences from real homeowners who trust Hausly
             </Text>
-          </div>
+      </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <TestimonialCard
@@ -1521,13 +1521,13 @@ const CustomerActionCard = ({ title, subtitle, icon, onClick, variant = 'default
         <div className="flex items-start justify-between mb-4">
           <div className={`p-3 rounded-xl ${iconBgColors[variant]} ${iconColors[variant]} group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
             <Icon name={icon} size="lg" />
-          </div>
+        </div>
           {badge && (
             <Badge variant={variant === 'default' ? 'neutral' : variant} size="sm" className="shadow-sm">
               {badge}
             </Badge>
           )}
-        </div>
+      </div>
         
         <Heading level={3} className="text-neutral-900 mb-2 group-hover:text-neutral-800 transition-colors">
           {title}
@@ -1615,7 +1615,7 @@ const CustomerServiceCard = ({ service, index }) => {
       </CardContent>
     </Card>
   );
-};
+  };
 
 const CustomerBookingCard = ({ booking, index, compact = false }) => {
   const navigate = useNavigate();
@@ -1638,7 +1638,7 @@ const CustomerBookingCard = ({ booking, index, compact = false }) => {
   };
 
   if (compact) {
-    return (
+  return (
       <Card 
         className="cursor-pointer hover:shadow-md transition-all duration-200 group border border-neutral-200 hover:border-primary-200"
         onClick={() => navigate(`/booking/${booking._id}`)}
@@ -1681,12 +1681,12 @@ const CustomerBookingCard = ({ booking, index, compact = false }) => {
       <CardContent className="p-0">
         {/* Booking Header */}
         <div className="bg-gradient-to-r from-neutral-50 to-primary-50 p-4 border-b border-neutral-200">
-          <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
                 <Icon name="calendar" className="w-5 h-5 text-primary-600" />
               </div>
-              <div>
+          <div>
                 <Text className="font-medium text-neutral-900">
                   {booking.serviceName}
                 </Text>
@@ -1694,7 +1694,7 @@ const CustomerBookingCard = ({ booking, index, compact = false }) => {
                   with {booking.providerName}
                 </Text>
               </div>
-            </div>
+          </div>
             
             <Badge variant={config.variant} className="shadow-sm">
               <Icon name={config.icon} size="xs" className="mr-1" />
@@ -1711,7 +1711,7 @@ const CustomerBookingCard = ({ booking, index, compact = false }) => {
               <Text className="font-medium text-neutral-900">
                 {formatDate(booking.scheduledDate || booking.createdAt)}
               </Text>
-            </div>
+      </div>
             <div>
               <Text size="small" className="text-neutral-500 mb-1">Category</Text>
               <Text className="font-medium text-neutral-900">
@@ -1753,7 +1753,7 @@ const ActionCard = ({ icon, title, subtitle, onClick, variant = 'default' }) => 
 
   return (
     <div
-      onClick={onClick}
+    onClick={onClick}
       className={`p-6 rounded-xl cursor-pointer transition-all duration-300 border-2 ${variants[variant]} relative overflow-hidden group`}
     >
       <div className="absolute top-0 right-0 w-20 h-20 bg-white/20 rounded-full transform translate-x-10 -translate-y-10 group-hover:scale-110 transition-transform duration-300"></div>
@@ -1763,10 +1763,10 @@ const ActionCard = ({ icon, title, subtitle, onClick, variant = 'default' }) => 
           {icon}
         </div>
         <h3 className="font-bold text-gray-900 text-lg mb-1">{title}</h3>
-        <p className="text-sm text-gray-600">{subtitle}</p>
+    <p className="text-sm text-gray-600">{subtitle}</p>
       </div>
     </div>
-  );
+);
 };
 
 const ServiceCard = ({ service, index }) => {
@@ -1777,7 +1777,7 @@ const ServiceCard = ({ service, index }) => {
     'from-purple-100 to-purple-200',
     'from-amber-100 to-amber-200'
   ];
-
+  
   return (
     <div
       className={`bg-gradient-to-r ${gradients[index % gradients.length]} p-4 rounded-lg cursor-pointer hover:scale-105 transition-transform duration-200 border border-gray-200`}
@@ -1785,11 +1785,11 @@ const ServiceCard = ({ service, index }) => {
     >
       <h3 className="font-medium text-gray-900 text-sm mb-1">{service.title}</h3>
       <p className="text-xs text-gray-600 mb-2 line-clamp-2">{service.description}</p>
-      <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
         <span className="text-sm font-bold text-gray-900">{formatCurrency(service.price)}</span>
         <span className="text-xs text-gray-500">{service.category}</span>
+        </div>
       </div>
-    </div>
   );
 };
 
@@ -1884,9 +1884,9 @@ const ServiceShowcaseCard = ({ image, icon, title, description, price, rating, r
           </Text>
           
           <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="flex items-center">
+      <div className="flex items-center">
               {renderStars(parseFloat(rating))}
-            </div>
+        </div>
             <Text size="small" className="text-neutral-500">
               {rating} ({reviews} reviews)
             </Text>
@@ -1896,8 +1896,8 @@ const ServiceShowcaseCard = ({ image, icon, title, description, price, rating, r
             <Text className="font-semibold text-primary-600">
               {price}
             </Text>
-          </div>
         </div>
+      </div>
       </CardContent>
     </Card>
   );
@@ -1929,7 +1929,7 @@ const TestimonialCard = ({ image, name, location, rating, text, service }) => {
           <div>
             <Heading level={4} className="text-neutral-900">{name}</Heading>
             <Text size="small" className="text-neutral-600">{location}</Text>
-          </div>
+        </div>
         </div>
         <div className="flex items-center mb-3">
           {renderStars(rating)}
@@ -1982,15 +1982,15 @@ const BeforeAfterCard = ({ beforeImage, afterImage, title, description, service,
           </Text>
           
           <div className="flex items-center justify-between">
-            <div>
+        <div>
               <Text size="small" className="text-neutral-500">Service by</Text>
               <Text size="small" className="font-semibold text-neutral-900">{provider}</Text>
-            </div>
+        </div>
             <Badge variant="primary" size="sm">
               {service}
             </Badge>
-          </div>
-        </div>
+      </div>
+      </div>
       </CardContent>
     </Card>
   );
