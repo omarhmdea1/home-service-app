@@ -7,7 +7,10 @@ const { Server } = require('socket.io');
 const connectDB = require('./config/db');
 
 // Load environment variables
-dotenv.config();
+// Try multiple .env file locations for flexibility
+require('dotenv').config({ path: '.env' }); // Current directory
+require('dotenv').config({ path: '../.env' }); // Parent directory (for production)
+require('dotenv').config(); // Default behavior
 
 // Connect to database
 try {
@@ -29,7 +32,17 @@ const messagesRouter = require('./routes/messageRoutes');
 const app = express();
 
 // Middleware
-app.use(cors());
+// Configure CORS based on environment
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.CLIENT_URL, process.env.CLIENT_URL?.replace('https://', 'http://')]
+    : ['http://localhost:3000', 'http://localhost:3001'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 // Increase payload size limit to 50MB for handling base64 encoded images
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));

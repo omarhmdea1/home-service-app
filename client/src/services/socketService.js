@@ -12,9 +12,12 @@ class SocketService {
       return this.socket;
     }
 
-    const SERVER_URL = process.env.REACT_APP_API_URL 
-      ? process.env.REACT_APP_API_URL.replace('/api', '') 
-      : 'http://localhost:5001';
+    // Determine server URL based on environment
+    const SERVER_URL = process.env.NODE_ENV === 'production' 
+      ? window.location.origin  // Use current domain in production
+      : 'http://localhost:5001'; // Use localhost in development
+
+    console.log('🔌 Connecting Socket.io to:', SERVER_URL);
 
     this.socket = io(SERVER_URL, {
       autoConnect: true,

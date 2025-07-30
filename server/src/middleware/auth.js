@@ -2,10 +2,24 @@ const admin = require('firebase-admin');
 const User = require('../models/User');
 
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-    projectId: process.env.FIREBASE_PROJECT_ID
-  });
+  // Initialize Firebase Admin with environment variables for Heroku compatibility
+  if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
+    // Use explicit credentials from environment variables
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+      }),
+      projectId: process.env.FIREBASE_PROJECT_ID
+    });
+  } else {
+    // Fallback to application default credentials (for local development)
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+      projectId: process.env.FIREBASE_PROJECT_ID
+    });
+  }
 }
 
 /**
