@@ -149,9 +149,10 @@ const ProviderDashboard = () => {
        
        <ActionCard
          icon={<Icon name="calendar" />}
-         title="View Bookings"
-         subtitle="Manage appointments"
+         title="Booking Requests"
+         subtitle={`${stats.pendingBookings} pending requests`}
          variant="secondary"
+         badge={stats.pendingBookings > 0 ? { text: stats.pendingBookings, variant: 'warning' } : null}
          onClick={() => window.location.href = '/provider/bookings'}
        />
        
@@ -211,11 +212,31 @@ const ProviderDashboard = () => {
   );
 
   // Show welcome message for new providers
-  const welcomeAlert = stats.completedBookings === 0 && (
+  const welcomeAlert = (
     <Alert variant="info" title="Welcome to HomeCare Services!" className="mb-6">
       <div className="flex items-center">
         <Icon name="info" size="sm" className="mr-2 text-primary-600" />
         Complete your profile and add services to start receiving bookings from customers.
+      </div>
+    </Alert>
+  );
+
+  // Show alert for pending booking requests
+  const pendingRequestsAlert = stats.pendingBookings > 0 && (
+    <Alert variant="warning" title={`You have ${stats.pendingBookings} pending booking request${stats.pendingBookings > 1 ? 's' : ''}!`} className="mb-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <Icon name="calendar" size="sm" className="mr-2 text-warning-600" />
+          <span>Customer{stats.pendingBookings > 1 ? 's' : ''} waiting for your response. Accept or decline to confirm appointment{stats.pendingBookings > 1 ? 's' : ''}.</span>
+        </div>
+        <Button 
+          variant="warning" 
+          size="sm"
+          onClick={() => window.location.href = '/provider/bookings?status=pending'}
+        >
+          <Icon name="calendar" size="xs" className="mr-1" />
+          Review Requests
+        </Button>
       </div>
     </Alert>
   );
@@ -247,6 +268,7 @@ const ProviderDashboard = () => {
       mainContent={
         <div>
           {welcomeAlert}
+          {pendingRequestsAlert}
           <ContentSection title="Recent Activity">
             {recentBookingsContent}
           </ContentSection>

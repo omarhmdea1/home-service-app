@@ -177,7 +177,7 @@ const ProviderBookings = () => {
                   onClick={() => handleStatusUpdate(booking.id, 'confirmed')}
                 >
                   <Icon name="check" size="xs" className="mr-1" />
-                  Confirm
+                  Accept Request
                 </Button>
                 <Button
                   variant="error"
@@ -185,7 +185,7 @@ const ProviderBookings = () => {
                   onClick={() => handleStatusUpdate(booking.id, 'cancelled')}
                 >
                   <Icon name="close" size="xs" className="mr-1" />
-                  Cancel
+                  Decline Request
                 </Button>
               </>
             )}
@@ -197,7 +197,7 @@ const ProviderBookings = () => {
                 onClick={() => handleStatusUpdate(booking.id, 'completed')}
               >
                 <Icon name="check" size="xs" className="mr-1" />
-                Mark Complete
+                Mark as Completed
               </Button>
             )}
           </div>
@@ -310,13 +310,20 @@ const ProviderBookings = () => {
       )}
 
       <ListPageTemplate
-        title="Manage Bookings"
-        subtitle="Review and manage your service booking requests"
-        description="Track customer bookings, update status, and communicate with clients"
+        title="Manage Booking Requests"
+        subtitle="Accept, decline, and track your service bookings"
+        description={
+          <div className="space-y-2">
+            <Text>Workflow: <strong>Pending</strong> → Accept/Decline → <strong>Confirmed</strong> → Mark Complete → <strong>Completed</strong></Text>
+            <Text className="text-sm text-neutral-600">
+              💡 New booking requests appear as "Pending" - accept them to confirm the appointment with your customer.
+            </Text>
+          </div>
+        }
         icon={<Icon name="calendar" />}
         breadcrumbs={[
           { label: 'Provider Dashboard', href: '/provider/dashboard' },
-          { label: 'Bookings' }
+          { label: 'Booking Requests' }
         ]}
         primaryAction={{
           label: 'View Calendar',
@@ -339,11 +346,11 @@ const ProviderBookings = () => {
         loading={loading}
         error={error ? { message: error } : null}
         empty={filteredBookings.length === 0 && !loading}
-        emptyTitle="No bookings found"
+        emptyTitle="No booking requests yet"
         emptyDescription={
           searchTerm || statusFilter 
             ? "No bookings match your current filters. Try adjusting your search criteria."
-            : "You don't have any bookings yet."
+            : "When customers book your services, requests will appear here for you to accept or decline."
         }
         emptyAction={emptyAction}
         background="bg-neutral-50"
