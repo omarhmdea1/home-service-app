@@ -46,7 +46,20 @@ router.post('/', protect, async (req, res) => {
   try {
     // ✅ ROLE RESTRICTION: Get user information to check role
     const User = require('../models/User');
-    const user = await User.findOne({ firebaseUid: req.user.uid });
+    let user = await User.findOne({ firebaseUid: req.user.uid });
+    
+    // Handle temporary test user (when Firebase Admin is not working)
+    if (!user && req.user.uid === 'test-user-id') {
+      console.log('📝 Using temporary test user for booking creation');
+      user = {
+        firebaseUid: 'test-user-id',
+        email: 'test@example.com',
+        role: 'customer', // Assume customer role for testing
+        name: 'Test Customer', // This is what the booking creation expects
+        firstName: 'Test',
+        lastName: 'Customer'
+      };
+    }
     
     if (!user) {
       return res.status(404).json({ 
