@@ -62,8 +62,8 @@ const Profile = () => {
     if (!currentUser) return;
     
     const fetchUserData = async () => {
-      setLoading(true);
-      
+    setLoading(true);
+    
       try {
         // Fetch user profile and bookings in parallel
         const [profileData, bookingsData] = await Promise.all([
@@ -103,30 +103,30 @@ const Profile = () => {
         
         // Create minimal profile from Firebase auth data as fallback
         const fallbackProfile = {
-          id: currentUser.uid,
+        id: currentUser.uid,
           name: currentUser.displayName || 'User',
           email: currentUser.email,
           avatar: currentUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.displayName || 'User')}&background=6366f1&color=fff`,
-          accountType: 'Customer',
+        accountType: 'Customer',
           location: { city: '', address: '' },
-          account: {
-            status: 'active',
+        account: {
+          status: 'active',
             createdAt: currentUser.metadata?.creationTime,
-            lastLogin: new Date().toISOString(),
-            preferences: {
-              notifications: true,
-              emailUpdates: true,
-              language: 'English'
-            }
-          },
+          lastLogin: new Date().toISOString(),
+          preferences: {
+            notifications: true,
+            emailUpdates: true,
+            language: 'English'
+          }
+        },
           createdAt: currentUser.metadata?.creationTime
-        };
-        
+      };
+      
         setUserProfile(fallbackProfile);
         setEditedProfile(fallbackProfile);
         setUserBookings([]);
       } finally {
-        setLoading(false);
+      setLoading(false);
       }
     };
     
@@ -268,8 +268,8 @@ const Profile = () => {
           <p className="text-gray-600 mt-1">Preparing your personalized experience...</p>
         </motion.div>
       </motion.div>
-    </div>
-  );
+      </div>
+    );
 
   // Enhanced Stats Card Component
   const StatsCard = ({ icon, title, value, subtitle, color = 'primary', trend }) => (
@@ -442,7 +442,7 @@ const Profile = () => {
             transition={{ duration: 0.6 }}
           >
             <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-primary-600 bg-clip-text text-transparent mb-2">
-              My Profile
+            My Profile
             </h1>
             <p className="text-gray-600 text-lg">Manage your account and preferences</p>
           </motion.div>
@@ -524,13 +524,13 @@ const Profile = () => {
                     transition={{ duration: 0.3 }}
                   >
                     <div className="h-32 w-32 rounded-3xl overflow-hidden border-4 border-white shadow-2xl bg-white">
-                      <img 
-                        src={avatarPreview || userProfile.avatar} 
-                        alt={userProfile.name}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                    {isEditing && (
+                    <img 
+                      src={avatarPreview || userProfile.avatar} 
+                      alt={userProfile.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  {isEditing && (
                       <motion.div
                         className="absolute -bottom-2 -right-2"
                         initial={{ opacity: 0, scale: 0 }}
@@ -539,19 +539,19 @@ const Profile = () => {
                       >
                         <label htmlFor="avatar-upload" className="bg-primary-600 rounded-2xl p-3 shadow-lg cursor-pointer hover:bg-primary-700 transition-colors border-4 border-white">
                           <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                        </label>
-                        <input 
-                          id="avatar-upload" 
-                          type="file" 
-                          accept="image/*" 
-                          className="hidden"
-                          onChange={handleAvatarChange}
-                        />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </label>
+                      <input 
+                        id="avatar-upload" 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden"
+                        onChange={handleAvatarChange}
+                      />
                       </motion.div>
-                    )}
+                  )}
                   </motion.div>
                 </div>
                 
@@ -583,7 +583,7 @@ const Profile = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                       </svg>
                       <span className="font-medium">{userProfile.phone || 'No phone added'}</span>
-                    </div>
+                  </div>
                   </motion.div>
                   
                   <motion.div
@@ -649,7 +649,7 @@ const Profile = () => {
                 </motion.div>
               </div>
             </div>
-
+            
             {/* Enhanced Quick Stats Bar */}
             <div className="bg-gradient-to-r from-gray-50 to-white px-8 py-6 border-b border-gray-100">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
@@ -689,8 +689,8 @@ const Profile = () => {
                   <p className="text-2xl font-bold text-purple-600">{userStats.memberDays}</p>
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Days Member</p>
                 </motion.div>
-              </div>
-            </div>
+                  </div>
+                  </div>
 
             {/* Enhanced Navigation Tabs */}
             <div className="bg-white">
@@ -717,9 +717,9 @@ const Profile = () => {
                     <div className="flex items-center space-x-2">
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={tab.icon} />
-                      </svg>
+                    </svg>
                       <span>{tab.label}</span>
-                    </div>
+                  </div>
                     {activeSection === tab.id && (
                       <motion.div
                         className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600"
@@ -734,8 +734,8 @@ const Profile = () => {
               </nav>
             </div>
           </motion.div>
-
-          {/* Content Sections */}
+            
+            {/* Content Sections */}
           <motion.div
             className="bg-white rounded-3xl shadow-xl overflow-hidden border border-white/20"
             initial={{ opacity: 0, y: 20 }}
@@ -759,10 +759,10 @@ const Profile = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <InputField
                         label="Full Name"
-                        name="name"
-                        value={editedProfile.name}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
+                          name="name"
+                          value={editedProfile.name}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
                         icon={
                           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -772,9 +772,9 @@ const Profile = () => {
                       
                       <InputField
                         label="Email Address"
-                        name="email"
+                          name="email"
                         type="email"
-                        value={editedProfile.email}
+                          value={editedProfile.email}
                         disabled={true}
                         helperText="Email cannot be changed for security reasons"
                         icon={
@@ -786,11 +786,11 @@ const Profile = () => {
                       
                       <InputField
                         label="Phone Number"
-                        name="phone"
+                          name="phone"
                         type="tel"
-                        value={editedProfile.phone}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
+                          value={editedProfile.phone}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
                         placeholder="+1 (555) 123-4567"
                         icon={
                           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -801,8 +801,8 @@ const Profile = () => {
                       
                       <InputField
                         label="Account Type"
-                        name="accountType"
-                        value={editedProfile.accountType}
+                          name="accountType"
+                          value={editedProfile.accountType}
                         disabled={true}
                         helperText="Contact support to change account type"
                         icon={
@@ -814,10 +814,10 @@ const Profile = () => {
                       
                       <InputField
                         label="City"
-                        name="location.city"
-                        value={editedProfile.location?.city || ''}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
+                          name="location.city"
+                          value={editedProfile.location?.city || ''}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
                         placeholder="San Francisco"
                         icon={
                           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -829,10 +829,10 @@ const Profile = () => {
                       
                       <InputField
                         label="Address"
-                        name="location.address"
-                        value={editedProfile.location?.address || ''}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
+                          name="location.address"
+                          value={editedProfile.location?.address || ''}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
                         placeholder="123 Main St, Apt 4B"
                         icon={
                           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -901,9 +901,9 @@ const Profile = () => {
                         <div className="flex-shrink-0">
                           <div className="p-3 bg-primary-100 rounded-xl">
                             <svg className="h-6 w-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                            </svg>
-                          </div>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                          </svg>
+                        </div>
                         </div>
                         <div className="ml-4">
                           <h4 className="text-lg font-bold text-gray-900">Current Sign-In Method</h4>
@@ -913,8 +913,8 @@ const Profile = () => {
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                             Secure
-                          </div>
-                        </div>
+                      </div>
+                    </div>
                       </div>
                     </motion.div>
                     
@@ -930,8 +930,8 @@ const Profile = () => {
                           <InputField
                             label="Current Password"
                             name="current-password"
-                            type="password"
-                            placeholder="Enter your current password"
+                              type="password"
+                              placeholder="Enter your current password"
                             icon={
                               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -942,8 +942,8 @@ const Profile = () => {
                           <InputField
                             label="New Password"
                             name="new-password"
-                            type="password"
-                            placeholder="Enter new password"
+                              type="password"
+                              placeholder="Enter new password"
                             helperText="Password must be at least 8 characters long and include a mix of letters, numbers, and symbols."
                             icon={
                               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -955,14 +955,14 @@ const Profile = () => {
                           <InputField
                             label="Confirm New Password"
                             name="confirm-password"
-                            type="password"
-                            placeholder="Confirm new password"
+                              type="password"
+                              placeholder="Confirm new password"
                             icon={
                               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
                             }
-                          />
+                            />
                           
                           <div className="pt-2">
                             <ActionButton
@@ -988,18 +988,18 @@ const Profile = () => {
                       <h4 className="text-lg font-bold text-gray-900 mb-4">Two-Factor Authentication</h4>
                       <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200">
                         <div className="flex items-start justify-between">
-                          <div className="flex items-start">
+                            <div className="flex items-start">
                             <div className="p-3 bg-yellow-100 rounded-xl mr-4">
                               <svg className="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                              </svg>
-                            </div>
+                                </svg>
+                              </div>
                             <div>
                               <h5 className="text-base font-bold text-gray-900">Enhanced Security</h5>
                               <p className="text-gray-600 mt-2">Add an extra layer of security to your account by enabling two-factor authentication.</p>
                               <p className="text-gray-500 text-sm mt-1">When enabled, you'll be required to enter a verification code along with your password when signing in.</p>
-                            </div>
-                          </div>
+                                </div>
+                              </div>
                           <div className="ml-6">
                             <ActionButton
                               variant="ghost"
@@ -1012,17 +1012,17 @@ const Profile = () => {
                             >
                               Coming Soon
                             </ActionButton>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                    
+                              </div>
+                    </div>
+                  </div>
+                </motion.div>
+              
                     {/* Recent Activity */}
-                    <motion.div
+                <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.4 }}
-                    >
+                >
                       <h4 className="text-lg font-bold text-gray-900 mb-4">Recent Account Activity</h4>
                       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
                         <div className="divide-y divide-gray-200">
@@ -1039,7 +1039,7 @@ const Profile = () => {
                               transition={{ delay: 0.1 * index }}
                             >
                               <div className="flex items-center">
-                                <div className="flex-shrink-0">
+                              <div className="flex-shrink-0">
                                   <div className={`p-3 rounded-xl ${
                                     activity.status === 'current' ? 'bg-green-100' :
                                     activity.status === 'security' ? 'bg-blue-100' : 'bg-gray-100'
@@ -1053,8 +1053,8 @@ const Profile = () => {
                                       ) : (
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                                       )}
-                                    </svg>
-                                  </div>
+                                </svg>
+                              </div>
                                 </div>
                                 <div className="ml-4 flex-1">
                                   <div className="flex items-center justify-between">
@@ -1066,15 +1066,15 @@ const Profile = () => {
                                         </span>
                                       )}
                                       <p className="text-xs text-gray-500 font-medium">{activity.time}</p>
-                                    </div>
-                                  </div>
+                              </div>
+                            </div>
                                   <p className="text-sm text-gray-600 mt-1">From {activity.location} using {activity.device}</p>
-                                </div>
+                          </div>
                               </div>
                             </motion.div>
                           ))}
-                        </div>
-                      </div>
+                                </div>
+                              </div>
                     </motion.div>
                   </div>
                 </motion.div>
@@ -1131,7 +1131,7 @@ const Profile = () => {
                           subtitle="All time"
                           color="green"
                         />
-                      </div>
+                          </div>
                     ) : (
                       <motion.div
                         className="text-center py-12 bg-gradient-to-br from-gray-50 to-primary-50 rounded-2xl border border-gray-200"
@@ -1145,8 +1145,8 @@ const Profile = () => {
                               <svg className="h-8 w-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                               </svg>
-                            </div>
                           </div>
+                        </div>
                           <h3 className="text-xl font-bold text-gray-900 mb-2">No Bookings Yet</h3>
                           <p className="text-gray-600 mb-6">Start your journey by booking your first service with us!</p>
                           <ActionButton
@@ -1159,7 +1159,7 @@ const Profile = () => {
                           >
                             Browse Services
                           </ActionButton>
-                        </div>
+                      </div>
                       </motion.div>
                     )}
                     
@@ -1173,14 +1173,14 @@ const Profile = () => {
                         <h4 className="text-lg font-bold text-gray-900 mb-4">Last Service Booked</h4>
                         <div className="bg-gradient-to-r from-white to-primary-50 rounded-2xl border border-primary-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
                           <div className="p-6">
-                            <div className="flex items-start">
+                          <div className="flex items-start">
                               <div className="flex-shrink-0 h-16 w-16 rounded-2xl overflow-hidden shadow-md">
-                                <img 
+                              <img 
                                   src={userBookings[0]?.service?.image || "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80"} 
-                                  alt="Service" 
-                                  className="h-full w-full object-cover"
-                                />
-                              </div>
+                                alt="Service" 
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
                               <div className="ml-6 flex-1">
                                 <div className="flex justify-between items-start">
                                   <div>
@@ -1193,7 +1193,7 @@ const Profile = () => {
                                       })} 
                                       {userBookings[0]?.scheduledTime && ` at ${userBookings[0].scheduledTime}`}
                                     </p>
-                                    <div className="mt-3">
+                              <div className="mt-3">
                                       <ActionButton
                                         variant="secondary"
                                         size="sm"
@@ -1204,11 +1204,11 @@ const Profile = () => {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                           </svg>
                                         }
-                                      >
+                                >
                                         View Details
                                       </ActionButton>
-                                    </div>
-                                  </div>
+                              </div>
+                            </div>
                                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold capitalize ${
                                     userBookings[0]?.status === 'confirmed' ? 'bg-green-100 text-green-800' :
                                     userBookings[0]?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -1219,10 +1219,10 @@ const Profile = () => {
                                     {userBookings[0]?.status === 'confirmed' ? '✓ ' : ''}
                                     {userBookings[0]?.status || 'Unknown'}
                                   </span>
-                                </div>
-                              </div>
-                            </div>
                           </div>
+                        </div>
+                      </div>
+                    </div>
                         </div>
                       </motion.div>
                     )}
@@ -1250,24 +1250,24 @@ const Profile = () => {
                       </div>
                       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
                         <div className="overflow-x-auto">
-                          <table className="min-w-full divide-y divide-gray-200">
+                        <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gradient-to-r from-gray-50 to-primary-50">
-                              <tr>
+                            <tr>
                                 <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                  Service
-                                </th>
+                                Service
+                              </th>
                                 <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                  Date
-                                </th>
+                                Date
+                              </th>
                                 <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                  Status
-                                </th>
+                                Status
+                              </th>
                                 <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">
                                   Action
                                 </th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
                               {userBookings.length > 0 ? (
                                 userBookings.slice(0, 5).map((booking, index) => {
                                   const getStatusColor = (status) => {
@@ -1288,12 +1288,12 @@ const Profile = () => {
                                       animate={{ opacity: 1, x: 0 }}
                                       transition={{ delay: 0.1 * index }}
                                     >
-                                      <td className="px-6 py-4 whitespace-nowrap">
+                              <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm font-bold text-gray-900">
                                           {booking.service?.title || booking.serviceName || 'Service'}
                                         </div>
-                                      </td>
-                                      <td className="px-6 py-4 whitespace-nowrap">
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm text-gray-600 font-medium">
                                           {new Date(booking.scheduledDate || booking.createdAt).toLocaleDateString('en-US', { 
                                             year: 'numeric', 
@@ -1301,12 +1301,12 @@ const Profile = () => {
                                             day: 'numeric' 
                                           })}
                                         </div>
-                                      </td>
-                                      <td className="px-6 py-4 whitespace-nowrap">
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
                                         <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-${getStatusColor(booking.status)}-100 text-${getStatusColor(booking.status)}-800 capitalize`}>
                                           {booking.status}
-                                        </span>
-                                      </td>
+                                </span>
+                              </td>
                                       <td className="px-6 py-4 whitespace-nowrap text-right">
                                         <ActionButton
                                           variant="ghost"
@@ -1321,7 +1321,7 @@ const Profile = () => {
                                         >
                                           View
                                         </ActionButton>
-                                      </td>
+                              </td>
                                     </motion.tr>
                                   );
                                 })
@@ -1335,13 +1335,13 @@ const Profile = () => {
                                       <p className="text-sm font-medium text-gray-900">No bookings yet</p>
                                       <p className="text-sm text-gray-500 mt-1">Start by booking your first service!</p>
                                     </div>
-                                  </td>
-                                </tr>
+                              </td>
+                            </tr>
                               )}
-                            </tbody>
-                          </table>
-                        </div>
+                          </tbody>
+                        </table>
                       </div>
+                    </div>
                     </motion.div>
                     
                     {/* Export Options */}
@@ -1355,8 +1355,8 @@ const Profile = () => {
                         variant="secondary"
                         icon={
                           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
                         }
                       >
                         Export Booking History
@@ -1376,7 +1376,7 @@ const Profile = () => {
                   <div className="mb-8">
                     <h3 className="text-2xl font-bold text-gray-900 mb-2">Account Management</h3>
                     <p className="text-gray-600">Manage your account settings and preferences</p>
-                  </div>
+            </div>
                   
                   <div className="space-y-8">
                     {/* Account Information */}
@@ -1423,13 +1423,13 @@ const Profile = () => {
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                   )}
-                                </div>
-                              </div>
+          </div>
+        </div>
                               <div>
                                 <p className="text-sm text-gray-500 font-medium">{item.label}</p>
                                 <p className="text-base font-bold text-gray-900 mt-1">{item.value}</p>
                                 <p className="text-xs text-gray-500 mt-1">{item.subtitle}</p>
-                              </div>
+      </div>
                             </motion.div>
                           ))}
                         </div>
@@ -1486,10 +1486,10 @@ const Profile = () => {
                         <div className="space-y-6">
                           <div className="flex items-start space-x-4">
                             <div className="p-3 bg-yellow-100 rounded-xl">
-                              <svg className="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                              </svg>
-                            </div>
+                <svg className="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
                             <div className="flex-1">
                               <h5 className="text-base font-bold text-gray-900">Temporarily Deactivate Account</h5>
                               <p className="text-gray-600 mt-2">Your account will be disabled and you won't be able to use our services until you log in again. Your data will be preserved.</p>
@@ -1583,7 +1583,7 @@ const Profile = () => {
                   <h3 className="text-2xl font-bold text-gray-900 mb-3">Deactivate Account</h3>
                   <p className="text-gray-600 mb-8 leading-relaxed">
                     Are you sure you want to deactivate your account? You can reactivate it by logging in again. Your data will be preserved.
-                  </p>
+              </p>
                 </motion.div>
                 
                 <motion.div
@@ -1593,18 +1593,18 @@ const Profile = () => {
                   transition={{ delay: 0.3 }}
                 >
                   <ActionButton
-                    onClick={() => setShowDeactivateModal(false)}
+                  onClick={() => setShowDeactivateModal(false)}
                     variant="secondary"
                     icon={
                       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     }
-                  >
-                    Cancel
+                >
+                  Cancel
                   </ActionButton>
                   <ActionButton
-                    onClick={handleDeactivateAccount}
+                  onClick={handleDeactivateAccount}
                     variant="warning"
                     loading={loading}
                     icon={
@@ -1612,19 +1612,19 @@ const Profile = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
                       </svg>
                     }
-                  >
+                >
                     Deactivate Account
                   </ActionButton>
                 </motion.div>
               </div>
             </motion.div>
           </motion.div>
-        )}
+      )}
       </AnimatePresence>
       
       {/* Enhanced Delete Account Modal */}
       <AnimatePresence>
-        {showDeleteModal && (
+      {showDeleteModal && (
           <motion.div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
             initial={{ opacity: 0 }}
@@ -1639,7 +1639,7 @@ const Profile = () => {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.3, type: "spring", damping: 25, stiffness: 300 }}
             >
-              <div className="text-center">
+            <div className="text-center">
                 <motion.div
                   className="mx-auto flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-red-100 to-pink-100 mb-6"
                   initial={{ scale: 0 }}
@@ -1647,8 +1647,8 @@ const Profile = () => {
                   transition={{ delay: 0.1, type: "spring", damping: 15 }}
                 >
                   <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
                 </motion.div>
                 
                 <motion.div
@@ -1658,8 +1658,8 @@ const Profile = () => {
                 >
                   <h3 className="text-2xl font-bold text-gray-900 mb-3">Delete Account</h3>
                   <p className="text-gray-600 mb-6 leading-relaxed">
-                    This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
-                  </p>
+                This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+              </p>
                 </motion.div>
                 
                 <motion.div
@@ -1670,16 +1670,16 @@ const Profile = () => {
                 >
                   <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 mb-4">
                     <p className="text-sm text-gray-700 mb-3 font-medium">Please type <span className="font-bold text-red-600">DELETE</span> to confirm</p>
-                    <input
-                      type="text"
-                      value={deleteConfirmText}
-                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-red-500 focus:border-red-500 transition-all duration-300 text-center font-bold"
-                      placeholder="Type DELETE to confirm"
-                    />
+                  placeholder="Type DELETE to confirm"
+                />
                   </div>
-                  
-                  {deleteError && (
+                
+                {deleteError && (
                     <motion.div
                       className="bg-red-50 p-4 rounded-xl border border-red-200"
                       initial={{ opacity: 0, scale: 0.95 }}
@@ -1690,7 +1690,7 @@ const Profile = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                         <p className="text-sm text-red-700 font-medium">{deleteError}</p>
-                      </div>
+              </div>
                     </motion.div>
                   )}
                 </motion.div>
@@ -1702,9 +1702,9 @@ const Profile = () => {
                   transition={{ delay: 0.4 }}
                 >
                   <ActionButton
-                    onClick={() => {
-                      setShowDeleteModal(false);
-                      setDeleteConfirmText('');
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteConfirmText('');
                       setDeleteError('');
                     }}
                     variant="secondary"
@@ -1713,12 +1713,12 @@ const Profile = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     }
-                  >
-                    Cancel
+                >
+                  Cancel
                   </ActionButton>
                   <ActionButton
-                    onClick={handleDeleteAccount}
-                    disabled={deleteConfirmText !== 'DELETE'}
+                  onClick={handleDeleteAccount}
+                  disabled={deleteConfirmText !== 'DELETE'}
                     loading={loading}
                     variant="danger"
                     icon={
@@ -1726,14 +1726,14 @@ const Profile = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     }
-                  >
-                    Delete Account
+                >
+                  Delete Account
                   </ActionButton>
                 </motion.div>
               </div>
             </motion.div>
           </motion.div>
-        )}
+      )}
       </AnimatePresence>
     </div>
   );

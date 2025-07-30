@@ -117,8 +117,8 @@ const CustomerDashboard = () => {
 
       // Fetch featured services and user's recent bookings in parallel
       const [servicesResponse, bookingsResponse] = await Promise.allSettled([
-        apiCall('/api/services?limit=6&featured=true'),
-        apiCall(`/api/bookings?userId=${currentUserId}&limit=3`)
+        apiCall('http://localhost:5001/api/services?limit=6&featured=true'),
+        apiCall(`http://localhost:5001/api/bookings?userId=${currentUserId}&limit=3`)
       ]);
 
       // Handle services
@@ -140,7 +140,7 @@ const CustomerDashboard = () => {
           const bookingsWithDetails = await Promise.allSettled(
             bookingsData.slice(0, 3).map(async (booking) => {
             try {
-                const serviceData = await apiCall(`/api/services/${booking.serviceId}`);
+                const serviceData = await apiCall(`http://localhost:5001/api/services/${booking.serviceId}`);
                 return {
                   ...booking,
                   serviceName: serviceData?.title || 'Unknown Service',
@@ -626,7 +626,7 @@ const ProviderDashboard = () => {
       let bookingsData = [];
       try {
         const bookingsResponse = await apiCall(
-          `/api/bookings?providerId=${currentUserId}`
+          `http://localhost:5001/api/bookings?providerId=${currentUserId}`
         );
         
         bookingsData = Array.isArray(bookingsResponse) 
@@ -654,7 +654,7 @@ const ProviderDashboard = () => {
       // ✅ Fetch services count with better error handling
         let activeServices = 0;
       try {
-        const servicesResponse = await apiCall(`/api/services?providerId=${currentUserId}`);
+        const servicesResponse = await apiCall(`http://localhost:5001/api/services?providerId=${currentUserId}`);
         const servicesData = Array.isArray(servicesResponse) 
           ? servicesResponse 
           : (servicesResponse.data || servicesResponse.services || []);
@@ -680,7 +680,7 @@ const ProviderDashboard = () => {
         const bookingsWithDetails = await Promise.allSettled(
           sortedBookings.map(async (booking) => {
             try {
-              const serviceData = await apiCall(`/api/services/${booking.serviceId}`);
+              const serviceData = await apiCall(`http://localhost:5001/api/services/${booking.serviceId}`);
                 return {
                 ...booking,
                 serviceName: serviceData?.title || 'Unknown Service',

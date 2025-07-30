@@ -153,11 +153,11 @@ const ProviderBookings = () => {
                 <div className="flex items-center space-x-1 mt-2 text-sm text-neutral-500">
                   <Icon name="location" size="xs" />
                   <span>{booking.address}</span>
-                </div>
-              )}
+          </div>
+        )}
             </div>
           </div>
-        </div>
+          </div>
 
         {/* Action Buttons */}
         <div className="flex items-center justify-between pt-4 border-t border-neutral-200">
@@ -165,16 +165,16 @@ const ProviderBookings = () => {
             <Link to={`/provider/bookings/${booking.id}`}>
               <Button variant="outline" size="sm">
                 <Icon name="info" size="xs" className="mr-1" />
-                View Details
+                            View Details
               </Button>
-            </Link>
-            
-            {booking.status === 'pending' && (
-              <>
+                          </Link>
+                          
+                          {booking.status === 'pending' && (
+                            <>
                 <Button
                   variant="success"
                   size="sm"
-                  onClick={() => handleStatusUpdate(booking.id, 'confirmed')}
+                                onClick={() => handleStatusUpdate(booking.id, 'confirmed')}
                 >
                   <Icon name="check" size="xs" className="mr-1" />
                   Accept Request
@@ -182,25 +182,25 @@ const ProviderBookings = () => {
                 <Button
                   variant="error"
                   size="sm"
-                  onClick={() => handleStatusUpdate(booking.id, 'cancelled')}
-                >
+                                onClick={() => handleStatusUpdate(booking.id, 'cancelled')}
+                              >
                   <Icon name="close" size="xs" className="mr-1" />
                   Decline Request
                 </Button>
-              </>
-            )}
+                            </>
+                          )}
             
-            {booking.status === 'confirmed' && (
+                          {booking.status === 'confirmed' && (
               <Button
                 variant="success"
                 size="sm"
-                onClick={() => handleStatusUpdate(booking.id, 'completed')}
-              >
+                              onClick={() => handleStatusUpdate(booking.id, 'completed')}
+                            >
                 <Icon name="check" size="xs" className="mr-1" />
                 Mark as Completed
               </Button>
-            )}
-          </div>
+                          )}
+                        </div>
           
           <div className="flex items-center space-x-2">
             <Button variant="ghost" size="sm">

@@ -166,7 +166,7 @@ const ProviderEarnings = () => {
               size="lg" 
               className={variant === 'primary' ? 'text-primary-600' : 'text-neutral-600'} 
             />
-          </div>
+      </div>
         </div>
       </CardContent>
     </Card>
@@ -188,9 +188,9 @@ const ProviderEarnings = () => {
               <Text size="small" className="text-neutral-600">
                 {transaction.service}
               </Text>
-            </div>
-          </div>
-          
+        </div>
+      </div>
+      
           <div className="flex items-center space-x-6">
             <div className="text-right">
               <Text size="small" className="text-neutral-600">
@@ -250,7 +250,7 @@ const ProviderEarnings = () => {
           : `No ${activeTab} transactions found.`
         }
       </Text>
-    </div>
+          </div>
   );
 
   return (
@@ -316,31 +316,31 @@ const ProviderEarnings = () => {
               <CardHeader className="border-b border-neutral-200">
                 <CardTitle>Transaction History</CardTitle>
               </CardHeader>
-              
-              {/* Tabs */}
+          
+          {/* Tabs */}
               <div className="border-b border-neutral-200">
-                <nav className="flex -mb-px">
+            <nav className="flex -mb-px">
                   <Tab
                     label="All Transactions"
                     isActive={activeTab === 'all'}
-                    onClick={() => setActiveTab('all')}
+                onClick={() => setActiveTab('all')}
                     count={transactions.length}
                   />
                   <Tab
                     label="Paid"
                     isActive={activeTab === 'paid'}
-                    onClick={() => setActiveTab('paid')}
+                onClick={() => setActiveTab('paid')}
                     count={transactions.filter(t => t.payoutStatus === 'paid').length}
                   />
                   <Tab
                     label="Pending"
                     isActive={activeTab === 'pending'}
-                    onClick={() => setActiveTab('pending')}
+                onClick={() => setActiveTab('pending')}
                     count={transactions.filter(t => t.payoutStatus === 'pending').length}
                   />
-                </nav>
-              </div>
-
+            </nav>
+          </div>
+          
               <CardContent className="p-6">
                 {filteredTransactions.length > 0 ? (
                   <div className="space-y-0">
@@ -365,7 +365,7 @@ const ProviderEarnings = () => {
                 <Text size="small" className="text-neutral-600 mt-1">
                   We're integrating Stripe for faster and more secure payments directly to your bank account.
                 </Text>
-              </div>
+        </div>
             </Alert>
           </>
         )}

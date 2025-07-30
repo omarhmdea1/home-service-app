@@ -33,7 +33,7 @@ const ServiceForm = ({
       try {
         setLoadingCategories(true);
         // Use the correct server endpoint for categories
-        const response = await axios.get('/api/services/categories');
+        const response = await axios.get('http://localhost:5001/api/services/categories');
         
         // Handle the new API response format
         const categoriesData = response.data?.categories || response.data || [];

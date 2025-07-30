@@ -21,10 +21,10 @@ if (!admin.apps.length) {
       console.log('✅ Firebase Admin initialized with environment credentials');
     } else {
       // Fallback to application default credentials (for local development)
-      admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
-        projectId: process.env.FIREBASE_PROJECT_ID
-      });
+  admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+    projectId: process.env.FIREBASE_PROJECT_ID
+  });
       
       console.log('✅ Firebase Admin initialized with default credentials');
     }

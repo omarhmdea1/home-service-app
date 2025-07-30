@@ -35,11 +35,7 @@ const PrivateRoute = ({ children, allowedRoles, requireVerification = true }) =>
   
   // Check email verification if required
   // Skip verification for customers, only require it for providers
-  // Skip verification for test accounts
-  const testEmails = ['cohen@hausly.com', 'tal.cohen@email.com'];
-  const isTestAccount = testEmails.includes(currentUser.email);
-  
-  if (requireVerification && !currentUser.emailVerified && userRole === 'provider' && !isTestAccount) {
+  if (requireVerification && !currentUser.emailVerified && userRole === 'provider') {
     // Redirect to a verification page or show verification UI
     return <Navigate to="/verify-email" state={{ from: location.pathname }} />;
   }

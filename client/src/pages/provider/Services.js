@@ -51,7 +51,7 @@ const ProviderServices = () => {
         
         if (currentUserId) {
           const response = await getServices({ providerId: currentUserId });
-          
+
           const formattedServices = response.map(service => ({
             id: service._id,
             title: service.title,
@@ -76,7 +76,7 @@ const ProviderServices = () => {
 
     // Only fetch if we have a valid user ID
     if (currentUserId) {
-      fetchProviderServices();
+    fetchProviderServices();
     } else {
       setLoading(false);
     }
@@ -178,30 +178,30 @@ const ProviderServices = () => {
   const ServiceCard = ({ service }) => {
     // Debug logging
     console.log('🔧 Rendering ServiceCard for service:', service.title, 'isActive:', service.isActive);
-    
-    return (
+
+  return (
     <Card className="transition-all duration-150 hover:shadow-md">
       <CardContent className="p-6">
         <div className="flex flex-col sm:flex-row gap-6">
           {/* Service Image */}
           <div className="flex-shrink-0">
             <div className="h-20 w-20 rounded-xl overflow-hidden bg-gradient-to-br from-primary-100 to-primary-200 shadow-sm">
-              {service.image ? (
-                <img 
-                  src={service.image} 
-                  alt={service.title} 
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = defaultPlaceholderImage;
-                  }}
-                />
-              ) : (
+                        {service.image ? (
+                          <img 
+                            src={service.image} 
+                            alt={service.title} 
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = defaultPlaceholderImage;
+                            }}
+                          />
+                        ) : (
                 <div className="h-full w-full flex items-center justify-center">
                   <Icon name="services" size="lg" className="text-primary-600" />
-                </div>
-              )}
-            </div>
+                          </div>
+                        )}
+                      </div>
           </div>
           
           {/* Service Info */}
@@ -215,10 +215,10 @@ const ProviderServices = () => {
                   variant={service.isActive ? "success" : "neutral"}
                   size="sm"
                 >
-                  {service.isActive ? 'Active' : 'Inactive'}
+                            {service.isActive ? 'Active' : 'Inactive'}
                 </Badge>
               </div>
-            </div>
+                        </div>
 
             <Text size="small" className="text-neutral-600 mb-3 line-clamp-2">
               {service.description}
@@ -238,23 +238,23 @@ const ProviderServices = () => {
                 <Icon name="clock" size="xs" />
                 <Text size="small">{service.duration}</Text>
               </div>
-            </div>
+                        </div>
 
             {/* Tags */}
-            {service.tags && service.tags.length > 0 && (
+                        {service.tags && service.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
-                {service.tags.map((tag, index) => (
+                            {service.tags.map((tag, index) => (
                   <Badge 
-                    key={index} 
+                                key={index} 
                     variant="neutral" 
                     size="sm"
                     className="bg-primary-50 text-primary-700"
-                  >
-                    {tag}
+                              >
+                                {tag}
                   </Badge>
-                ))}
-              </div>
-            )}
+                            ))}
+                          </div>
+                        )}
 
             {/* Action Buttons */}
             <div className="flex items-center gap-3 pt-4 mt-4 border-t border-neutral-200">
@@ -266,9 +266,9 @@ const ProviderServices = () => {
                   handleEditService(service.id);
                 }}
                 className="flex items-center gap-2"
-              >
+                      >
                 <Icon name="edit" size="xs" />
-                Edit
+                        Edit
               </Button>
               <Button
                 variant="primary"
@@ -282,9 +282,9 @@ const ProviderServices = () => {
                 <Icon name={service.isActive ? "close" : "check"} size="xs" />
                 {service.isActive ? 'Deactivate' : 'Activate'}
               </Button>
-            </div>
-          </div>
-        </div>
+                    </div>
+                  </div>
+                </div>
       </CardContent>
     </Card>
   );

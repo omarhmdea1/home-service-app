@@ -1,8 +1,6 @@
 import { getAuthToken } from '../utils/authToken';
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '/api' 
-  : 'http://localhost:5001/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 // Get reviews for a service or provider
 export const getReviews = async (filters = {}) => {

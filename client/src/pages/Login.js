@@ -25,11 +25,7 @@ const Login = () => {
       console.log('User authenticated with role:', userRole);
       
       // Check if email is verified - only for providers, not customers
-      // Skip verification for test accounts
-      const testEmails = ['cohen@hausly.com', 'tal.cohen@email.com'];
-      const isTestAccount = testEmails.includes(currentUser.email);
-      
-      if (!currentUser.emailVerified && userRole === 'provider' && !isTestAccount) {
+      if (!currentUser.emailVerified && userRole === 'provider') {
         console.log('Provider email not verified, showing alert');
         setVerificationAlert(true);
         // Don't redirect yet, show verification alert for providers

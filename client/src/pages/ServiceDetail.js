@@ -79,7 +79,7 @@ const ServiceDetail = () => {
     // Use direct navigation with window.location to bypass any potential React Router issues
     window.location.href = `/book/${id}`;
   };
-
+  
   const handleViewProviderProfile = () => {
     if (service.providerId) {
       // Navigate to the public provider profile page
@@ -322,9 +322,9 @@ const ServiceDetail = () => {
                     </div>
                   </div>
                   <div className="border-t border-gray-200 pt-4">
-                    <p className="text-gray-700 text-base leading-relaxed">
+                  <p className="text-gray-700 text-base leading-relaxed">
                       {service.providerProfile?.description || 'A trusted provider on Hausly with a proven track record of quality service and customer satisfaction. All our providers undergo thorough background checks and training verification.'}
-                    </p>
+                  </p>
                     
                     {/* Additional provider highlights */}
                     <div className="mt-4 flex flex-wrap gap-2">
