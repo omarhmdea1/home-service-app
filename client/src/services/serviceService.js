@@ -9,7 +9,18 @@ import { getAuth } from 'firebase/auth';
 export const getServices = async (params = {}) => {
   try {
     // Use public request since services list should be publicly accessible
-    const services = await getPublic('/services', params);
+    const response = await getPublic('/services', params);
+    
+    // Handle the new API response format that wraps services in an object
+    const services = response.services || response || [];
+    
+    console.log('🔍 getServices response:', { 
+      responseType: typeof response, 
+      hasServices: !!response.services,
+      servicesCount: services.length,
+      firstService: services[0]?.title || 'N/A'
+    });
+    
     return services;
   } catch (error) {
     console.error('Error fetching services from API:', error);
